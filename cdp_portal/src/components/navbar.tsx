@@ -63,7 +63,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
   }, []);
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-white">
+    <div className="flex flex-col w-full bg-white">
       {/* Top Header */}
       <div className="w-full bg-white py-4">
         <div className="max-w-[1400px] h-[60px] mx-auto flex justify-between items-center px-4">
