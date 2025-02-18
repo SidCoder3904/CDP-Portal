@@ -18,7 +18,7 @@ interface ProfileLayoutProps {
 export default function ProfileLayout({ children }: ProfileLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex bg-gray-50 pt-16">
         <Sidebar>
           <SidebarContent>
             <SidebarGroup>
