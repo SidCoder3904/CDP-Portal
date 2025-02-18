@@ -62,7 +62,7 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <a href="/profile/projects">
+                      <a href="/student/profile/projects">
                         <FolderGit2 className="h-4 w-4" />
                         <span>Projects</span>
                         <XCircle className="ml-auto h-4 w-4 text-red-500" />
@@ -71,7 +71,7 @@ export default function ProfileLayout({ children }: ProfileLayoutProps) {
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <a href="/profile/documents">
+                      <a href="/student/profile/documents">
                         <FileText className="h-4 w-4" />
                         <span>Resume & Certificates</span>
                         <CheckCircle className="ml-auto h-4 w-4 text-green-500" />
