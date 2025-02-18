@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
+import MainFooter from "@/components/main_footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,20 +30,17 @@ export default function RootLayout({
         {/* Navbar */}
         <Navbar
           menuItems={[
-            "Home",
-            "About Us",
-            "Notices",
-            "Our Team",
-            "Student Login",
-            "Admin Login",
-            "For Recruiters",
-            "Contact Us",
+            { label: "Home", href: "/" },
+            { label: "Our Team", href: "/team" },
+            { label: "For Recruiters", href: "/for_recruiters" },
+            { label: "Notices", href: "/notices" },
+            { label: "Student Login", href: "/login" },
+            { label: "Admin Login", href: "/login" },
           ]}
         />
-
         <main>{children}</main>
         {/* Footer */}
-        <Footer />
+        <MainFooter />
       </body>
     </html>
   );

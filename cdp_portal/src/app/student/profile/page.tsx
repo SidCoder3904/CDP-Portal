@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle } from "lucide-react";
 
 export default function BasicDetails() {
   return (
@@ -64,10 +64,11 @@ export default function BasicDetails() {
             </div>
           </div>
 
-          <Button className="bg-[#002147] hover:bg-[#003167]">Save Changes</Button>
+          <Button className="bg-[#002147] hover:bg-[#003167]">
+            Save Changes
+          </Button>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

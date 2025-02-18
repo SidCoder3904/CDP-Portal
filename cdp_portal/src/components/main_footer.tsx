@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Facebook, Twitter, Instagram } from "lucide-react";
 
-const Footer = () => {
+const MainFooter = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-template text-gray-100 py-12">
+    <div className="bg-template text-gray-100 py-12">
       <div className="container mx-auto px-6 lg:px-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Quick Finds Section */}
@@ -132,14 +132,14 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Footer Bottom */}
+        {/* MainFooter Bottom */}
         <div className="mt-12 border-t border-gray-700 pt-6 flex justify-between items-center text-sm">
           <p>&copy; {currentYear}, IIT Ropar CDPC</p>
           <p>Designed by CDPC Technical Team</p>
         </div>
       </div>
-    </footer>
+    </div>
   );
 };
 
-export default Footer;
+export default MainFooter;
