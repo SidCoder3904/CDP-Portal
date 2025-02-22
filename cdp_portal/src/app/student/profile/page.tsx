@@ -1,72 +1,189 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+"use client";
+
+import { useState } from "react";
+import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle } from "lucide-react";
+import { EditDialog } from "@/components/edit-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FileUploader } from "@/components/file-uploader";
+
+// Placeholder data
+const initialStudentData = {
+  name: "John Doe",
+  email: "john.doe@example.com",
+  phone: "+1 234 567 8900",
+  dateOfBirth: "1999-01-01",
+  gender: "Male",
+  address: "123 College St, University Town, ST 12345",
+  major: "Computer Science",
+  studentId: "CS12345",
+  enrollmentYear: "2020",
+  expectedGraduationYear: "2024",
+  passportImage: "/placeholder.svg?height=200&width=200",
+};
 
 export default function BasicDetails() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#002147]">Profile Details</h1>
-        <Badge variant="outline" className="bg-green-50">
-          <CheckCircle className="mr-1 h-3 w-3 text-green-500" />
-          Profile Verified
-        </Badge>
-      </div>
+  const [studentData, setStudentData] = useState(initialStudentData);
+  const [editableData, setEditableData] = useState(initialStudentData);
 
+  const handleDirectUpdate = (field: string, value: string) => {
+    setEditableData({ ...editableData, [field]: value });
+  };
+
+  const handleConfirmUpdate = () => {
+    setStudentData(editableData);
+  };
+
+  const handleUpdate = (newData: Partial<typeof studentData>) => {
+    setStudentData({ ...studentData, ...newData });
+    setEditableData({ ...editableData, ...newData });
+  };
+
+  const handlePassportImageUpload = (file: File) => {
+    const imageUrl = URL.createObjectURL(file);
+    setStudentData({ ...studentData, passportImage: imageUrl });
+    setEditableData({ ...editableData, passportImage: imageUrl });
+  };
+
+  return (
+    <div>
+      <h1 className="text-2xl text-template font-bold mb-6">Basic Details</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
+          {/* <CardTitle className="text-2xl text-template font-bold mb-6">
+          Basic Details
+        </CardTitle> */}
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Full Name</Label>
-              <Input value="John Doe" disabled />
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="col-span-2 flex items-center space-x-4">
+              <Avatar className="w-24 h-24">
+                <AvatarImage src={studentData.passportImage} alt="Passport" />
+                <AvatarFallback>JD</AvatarFallback>
+              </Avatar>
+              <FileUploader
+                onFileUpload={handlePassportImageUpload}
+                acceptedFileTypes={{ "image/*": [".jpeg", ".jpg", ".png"] }}
+              />
             </div>
-            <div className="space-y-2">
-              <Label>Branch</Label>
-              <Input value="Computer Science & Engineering" disabled />
+            <div>
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={editableData.name}
+                onChange={(e) => handleDirectUpdate("name", e.target.value)}
+              />
             </div>
-            <div className="space-y-2">
-              <Label>Gender</Label>
-              <Input value="Male" disabled />
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                value={editableData.email}
+                onChange={(e) => handleDirectUpdate("email", e.target.value)}
+              />
             </div>
-            <div className="space-y-2">
-              <Label>Roll Number</Label>
-              <Input value="2021CSB1234" disabled />
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={editableData.phone}
+                onChange={(e) => handleDirectUpdate("phone", e.target.value)}
+              />
             </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input value="john.doe@iitrpr.ac.in" disabled />
-            </div>
-            <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input value="+91 9876543210" />
-            </div>
+            <DetailItem
+              label="Date of Birth"
+              value={studentData.dateOfBirth}
+              isVerified={true}
+            />
+            <DetailItem
+              label="Gender"
+              value={studentData.gender}
+              isVerified={true}
+            />
+            <DetailItem
+              label="Address"
+              value={studentData.address}
+              isVerified={false}
+            />
+            <DetailItem
+              label="Major"
+              value={studentData.major}
+              isVerified={true}
+            />
+            <DetailItem
+              label="Student ID"
+              value={studentData.studentId}
+              isVerified={true}
+            />
+            <DetailItem
+              label="Enrollment Year"
+              value={studentData.enrollmentYear}
+              isVerified={true}
+            />
+            <DetailItem
+              label="Expected Graduation Year"
+              value={studentData.expectedGraduationYear}
+              isVerified={true}
+            />
           </div>
-
-          <div className="space-y-2">
-            <Label>Address</Label>
-            <Input />
+          <div className="flex justify-between mt-6">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline">Confirm Basic Info Updates</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action will update your basic information. Please
+                    confirm that the changes are correct.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleConfirmUpdate}>
+                    Confirm
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <EditDialog
+              title="Update Additional Details"
+              fields={[
+                { name: "dateOfBirth", label: "Date of Birth", type: "date" },
+                { name: "gender", label: "Gender", type: "text" },
+                { name: "address", label: "Address", type: "text" },
+                { name: "major", label: "Major", type: "text" },
+                { name: "studentId", label: "Student ID", type: "text" },
+                {
+                  name: "enrollmentYear",
+                  label: "Enrollment Year",
+                  type: "number",
+                },
+                {
+                  name: "expectedGraduationYear",
+                  label: "Expected Graduation Year",
+                  type: "number",
+                },
+              ]}
+              onSave={handleUpdate}
+              triggerButton={<Button>Update Additional Details</Button>}
+            />
           </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>GitHub Profile</Label>
-              <Input placeholder="https://github.com/username" />
-            </div>
-            <div className="space-y-2">
-              <Label>LinkedIn Profile</Label>
-              <Input placeholder="https://linkedin.com/in/username" />
-            </div>
-          </div>
-
-          <Button className="bg-[#002147] hover:bg-[#003167]">
-            Save Changes
-          </Button>
         </CardContent>
       </Card>
     </div>

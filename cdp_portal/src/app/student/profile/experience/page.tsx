@@ -1,93 +1,141 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Upload, Plus, Trash2 } from "lucide-react"
-import { useState } from "react"
+import { useState } from "react";
+import { DetailItem } from "@/components/detail-item";
+import { Button } from "@/components/ui/button";
+import { EditDialog } from "@/components/edit-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trash2 } from "lucide-react";
+
+// Placeholder data
+const initialExperienceData = [
+  {
+    id: 1,
+    company: "Tech Innovators Inc.",
+    position: "Software Engineering Intern",
+    duration: "June 2023 - August 2023",
+    description:
+      "Worked on developing new features for the company's main product.",
+    technologies: "React, Node.js, MongoDB",
+    achievements:
+      "Implemented a new feature that increased user engagement by 15%",
+    skills: "Full-stack development, Agile methodologies, Git",
+  },
+  {
+    id: 2,
+    company: "Data Analytics Co.",
+    position: "Data Science Intern",
+    duration: "May 2022 - July 2022",
+    description: "Assisted in data analysis and visualization projects.",
+    technologies: "Python, Pandas, Matplotlib, Scikit-learn",
+    achievements:
+      "Developed a predictive model with 90% accuracy for customer churn",
+    skills: "Data analysis, Machine learning, Data visualization",
+  },
+];
 
 export default function Experience() {
-  const [experiences, setExperiences] = useState([
-    {
-      id: 1,
-      role: "Software Engineering Intern",
-      company: "Tech Corp",
-      duration: "May 2023 - July 2023",
-      description: "Worked on developing new features for the company's main product.",
-      verified: true,
-    },
-  ])
+  const [experienceData, setExperienceData] = useState(initialExperienceData);
+
+  const handleAdd = (newData: any) => {
+    setExperienceData([...experienceData, { id: Date.now(), ...newData }]);
+  };
+
+  const handleUpdate = (id: number, newData: any) => {
+    setExperienceData(
+      experienceData.map((exp) =>
+        exp.id === id ? { ...exp, ...newData } : exp
+      )
+    );
+  };
+
+  const handleDelete = (id: number) => {
+    setExperienceData(experienceData.filter((exp) => exp.id !== id));
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#002147]">Experience</h1>
-        <Button className="bg-[#002147] hover:bg-[#003167]">
-          <Plus className="h-4 w-4 mr-1" />
-          Add Experience
-        </Button>
-      </div>
-
-      {experiences.map((exp) => (
-        <Card key={exp.id}>
+    <div>
+      <h1 className="text-2xl text-template font-bold mb-6">Experience</h1>
+      {experienceData.map((exp) => (
+        <Card key={exp.id} className="mb-6">
           <CardHeader>
-            <div className="flex items-start justify-between">
-              <CardTitle>{exp.role}</CardTitle>
-              {exp.verified ? (
-                <Badge variant="outline" className="bg-green-50">
-                  <CheckCircle className="mr-1 h-3 w-3 text-green-500" />
-                  Verified
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-red-50">
-                  <XCircle className="mr-1 h-3 w-3 text-red-500" />
-                  Pending Verification
-                </Badge>
-              )}
-            </div>
+            <CardTitle>
+              {exp.position} at {exp.company}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Company</Label>
-                <Input defaultValue={exp.company} />
-              </div>
-              <div className="space-y-2">
-                <Label>Duration</Label>
-                <Input defaultValue={exp.duration} />
-              </div>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DetailItem
+                label="Company"
+                value={exp.company}
+                isVerified={true}
+              />
+              <DetailItem
+                label="Position"
+                value={exp.position}
+                isVerified={true}
+              />
+              <DetailItem
+                label="Duration"
+                value={exp.duration}
+                isVerified={true}
+              />
+              <DetailItem
+                label="Description"
+                value={exp.description}
+                isVerified={false}
+              />
+              <DetailItem
+                label="Technologies"
+                value={exp.technologies}
+                isVerified={true}
+              />
+              <DetailItem
+                label="Achievements"
+                value={exp.achievements}
+                isVerified={false}
+              />
+              <DetailItem label="Skills" value={exp.skills} isVerified={true} />
             </div>
-
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea defaultValue={exp.description} className="min-h-[100px]" />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Offer Letter/Completion Certificate</Label>
-              <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                <Button variant="outline" className="w-full">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Document
-                </Button>
-                <p className="text-sm text-muted-foreground mt-2">PDF or image files up to 5MB</p>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" className="text-red-500 hover:text-red-600">
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
+            <div className="flex justify-end space-x-2 mt-4">
+              <EditDialog
+                title="Update Experience"
+                fields={[
+                  { name: "company", label: "Company", type: "text" },
+                  { name: "position", label: "Position", type: "text" },
+                  { name: "duration", label: "Duration", type: "text" },
+                  { name: "description", label: "Description", type: "text" },
+                  { name: "technologies", label: "Technologies", type: "text" },
+                  { name: "achievements", label: "Achievements", type: "text" },
+                  { name: "skills", label: "Skills", type: "text" },
+                ]}
+                onSave={(data) => handleUpdate(exp.id, data)}
+                triggerButton={<Button variant="outline">Edit</Button>}
+              />
+              <Button
+                variant="destructive"
+                onClick={() => handleDelete(exp.id)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Delete
               </Button>
-              <Button className="bg-[#002147] hover:bg-[#003167]">Save Changes</Button>
             </div>
           </CardContent>
         </Card>
       ))}
+      <EditDialog
+        title="Add Experience"
+        fields={[
+          { name: "company", label: "Company", type: "text" },
+          { name: "position", label: "Position", type: "text" },
+          { name: "duration", label: "Duration", type: "text" },
+          { name: "description", label: "Description", type: "text" },
+          { name: "technologies", label: "Technologies", type: "text" },
+          { name: "achievements", label: "Achievements", type: "text" },
+          { name: "skills", label: "Skills", type: "text" },
+        ]}
+        onSave={handleAdd}
+        triggerButton={<Button>Add Experience</Button>}
+      />
     </div>
-  )
+  );
 }
-

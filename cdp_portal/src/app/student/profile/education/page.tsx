@@ -1,131 +1,129 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { CheckCircle, XCircle, Upload, Plus } from "lucide-react"
-import { useState } from "react"
+import { useState } from "react";
+import { DetailItem } from "@/components/detail-item";
+import { Button } from "@/components/ui/button";
+import { EditDialog } from "@/components/edit-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trash2 } from "lucide-react";
+
+// Placeholder data
+const initialEducationData = [
+  {
+    id: 1,
+    degree: "Bachelor of Science in Computer Science",
+    institution: "University of Technology",
+    year: "2020-2024",
+    gpa: "3.8",
+    major: "Computer Science",
+    minor: "Data Science",
+    relevantCourses:
+      "Algorithms, Data Structures, Machine Learning, Database Systems",
+    honors: "Dean's List (2020-2023)",
+  },
+  {
+    id: 2,
+    degree: "High School Diploma",
+    institution: "City High School",
+    year: "2016-2020",
+    gpa: "3.9",
+    major: "General Studies",
+    minor: "N/A",
+    relevantCourses: "Advanced Mathematics, Physics, Computer Science",
+    honors: "Valedictorian",
+  },
+];
 
 export default function Education() {
-  const [educationHistory, setEducationHistory] = useState([
-    {
-      id: 1,
-      level: "Class XII",
-      school: "Delhi Public School",
-      board: "CBSE",
-      year: "2021",
-      percentage: "95.6%",
-      verified: true,
-    },
-  ])
+  const [educationData, setEducationData] = useState(initialEducationData);
+
+  const handleAdd = (newData: any) => {
+    setEducationData([...educationData, { id: Date.now(), ...newData }]);
+  };
+
+  const handleUpdate = (id: number, newData: any) => {
+    setEducationData(
+      educationData.map((edu) => (edu.id === id ? { ...edu, ...newData } : edu))
+    );
+  };
+
+  const handleDelete = (id: number) => {
+    setEducationData(educationData.filter((edu) => edu.id !== id));
+  };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-[#002147]">Education Details</h1>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Academic Performance</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Current CGPA</Label>
-              <Input value="9.45" disabled />
+    <div>
+      <h1 className="text-2xl text-template font-bold mb-6">
+        Education/Academic
+      </h1>
+      {educationData.map((edu) => (
+        <Card key={edu.id} className="mb-6">
+          <CardHeader>
+            <CardTitle>{edu.degree}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DetailItem
+                label="Institution"
+                value={edu.institution}
+                isVerified={true}
+              />
+              <DetailItem label="Year" value={edu.year} isVerified={true} />
+              <DetailItem label="GPA" value={edu.gpa} isVerified={false} />
+              <DetailItem label="Major" value={edu.major} isVerified={true} />
+              <DetailItem label="Minor" value={edu.minor} isVerified={true} />
+              <DetailItem
+                label="Relevant Courses"
+                value={edu.relevantCourses}
+                isVerified={false}
+              />
+              <DetailItem label="Honors" value={edu.honors} isVerified={true} />
             </div>
-            <div className="space-y-2">
-              <Label>Current Semester</Label>
-              <Input value="6th" disabled />
+            <div className="flex justify-end space-x-2 mt-4">
+              <EditDialog
+                title="Update Education"
+                fields={[
+                  { name: "degree", label: "Degree", type: "text" },
+                  { name: "institution", label: "Institution", type: "text" },
+                  { name: "year", label: "Year", type: "text" },
+                  { name: "gpa", label: "GPA", type: "text" },
+                  { name: "major", label: "Major", type: "text" },
+                  { name: "minor", label: "Minor", type: "text" },
+                  {
+                    name: "relevantCourses",
+                    label: "Relevant Courses",
+                    type: "text",
+                  },
+                  { name: "honors", label: "Honors", type: "text" },
+                ]}
+                onSave={(data) => handleUpdate(edu.id, data)}
+                triggerButton={<Button variant="outline">Edit</Button>}
+              />
+              <Button
+                variant="destructive"
+                onClick={() => handleDelete(edu.id)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Delete
+              </Button>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Semester-wise Performance</Label>
-            <div className="grid gap-2 md:grid-cols-3">
-              {[
-                { sem: "1st", sgpa: "9.2" },
-                { sem: "2nd", sgpa: "9.4" },
-                { sem: "3rd", sgpa: "9.5" },
-                { sem: "4th", sgpa: "9.6" },
-                { sem: "5th", sgpa: "9.5" },
-              ].map((sem) => (
-                <div key={sem.sem} className="flex items-center justify-between p-2 border rounded">
-                  <span>Sem {sem.sem}</span>
-                  <span className="font-medium">{sem.sgpa}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Previous Education</CardTitle>
-            <Button variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Add Education
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {educationHistory.map((edu) => (
-            <div key={edu.id} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">{edu.level}</h3>
-                {edu.verified ? (
-                  <Badge variant="outline" className="bg-green-50">
-                    <CheckCircle className="mr-1 h-3 w-3 text-green-500" />
-                    Verified
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-red-50">
-                    <XCircle className="mr-1 h-3 w-3 text-red-500" />
-                    Pending Verification
-                  </Badge>
-                )}
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>School/Institution</Label>
-                  <Input defaultValue={edu.school} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Board</Label>
-                  <Input defaultValue={edu.board} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Year of Completion</Label>
-                  <Input defaultValue={edu.year} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Percentage/CGPA</Label>
-                  <Input defaultValue={edu.percentage} />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Upload Marksheet</Label>
-                <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                  <Button variant="outline" className="w-full">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Document
-                  </Button>
-                  <p className="text-sm text-muted-foreground mt-2">PDF or image files up to 5MB</p>
-                </div>
-              </div>
-
-              <Separator />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ))}
+      <EditDialog
+        title="Add Education"
+        fields={[
+          { name: "degree", label: "Degree", type: "text" },
+          { name: "institution", label: "Institution", type: "text" },
+          { name: "year", label: "Year", type: "text" },
+          { name: "gpa", label: "GPA", type: "text" },
+          { name: "major", label: "Major", type: "text" },
+          { name: "minor", label: "Minor", type: "text" },
+          { name: "relevantCourses", label: "Relevant Courses", type: "text" },
+          { name: "honors", label: "Honors", type: "text" },
+        ]}
+        onSave={handleAdd}
+        triggerButton={<Button>Add Education</Button>}
+      />
     </div>
-  )
+  );
 }
-
