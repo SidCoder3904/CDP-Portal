@@ -34,8 +34,8 @@ export default function RootLayout({
             { label: "Our Team", href: "/team" },
             { label: "For Recruiters", href: "/for_recruiters" },
             { label: "Notices", href: "/notices" },
-            { label: "Student Login", href: "/login" },
-            { label: "Admin Login", href: "/login" },
+            { label: "Student Login", href: "/student_login" },
+            { label: "Admin Login", href: "/admin_login" },
           ]}
         />
         <main>{children}</main>

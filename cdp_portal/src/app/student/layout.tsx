@@ -14,8 +14,8 @@ export default function RootLayout({
           menuItems={[
             { label: "Notifications", href: "/student/" },
             { label: "My Profile", href: "/student/profile" },
-            { label: "Job Openings", href: "/student/Job_openings" },
-            { label: "Notices", href: "/notices" },
+            { label: "Job Openings", href: "/student/job_openings" },
+            { label: "Notices", href: "student/notices" },
             { label: "Logout", href: "/logout" },
           ]}
         />
