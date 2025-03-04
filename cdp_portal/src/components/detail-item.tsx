@@ -2,7 +2,7 @@ import { VerificationStatus } from "./verification-status";
 
 interface DetailItemProps {
   label: string;
-  value: string;
+  value: React.ReactNode;
   isVerified: boolean;
 }
 

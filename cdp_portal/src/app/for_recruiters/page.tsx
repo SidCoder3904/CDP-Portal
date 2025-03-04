@@ -1,15 +1,15 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { ArrowLeft, Users, Building2, CalendarDays, CheckCircle } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card";
+import { Users, Building2, CalendarDays, CheckCircle } from "lucide-react";
 
 export default function RecruitmentProcess() {
   const steps = [
     {
-        number: 1,
-        title: "Company Registration",
-        description:
-          "Companies and organizations interested to recruit, register to the Career Services website.",
-        icon: Users,
-      },
+      number: 1,
+      title: "Company Registration",
+      description:
+        "Companies and organizations interested to recruit, register to the Career Services website.",
+      icon: Users,
+    },
     {
       number: 2,
       title: "Pre-process Tests",
@@ -27,7 +27,8 @@ export default function RecruitmentProcess() {
     {
       number: 4,
       title: "Shortlisting",
-      description: "Shortlisted students are notified based on their CVs or Test/GD performance.",
+      description:
+        "Shortlisted students are notified based on their CVs or Test/GD performance.",
       icon: CheckCircle,
     },
     {
@@ -44,7 +45,7 @@ export default function RecruitmentProcess() {
         "After completion of the selection process, the company announces the final list of selected students on the same day.",
       icon: CheckCircle,
     },
-  ]
+  ];
 
   const recruiters = [
     "/amazon.png", "/google.png", "/samsung.jpg",
@@ -80,12 +81,15 @@ export default function RecruitmentProcess() {
         <h2 className="text-2xl font-bold mb-6">Past Recruiters</h2>
         <div className="grid grid-cols-3 gap-6">
           {recruiters.map((logo, index) => (
-            <div key={index} className="border rounded-lg p-4 shadow-lg flex items-center justify-center">
+            <div
+              key={index}
+              className="border rounded-lg p-4 shadow-lg flex items-center justify-center"
+            >
               <img src={logo} alt={`Recruiter ${index + 1}`} className="h-20" />
             </div>
           ))}
         </div>
       </div>
     </div>
-  )
+  );
 }

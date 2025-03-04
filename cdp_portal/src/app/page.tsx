@@ -3,13 +3,14 @@
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
 
 const rankingData = [
   { title: "NIRF Ranking", value: "22nd", image: "/nirf.jpg" },
-  { title: "QS World University Rankings", value: "351-400", image: "/qs-world-ranking.jpg" },
+  {
+    title: "QS World University Rankings",
+    value: "351-400",
+    image: "/qs-world-ranking.jpg",
+  },
   { title: "Times Higher Education", value: "351-400", image: "/times.jpg" },
   { title: "ARIIA Ranking", value: "Band - Excellent", image: "/ariia.jpeg" },
 ];
@@ -26,7 +27,7 @@ export function CareerDevelopmentLanding() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       <main className="container mx-auto px-4 py-8">
-
+        
         {/* Header Section */}
         <section className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div>
@@ -48,7 +49,21 @@ export function CareerDevelopmentLanding() {
         {/* Placement Text Section */}
         <section className="mb-12">
           <p className="text-lg text-gray-700 leading-relaxed">
-            Campus placements at IIT Ropar serve as a bridge between students and industry, ensuring that graduates are well-equipped to step into professional roles. The Career Development and Placement Cell (CDPC) is dedicated to preparing students through workshops, mock interviews, and skill development sessions. Each year, top recruiters from various domains, including technology, consulting, finance, and research, visit the campus to hire talent. Companies like Google, Microsoft, Goldman Sachs, and Tata Group have consistently shown interest in our graduates. IIT Ropar's rigorous curriculum and research-driven approach make our students highly sought after. The placement cell also facilitates internships, providing students with real-world exposure before they even graduate. With an increasing number of recruiters and a high placement success rate, CDPC ensures that students step into their careers with confidence and a competitive edge.
+            Campus placements at IIT Ropar serve as a bridge between students
+            and industry, ensuring that graduates are well-equipped to step into
+            professional roles. The Career Development and Placement Cell (CDPC)
+            is dedicated to preparing students through workshops, mock
+            interviews, and skill development sessions. Each year, top
+            recruiters from various domains, including technology, consulting,
+            finance, and research, visit the campus to hire talent. Companies
+            like Google, Microsoft, Goldman Sachs, and Tata Group have
+            consistently shown interest in our graduates. IIT Ropar's rigorous
+            curriculum and research-driven approach make our students highly
+            sought after. The placement cell also facilitates internships,
+            providing students with real-world exposure before they even
+            graduate. With an increasing number of recruiters and a high
+            placement success rate, CDPC ensures that students step into their
+            careers with confidence and a competitive edge.
           </p>
         </section>
 
@@ -59,7 +74,13 @@ export function CareerDevelopmentLanding() {
             {rankingData.map((rank, index) => (
               <Card key={index} className="w-64 bg-white shadow-lg">
                 <CardHeader className="pb-2">
-                  <Image src={rank.image} alt={rank.title} width={200} height={200} className="mx-auto" />
+                  <Image
+                    src={rank.image}
+                    alt={rank.title}
+                    width={200}
+                    height={200}
+                    className="mx-auto"
+                  />
                 </CardHeader>
                 <CardContent className="text-center">
                   <CardTitle className="text-lg">{rank.title}</CardTitle>
@@ -85,10 +106,18 @@ export function CareerDevelopmentLanding() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="relative h-48">
-                  <Image src="/company.png" alt="Recruiters" layout="fill" objectFit="cover" className="rounded-lg shadow-md" />
+                  <Image
+                    src="/company.png"
+                    alt="Recruiters"
+                    layout="fill"
+                    objectFit="cover"
+                    className="rounded-lg shadow-md"
+                  />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">Past Recruiters</h3>
+                  <h3 className="text-xl font-semibold mb-2">
+                    Past Recruiters
+                  </h3>
                   <ul className="list-disc list-inside">
                     <li>Tech Giant Inc.</li>
                     <li>Global Finance Corp.</li>
@@ -117,7 +146,7 @@ export function CareerDevelopmentLanding() {
 }
 
 // Carousel Component
-export function CarouselDemo({ images }: { images: string[] }) {
+function CarouselDemo({ images }: { images: string[] }) {
   return (
     <Carousel className="w-[80%] mx-auto">
       <CarouselContent>
