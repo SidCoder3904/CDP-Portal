@@ -122,7 +122,7 @@ export default function Education() {
           { name: "honors", label: "Honors", type: "text" },
         ]}
         onSave={handleAdd}
-        triggerButton={<Button>Add Education</Button>}
+        triggerButton={<Button className="bg-template">Add Education</Button>}
       />
     </div>
   );

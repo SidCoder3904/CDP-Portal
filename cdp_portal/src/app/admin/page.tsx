@@ -14,11 +14,11 @@ export default function AdminNoticePage() {
         <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
           <div className="space-y-8">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-[#002147]">Placement Cycles</h2>
+              <h2 className="text-2xl font-bold text-template">Placement Cycles</h2>
               <AddNoticeButton />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-[#002147] mb-4">Recent Notices</h2>
+              <h2 className="text-2xl font-bold text-template mb-4">Recent Notices</h2>
               <NoticeListAdmin />
               {/* <JobFloatForm onSuccess={() => {}} /> */}
             </div>

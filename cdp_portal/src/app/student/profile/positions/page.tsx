@@ -128,7 +128,7 @@ export default function Positions() {
           { name: "achievements", label: "Achievements", type: "text" },
         ]}
         onSave={handleAdd}
-        triggerButton={<Button>Add Position</Button>}
+        triggerButton={<Button className="bg-template">Add Position</Button>}
       />
     </div>
   );

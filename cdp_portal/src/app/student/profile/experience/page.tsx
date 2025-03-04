@@ -134,7 +134,7 @@ export default function Experience() {
           { name: "skills", label: "Skills", type: "text" },
         ]}
         onSave={handleAdd}
-        triggerButton={<Button>Add Experience</Button>}
+        triggerButton={<Button className="bg-template">Add Experience</Button>}
       />
     </div>
   );

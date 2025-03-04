@@ -15,7 +15,7 @@ export default function ReportsPage() {
             </TabsList>
             <TabsContent value="generate">
               <div>
-                <h2 className="text-2xl font-bold text-[#002147]">Generate Reports</h2>
+                <h2 className="text-2xl font-bold text-template">Generate Reports</h2>
                 <p className="text-muted-foreground">
                   Generate and download various reports for placement and internship analysis
                 </p>

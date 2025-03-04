@@ -72,7 +72,7 @@ export function Sidebar() {
           ))}
         </ul>
       </div>
-      <motion.button
+      {/* <motion.button
         className="absolute bottom-4 right-4 p-2 rounded-full bg-primary text-primary-foreground"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
@@ -83,7 +83,7 @@ export function Sidebar() {
             isOpen ? "rotate-180" : ""
           }`}
         />
-      </motion.button>
+      </motion.button> */}
     </motion.nav>
   );
 }

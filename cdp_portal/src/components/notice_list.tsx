@@ -39,7 +39,7 @@ export function NoticeList() {
         <Card key={notice.id}>
           <CardHeader>
             <div className="flex items-start justify-between">
-              <CardTitle className="text-lg font-semibold text-[#002147]">{notice.title}</CardTitle>
+              <CardTitle className="text-lg font-semibold text-template">{notice.title}</CardTitle>
               <Badge variant="secondary">{notice.type}</Badge>
             </div>
           </CardHeader>

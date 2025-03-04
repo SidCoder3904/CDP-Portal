@@ -26,7 +26,7 @@ export default function StudentLogin() {
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <div className="w-20 h-20 bg-[#002147] rounded-full mx-auto mb-4 flex items-center justify-center">
+            <div className="w-20 h-20 bg-template rounded-full mx-auto mb-4 flex items-center justify-center">
               <Icons.graduationCap className="h-10 w-10 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900">Student Portal</h2>
@@ -56,7 +56,7 @@ export default function StudentLogin() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-[#002147] hover:bg-[#002147]/90 text-white"
+                  className="w-full bg-template hover:bg-template/90 text-white"
                   disabled={isLoading}
                 >
                   {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
@@ -74,14 +74,14 @@ export default function StudentLogin() {
           </Card>
 
           <div className="text-center space-y-2">
-            <a href="#" className="text-gray-600 hover:text-[#002147] text-sm block">
+            <a href="#" className="text-gray-600 hover:text-template text-sm block">
               Need help signing in?
             </a>
           </div>
         </div>
       </main>
 
-      <footer className="w-full bg-[#002147] py-4 px-6 mt-auto">
+      <footer className="w-full bg-template py-4 px-6 mt-auto">
         <div className="max-w-7xl mx-auto text-center text-white text-sm">
           Career Development and Placement Cell, IIT Ropar
         </div>
