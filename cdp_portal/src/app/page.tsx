@@ -66,7 +66,7 @@ export default function CareerDevelopmentLanding() {
             alt="IIT Ropar Campus"
             fill
             priority
-            className="object-cover brightness-[0.65]"
+            className="object-cover blur-sm brightness-90"
           />
         </div>
         <div className="relative z-10 container mx-auto h-full flex flex-col justify-center px-4 md:px-8">
