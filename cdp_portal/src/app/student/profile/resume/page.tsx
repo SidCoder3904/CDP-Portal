@@ -9,7 +9,7 @@ import { FileUploader } from "@/components/file-uploader";
 
 export default function Resume() {
   const [resume, setResume] = useState({
-    fileName: "JohnDoe_Resume.pdf",
+    fileName: "Resume.pdf",
     uploadDate: "2023-05-15",
     fileSize: "1.2 MB",
   });

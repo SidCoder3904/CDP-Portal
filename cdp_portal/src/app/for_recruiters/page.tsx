@@ -48,10 +48,6 @@ export default function RecruitmentProcess() {
 
   const recruiters = [
     "/amazon.png", "/google.png", "/samsung.jpg",
-    "/amazon.png", "/google.png", "/samsung.jpg",
-    "/amazon.png", "/google.png", "/samsung.jpg",
-    "/amazon.png", "/google.png", "/samsung.jpg",
-    "/amazon.png", "/google.png", "/samsung.jpg"
   ]
 
   return (

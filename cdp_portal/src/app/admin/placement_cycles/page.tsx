@@ -52,9 +52,9 @@ export default function PlacementCycleDetails() {
 
     // Fetch jobs
     setJobs([
-      { id: 1, company: "Tech Corp", role: "Software Engineer Intern", studentsApplied: 75, status: "Open" },
-      { id: 2, company: "InnovateAI", role: "Data Science Intern", studentsApplied: 50, status: "In Progress" },
-      { id: 3, company: "BuildFuture", role: "Product Management Intern", studentsApplied: 40, status: "Closed" },
+      { id: 1, company: "Google", role: "Software Engineer Intern", studentsApplied: 75, status: "Open" },
+      { id: 2, company: "Samsung", role: "Data Science Intern", studentsApplied: 50, status: "In Progress" },
+      { id: 3, company: "Amazon", role: "Product Management Intern", studentsApplied: 40, status: "Closed" },
     ])
   }, [])
 
