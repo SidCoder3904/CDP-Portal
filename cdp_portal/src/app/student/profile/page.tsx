@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FileUploader } from "@/components/file-uploader";
+import { ImageCropModal } from "@/components/image-crop-model";
 
 // Placeholder data
 const initialStudentData = {
@@ -39,6 +40,8 @@ const initialStudentData = {
 export default function BasicDetails() {
   const [studentData, setStudentData] = useState(initialStudentData);
   const [editableData, setEditableData] = useState(initialStudentData);
+  const [isImageCropModalOpen, setIsImageCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const handleDirectUpdate = (field: string, value: string) => {
     setEditableData({ ...editableData, [field]: value });
@@ -55,8 +58,13 @@ export default function BasicDetails() {
 
   const handlePassportImageUpload = (file: File) => {
     const imageUrl = URL.createObjectURL(file);
-    setStudentData({ ...studentData, passportImage: imageUrl });
-    setEditableData({ ...editableData, passportImage: imageUrl });
+    setSelectedImage(imageUrl);
+    setIsImageCropModalOpen(true);
+  };
+
+  const handleCropComplete = (croppedImageUrl: string) => {
+    setStudentData({ ...studentData, passportImage: croppedImageUrl });
+    setEditableData({ ...editableData, passportImage: croppedImageUrl });
   };
 
   return (
@@ -185,6 +193,14 @@ export default function BasicDetails() {
             />
           </div>
         </CardContent>
+        {selectedImage && (
+          <ImageCropModal
+            isOpen={isImageCropModalOpen}
+            onClose={() => setIsImageCropModalOpen(false)}
+            imageSrc={selectedImage}
+            onCropComplete={handleCropComplete}
+          />
+        )}
       </Card>
     </div>
   );
