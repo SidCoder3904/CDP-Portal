@@ -1,39 +1,45 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CalendarDays, Users, Briefcase, Building, GraduationCap } from "lucide-react"
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  CalendarDays,
+  Users,
+  Briefcase,
+  Building,
+  GraduationCap,
+} from "lucide-react";
 // import { JobFloatButton } from "./job-float-button"
 
 interface PlacementCycle {
-  id: number
-  name: string
-  year: string
-  type: "Internship" | "Placement"
-  status: "Active" | "Completed" | "Upcoming"
-  studentsParticipating: number
-  companiesParticipating: number
-  startDate: string
-  endDate: string
-  eligibleBranches: string[]
+  id: number;
+  name: string;
+  year: string;
+  type: "Internship" | "Placement";
+  status: "Active" | "Completed" | "Upcoming";
+  studentsParticipating: number;
+  companiesParticipating: number;
+  startDate: string;
+  endDate: string;
+  eligibleBranches: string[];
 }
 
 interface Job {
-  id: number
-  company: string
-  role: string
-  studentsApplied: number
-  status: "Open" | "Closed" | "In Progress"
+  id: number;
+  company: string;
+  role: string;
+  studentsApplied: number;
+  status: "Open" | "Closed" | "In Progress";
 }
 
 export default function PlacementCycleDetails() {
-  const params = useParams()
-  const [cycle, setCycle] = useState<PlacementCycle | null>(null)
-  const [jobs, setJobs] = useState<Job[]>([])
+  // const params = useParams()
+  const [cycle, setCycle] = useState<PlacementCycle | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
 
   useEffect(() => {
     // Fetch cycle details
@@ -47,18 +53,40 @@ export default function PlacementCycleDetails() {
       companiesParticipating: 50,
       startDate: "2024-05-01",
       endDate: "2024-07-31",
-      eligibleBranches: ["Computer Science", "Electrical Engineering", "Mechanical Engineering"],
-    })
+      eligibleBranches: [
+        "Computer Science",
+        "Electrical Engineering",
+        "Mechanical Engineering",
+      ],
+    });
 
     // Fetch jobs
     setJobs([
-      { id: 1, company: "Tech Corp", role: "Software Engineer Intern", studentsApplied: 75, status: "Open" },
-      { id: 2, company: "InnovateAI", role: "Data Science Intern", studentsApplied: 50, status: "In Progress" },
-      { id: 3, company: "BuildFuture", role: "Product Management Intern", studentsApplied: 40, status: "Closed" },
-    ])
-  }, [])
+      {
+        id: 1,
+        company: "Tech Corp",
+        role: "Software Engineer Intern",
+        studentsApplied: 75,
+        status: "Open",
+      },
+      {
+        id: 2,
+        company: "InnovateAI",
+        role: "Data Science Intern",
+        studentsApplied: 50,
+        status: "In Progress",
+      },
+      {
+        id: 3,
+        company: "BuildFuture",
+        role: "Product Management Intern",
+        studentsApplied: 40,
+        status: "Closed",
+      },
+    ]);
+  }, []);
 
-  if (!cycle) return <div>Loading...</div>
+  if (!cycle) return <div>Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -73,7 +101,13 @@ export default function PlacementCycleDetails() {
           <div className="flex items-center justify-between">
             <CardTitle>Cycle Overview</CardTitle>
             <Badge
-              variant={cycle.status === "Active" ? "default" : cycle.status === "Completed" ? "secondary" : "outline"}
+              variant={
+                cycle.status === "Active"
+                  ? "default"
+                  : cycle.status === "Completed"
+                  ? "secondary"
+                  : "outline"
+              }
             >
               {cycle.status}
             </Badge>
@@ -96,12 +130,18 @@ export default function PlacementCycleDetails() {
             <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
               <Briefcase className="h-8 w-8 text-[#002147] mb-2" />
               <span className="text-sm text-muted-foreground">Companies</span>
-              <span className="font-medium">{cycle.companiesParticipating}</span>
+              <span className="font-medium">
+                {cycle.companiesParticipating}
+              </span>
             </div>
             <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
               <GraduationCap className="h-8 w-8 text-[#002147] mb-2" />
-              <span className="text-sm text-muted-foreground">Eligible Branches</span>
-              <span className="font-medium">{cycle.eligibleBranches.length}</span>
+              <span className="text-sm text-muted-foreground">
+                Eligible Branches
+              </span>
+              <span className="font-medium">
+                {cycle.eligibleBranches.length}
+              </span>
             </div>
           </div>
         </CardContent>
@@ -126,9 +166,17 @@ export default function PlacementCycleDetails() {
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm">{job.studentsApplied} applied</span>
+                    <span className="text-sm">
+                      {job.studentsApplied} applied
+                    </span>
                     <Badge
-                      variant={job.status === "Open" ? "default" : job.status === "Closed" ? "secondary" : "outline"}
+                      variant={
+                        job.status === "Open"
+                          ? "default"
+                          : job.status === "Closed"
+                          ? "secondary"
+                          : "outline"
+                      }
                     >
                       {job.status}
                     </Badge>
@@ -147,10 +195,11 @@ export default function PlacementCycleDetails() {
         </TabsContent>
         <TabsContent value="statistics">
           {/* Add placement cycle statistics here */}
-          <p>Detailed statistics about the placement cycle will be shown here.</p>
+          <p>
+            Detailed statistics about the placement cycle will be shown here.
+          </p>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
-

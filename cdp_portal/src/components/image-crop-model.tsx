@@ -24,18 +24,31 @@ export function ImageCropModal({
   imageSrc,
   onCropComplete,
 }: ImageCropModalProps) {
-  const [crop, setCrop] = useState<Crop>({ unit: "%", width: 100, aspect: 1 });
+  // Remove 'aspect' from Crop state as it's a component prop
+  const [crop, setCrop] = useState<Crop>({
+    unit: "%",
+    width: 100,
+    height: 100,
+    x: 0,
+    y: 0,
+  });
   const imageRef = useRef<HTMLImageElement>(null);
 
   const getCroppedImg = (image: HTMLImageElement, crop: Crop) => {
     const canvas = document.createElement("canvas");
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-    canvas.width = crop.width;
-    canvas.height = crop.height;
+    canvas.width = crop.width || 0;
+    canvas.height = crop.height || 0;
     const ctx = canvas.getContext("2d");
 
-    if (ctx) {
+    if (
+      ctx &&
+      crop.width &&
+      crop.height &&
+      crop.x !== undefined &&
+      crop.y !== undefined
+    ) {
       ctx.drawImage(
         image,
         crop.x * scaleX,
@@ -73,6 +86,7 @@ export function ImageCropModal({
           <DialogTitle>Crop Image</DialogTitle>
         </DialogHeader>
         <div className="mt-4">
+          {/* Move aspect prop to ReactCrop component */}
           <ReactCrop
             crop={crop}
             onChange={(c) => setCrop(c)}
@@ -82,12 +96,16 @@ export function ImageCropModal({
             <img
               ref={imageRef}
               src={imageSrc || "/placeholder.svg"}
-              alt="Crop me"
+              alt="Crop preview"
+              className="max-h-[400px] w-full object-contain"
             />
           </ReactCrop>
         </div>
-        <div className="flex justify-end mt-4">
-          <Button onClick={handleCropComplete}>Crop and Save</Button>
+        <div className="flex justify-end mt-4 gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleCropComplete}>Save Crop</Button>
         </div>
       </DialogContent>
     </Dialog>

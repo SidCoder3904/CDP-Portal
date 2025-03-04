@@ -2,13 +2,6 @@
 import { useState } from "react";
 import JobList from "@/components/company_list";
 import JobDetails from "@/components/job_details";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface JobListing {
   id: string;
@@ -36,7 +29,11 @@ const jobs: JobListing[] = [
     company: "Samsung Research Institute Noida",
     location: "Noida",
     timePosted: "a day ago",
-    jobFunctions: ["Engineering - Web / Software", "Information Technology", "Research"],
+    jobFunctions: [
+      "Engineering - Web / Software",
+      "Information Technology",
+      "Research",
+    ],
     salary: "₹50000 per Month",
     description: [
       "Standardize the software development process to meet the delivery, quality and cost of software.",
@@ -105,7 +102,10 @@ export default function JobListings() {
   }>({});
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const handleTabClick = (jobId: string, tab: "description" | "eligibility") => {
+  const handleTabClick = (
+    jobId: string,
+    tab: "description" | "eligibility"
+  ) => {
     setActiveTab((prev) => ({ ...prev, [jobId]: tab }));
   };
 
@@ -125,7 +125,10 @@ export default function JobListings() {
       />
 
       {/* Job Details */}
-      <div className="w-3/4 p-4 overflow-y-auto" style={{ maxHeight: "calc(100vh - 2rem)" }}>
+      <div
+        className="w-3/4 p-4 overflow-y-auto"
+        style={{ maxHeight: "calc(100vh - 2rem)" }}
+      >
         {activeJobId && (
           <JobDetails
             job={jobs.find((job) => job.id === activeJobId)!}
