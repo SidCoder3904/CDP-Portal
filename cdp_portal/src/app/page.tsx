@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 const rankingData = [
   { title: "NIRF Ranking", value: "22nd", image: "/nirf.jpg" },
@@ -27,7 +30,6 @@ export function CareerDevelopmentLanding() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       <main className="container mx-auto px-4 py-8">
-        
         {/* Header Section */}
         <section className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div>
