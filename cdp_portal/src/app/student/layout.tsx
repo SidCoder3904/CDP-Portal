@@ -14,7 +14,7 @@ export default function RootLayout({
             { label: "Notifications", href: "/student/" },
             { label: "My Profile", href: "/student/profile" },
             { label: "Job Openings", href: "/student/job_openings" },
-            { label: "Notices", href: "student/notices" },
+            { label: "Notices", href: "/student/notices" },
             { label: "Logout", href: "/logout" },
           ]}
         />

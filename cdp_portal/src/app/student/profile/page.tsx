@@ -189,7 +189,7 @@ export default function BasicDetails() {
                 },
               ]}
               onSave={handleUpdate}
-              triggerButton={<Button>Update Additional Details</Button>}
+              triggerButton={<Button className="bg-template">Update Additional Details</Button>}
             />
           </div>
         </CardContent>

@@ -51,7 +51,7 @@ export function CommentSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-[#002147]">Student Queries</CardTitle>
+        <CardTitle className="text-lg font-semibold text-template">Student Queries</CardTitle>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[300px] mb-4">
@@ -79,7 +79,7 @@ export function CommentSection() {
             onChange={(e) => setNewComment(e.target.value)}
             className="min-h-[100px]"
           />
-          <Button type="submit" className="bg-[#002147] hover:bg-[#003167]">
+          <Button type="submit" className="bg-template hover:bg-[#003167]">
             Post Question
           </Button>
         </form>

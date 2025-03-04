@@ -157,7 +157,7 @@ export default function Projects() {
           { name: "demoLink", label: "Demo Link", type: "url" },
         ]}
         onSave={handleAdd}
-        triggerButton={<Button>Add Project</Button>}
+        triggerButton={<Button className="bg-template">Add Project</Button>}
       />
     </div>
   );

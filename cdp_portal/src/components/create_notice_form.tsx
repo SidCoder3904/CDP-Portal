@@ -67,7 +67,7 @@ export function CreateNoticeForm({ onSuccess }: CreateNoticeFormProps) {
               <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} />
             </div>
           </div>
-          <Button type="submit" className="w-full bg-[#002147] hover:bg-[#003167]">
+          <Button type="submit" className="w-full bg-template hover:bg-[#003167]">
             Create Notice
           </Button>
         </form>

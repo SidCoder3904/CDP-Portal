@@ -43,7 +43,7 @@ export function CommentSectionAdmin() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-[#002147]">Student Queries</CardTitle>
+        <CardTitle className="text-lg font-semibold text-template">Student Queries</CardTitle>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[600px] pr-4">
@@ -83,7 +83,7 @@ export function CommentSectionAdmin() {
                       value={replyContent[comment.id] || ""}
                       onChange={(e) => setReplyContent({ ...replyContent, [comment.id]: e.target.value })}
                     />
-                    <Button onClick={() => handleReply(comment.id)} className="bg-[#002147] hover:bg-[#003167]">
+                    <Button onClick={() => handleReply(comment.id)} className="bg-template hover:bg-[#003167]">
                       Post Reply
                     </Button>
                   </div>

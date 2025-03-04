@@ -58,7 +58,7 @@ export function FileUploader({
       <p className="mt-1 text-xs text-gray-500">
         Supported formats: {Object.values(acceptedFileTypes).flat().join(", ")}
       </p>
-      <Button className="mt-4" type="button">
+      <Button className="mt-4 bg-template" type="button">
         Upload File
       </Button>
     </div>

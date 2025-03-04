@@ -91,7 +91,7 @@ export default function PlacementCycleDetails() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#002147]">
+        <h1 className="text-3xl font-bold text-template">
           {cycle.name} {cycle.year}
         </h1>
       </div>
@@ -116,26 +116,26 @@ export default function PlacementCycleDetails() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-              <CalendarDays className="h-8 w-8 text-[#002147] mb-2" />
+              <CalendarDays className="h-8 w-8 text-template mb-2" />
               <span className="text-sm text-muted-foreground">Duration</span>
               <span className="font-medium">
                 {cycle.startDate} - {cycle.endDate}
               </span>
             </div>
             <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-              <Users className="h-8 w-8 text-[#002147] mb-2" />
+              <Users className="h-8 w-8 text-template mb-2" />
               <span className="text-sm text-muted-foreground">Students</span>
               <span className="font-medium">{cycle.studentsParticipating}</span>
             </div>
             <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-              <Briefcase className="h-8 w-8 text-[#002147] mb-2" />
+              <Briefcase className="h-8 w-8 text-template mb-2" />
               <span className="text-sm text-muted-foreground">Companies</span>
               <span className="font-medium">
                 {cycle.companiesParticipating}
               </span>
             </div>
             <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
-              <GraduationCap className="h-8 w-8 text-[#002147] mb-2" />
+              <GraduationCap className="h-8 w-8 text-template mb-2" />
               <span className="text-sm text-muted-foreground">
                 Eligible Branches
               </span>

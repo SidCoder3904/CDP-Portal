@@ -12,7 +12,7 @@ export function AddNoticeButton() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-[#002147] hover:bg-[#003167]">
+        <Button className="bg-template hover:bg-[#003167]">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Notice
         </Button>

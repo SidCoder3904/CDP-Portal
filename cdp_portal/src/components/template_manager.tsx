@@ -81,10 +81,10 @@ export function TemplateManager() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-[#002147]">Report Templates</h2>
+        <h2 className="text-2xl font-bold text-template">Report Templates</h2>
         <Dialog open={showBuilder} onOpenChange={setShowBuilder}>
           <DialogTrigger asChild>
-            <Button className="bg-[#002147] hover:bg-[#003167]">
+            <Button className="bg-template hover:bg-[#003167]">
               <Plus className="h-4 w-4 mr-2" />
               Create Template
             </Button>
