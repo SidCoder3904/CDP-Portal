@@ -3,3 +3,9 @@ cdp_portal/.next/
 cdp_portal/build
 cdp_portal/.env*
 cdp_portal/.vercel
+
+
+backend/.env
+backend/uploads/
+backend/app/uploads/
+venv/
