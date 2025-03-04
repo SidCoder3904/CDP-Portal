@@ -6,6 +6,7 @@ from flask_cors import CORS
 from app.config import Config
 import os
 
+
 mongo = PyMongo()
 jwt = JWTManager()
 

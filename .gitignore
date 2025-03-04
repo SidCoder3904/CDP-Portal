@@ -9,3 +9,9 @@ backend/.env
 backend/uploads/
 backend/app/uploads/
 venv/
+backend/temp.py
+backend/app/__pycache__
+backend/app/routes/__pycache__
+backend/app/services/__pycache__
+
+

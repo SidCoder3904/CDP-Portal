@@ -1,9 +1,8 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from app.services.placement_service import PlacementService
 from app.utils.auth import admin_required
 from app.utils.validators import validate_placement_cycle, validate_job
-from datetime import datetime
 from bson.json_util import dumps
 import json
 
