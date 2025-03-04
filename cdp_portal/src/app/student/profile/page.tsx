@@ -24,16 +24,16 @@ import { ImageCropModal } from "@/components/image-crop-model";
 
 // Placeholder data
 const initialStudentData = {
-  name: "John Doe",
-  email: "john.doe@example.com",
-  phone: "+1 234 567 8900",
-  dateOfBirth: "1999-01-01",
+  name: "Akash Verma",
+  email: "verma@egmail.com",
+  phone: "+91 941914191",
+  dateOfBirth: "02-04-2003",
   gender: "Male",
-  address: "123 College St, University Town, ST 12345",
+  address: "330 Sector 7, Gandhi Nagar, Indore",
   major: "Computer Science",
-  studentId: "CS12345",
-  enrollmentYear: "2020",
-  expectedGraduationYear: "2024",
+  studentId: "CSB1098",
+  enrollmentYear: "2022",
+  expectedGraduationYear: "2026",
   passportImage: "/placeholder.svg?height=200&width=200",
 };
 

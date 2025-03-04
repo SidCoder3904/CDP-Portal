@@ -12,7 +12,7 @@ const initialPositionsData = [
   {
     id: 1,
     title: "Student Council President",
-    organization: "University of Technology",
+    organization: "Indian Institute of Technology, Ropar",
     duration: "2022-2023",
     description:
       "Led student initiatives and represented student body in university meetings.",
@@ -23,7 +23,7 @@ const initialPositionsData = [
   {
     id: 2,
     title: "Coding Club Lead",
-    organization: "University of Technology",
+    organization: "Indian Institute of Technology, Ropar",
     duration: "2021-2022",
     description:
       "Organized coding workshops and hackathons for fellow students.",

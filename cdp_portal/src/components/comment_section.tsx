@@ -20,13 +20,13 @@ export function CommentSection() {
   const [comments, setComments] = useState<Comment[]>([
     {
       id: 1,
-      user: "Student",
+      user: "Samarth Jain",
       content: "When will the exact schedule for the Tech Giants recruitment drive be announced?",
       timestamp: "2 hours ago",
     },
     {
       id: 2,
-      user: "Student",
+      user: "Akash Verma",
       content: "Is the resume workshop mandatory for internship applicants as well?",
       timestamp: "1 hour ago",
     },

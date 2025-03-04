@@ -48,22 +48,8 @@ export default function RecruitmentProcess() {
   ];
 
   const recruiters = [
-    "/amazon.png",
-    "/google.png",
-    "/samsung.jpg",
-    "/amazon.png",
-    "/google.png",
-    "/samsung.jpg",
-    "/amazon.png",
-    "/google.png",
-    "/samsung.jpg",
-    "/amazon.png",
-    "/google.png",
-    "/samsung.jpg",
-    "/amazon.png",
-    "/google.png",
-    "/samsung.jpg",
-  ];
+    "/amazon.png", "/google.png", "/samsung.jpg",
+  ]
 
   return (
     <div className="container mx-auto px-4 py-8">
