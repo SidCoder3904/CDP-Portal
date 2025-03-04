@@ -1,10 +1,7 @@
 "use client"
-import { Separator } from "@/components/ui/separator"
 import { NoticeListAdmin } from "@/components/notice_list_admin"
 import { CommentSectionAdmin } from "@/components/comment_section_admin"
 import { AddNoticeButton } from "@/components/add_notice_button"
-import { PlacementCyclesList } from "@/components/placement_cycles_list"
-import { JobFloatForm } from "@/components/job_float_form"
 
 export default function AdminNoticePage() {
   return (
