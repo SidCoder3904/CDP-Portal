@@ -9,6 +9,7 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/request-otp', methods=['POST'])
 def request_otp():
+    print("Request OTP")
     data = request.get_json()
     user = AuthService.authenticate_user(data.get('email'), data.get('password'))
     if not user:
@@ -16,13 +17,20 @@ def request_otp():
     
     otp = AuthService.generate_otp(user['_id'])
 
-    return jsonify({"message": "OTP sent"}), 200
+    # Return user_id along with the OTP sent message
+    return jsonify({
+        "message": "OTP sent",
+        "user_id": str(user['_id'])  # Provide user_id for subsequent OTP login
+    }), 200
+
 
 @auth_bp.route('/login-with-otp', methods=['POST'])
 def login_with_otp():
     data = request.get_json()
     user_id = data.get('user_id')
     otp = data.get('otp')
+    print("User ID: ", user_id)
+    print("OTP: ", otp)
 
     if not AuthService.verify_otp(user_id, otp):
         return jsonify({"message": "Invalid or expired OTP"}), 401
@@ -44,7 +52,7 @@ def login_with_otp():
         'user': {
             'id': str(user['_id']),
             'email': user['email'],
-            'name': user['name'],
+            # 'name': user['name'],
             'role': user['role']
         }
     }), 200

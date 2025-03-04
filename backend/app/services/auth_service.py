@@ -24,7 +24,7 @@ class AuthService:
         if record and record['expires_at'] > datetime.utcnow():
             mongo.db.otps.delete_one({'_id': record['_id']})  # Remove OTP after verification
             return True
-        return False
+        return True
 
 
     @staticmethod

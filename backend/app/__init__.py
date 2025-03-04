@@ -13,11 +13,21 @@ jwt = JWTManager()
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    print("Config: ", app.config)
     
     # Initialize extensions
     mongo.init_app(app)
     jwt.init_app(app)
     CORS(app)
+
+    # Check if MongoDB is initialized correctly
+    try:
+        # Attempt to access a collection to ensure connection
+        mongo.db.list_collection_names()
+        print("MongoDB initialized successfully.")
+    except Exception as e:
+        print(f"Error initializing MongoDB: {e}")
     
     # Register blueprints
     from app.routes.auth import auth_bp

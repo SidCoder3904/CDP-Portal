@@ -21,9 +21,12 @@ const IITRPR_EMAIL_REGEX = /^[a-zA-Z0-9_]+@iitrpr\.ac\.in$/;
 
 export default function StudentLogin() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState(""); // New state for password
+  const [otp, setOtp] = useState(""); // New state for OTP
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [userId, setUserId] = useState(""); // New state for userId
 
   // Get backend URL from environment variables
   const backendUrl =
@@ -37,10 +40,7 @@ export default function StudentLogin() {
     }
   }, [email]);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!IITRPR_EMAIL_REGEX.test(email)) return;
-
+  async function requestOtp() {
     setIsLoading(true);
     setError("");
     setSuccess("");
@@ -48,17 +48,61 @@ export default function StudentLogin() {
     try {
       const response = await axios.post(`${backendUrl}/api/auth/request-otp`, {
         email: email,
-        password: "your-password-here", // Update with actual password field
+        password: password,
       });
 
       if (response.status === 200) {
         setSuccess("OTP sent to your email!");
-        // Here you would typically redirect to OTP verification
+        setUserId(response.data.user_id); // Store userId for OTP login
       }
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to send OTP");
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : (err as any)?.response?.data?.message || "Failed to send OTP";
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function loginWithOtp() {
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/auth/login-with-otp`,
+        {
+          user_id: userId,
+          otp: otp,
+        }
+      );
+
+      if (response.status === 200) {
+        setSuccess("Logged in successfully!");
+        // Handle successful login, e.g., redirect to dashboard
+      }
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : (err as any)?.response?.data?.message || "Failed to login with OTP";
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!IITRPR_EMAIL_REGEX.test(email)) return;
+
+    if (!userId) {
+      requestOtp();
+    } else {
+      loginWithOtp();
     }
   }
 
@@ -91,6 +135,34 @@ export default function StudentLogin() {
                     className="w-full"
                     pattern="[a-zA-Z0-9_]+@iitrpr\.ac\.in"
                   />
+                  <Label htmlFor="password" className="text-gray-700">
+                    Password
+                  </Label>
+                  <Input
+                    id="password"
+                    placeholder="Enter your password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full"
+                  />
+                  {userId && (
+                    <>
+                      <Label htmlFor="otp" className="text-gray-700">
+                        OTP
+                      </Label>
+                      <Input
+                        id="otp"
+                        placeholder="Enter OTP"
+                        type="text"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        required
+                        className="w-full"
+                      />
+                    </>
+                  )}
                   {error && <p className="text-red-500 text-sm">{error}</p>}
                   {success && (
                     <p className="text-green-500 text-sm">{success}</p>
@@ -104,7 +176,7 @@ export default function StudentLogin() {
                   {isLoading && (
                     <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Continue with Email
+                  {userId ? "Login with OTP" : "Request OTP"}
                 </Button>
               </form>
             </CardContent>
