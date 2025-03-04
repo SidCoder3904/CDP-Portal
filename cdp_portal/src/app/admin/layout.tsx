@@ -8,8 +8,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        {/* Navbar */}
+      <body className="flex flex-col min-h-screen">
         <Navbar
           menuItems={[
             { label: "Notifications", href: "/admin" },
@@ -19,7 +18,8 @@ export default function RootLayout({
             { label: "Logout", href: "/logout" },
           ]}
         />
-        <main>{children}</main>
+
+        <main className="flex-grow max-w-7xl mx-auto w-full">{children}</main>
         {/* <MainFooter /> */}
       </body>
     </html>
