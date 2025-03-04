@@ -8,15 +8,10 @@ interface TeamMember {
 }
 
 const teamMembers: TeamMember[] = [
-    { id: 1,position:'member', name: 'Alice Johnson', email: 'alice@college.edu', image: "/blank_student.jpg" },
-    { id: 2,position:'member', name: 'Bob Smith', email: 'bob@college.edu', image: "/blank_student.jpg" },
-    { id: 3,position:'member', name: 'Charlie Brown', email: 'charlie@college.edu', image: "/blank_student.jpg" },
-    { id: 4,position:'member', name: 'David Lee', email: 'david@college.edu', image: "/blank_student.jpg" },
-    { id: 5,position:'member', name: 'Emma Stone', email: 'emma@college.edu', image: "/blank_student.jpg" },
-    { id: 6,position:'member', name: 'Fiona White', email: 'fiona@college.edu', image: "/blank_student.jpg" },
-    { id: 7,position:'member', name: 'George Black', email: 'george@college.edu', image: "/blank_student.jpg" },
-    { id: 8,position:'member', name: 'Hannah Green', email: 'hannah@college.edu', image: "/blank_student.jpg" },
-    { id: 9,position:'member', name: 'Ian Yellow', email: 'ian@college.edu', image: "/blank_student.jpg" },
+    { id: 1,position:'member', name: 'Samarth Singhal', email: 'samarth@gmail.com', image: "/blank_student.jpg" },
+    { id: 2,position:'member', name: 'Ojas Jain', email: 'ojas@gmail.com', image: "/blank_student.jpg" },
+    { id: 3,position:'member', name: 'Siddharth Verma', email: 'siddharth@gmail.com', image: "/blank_student.jpg" },
+    { id: 4,position:'member', name: 'Akash Jha', email: 'akash@gmail.com', image: "/blank_student.jpg" },
     // { id: 10,position:'member', name: 'Julia Blue', email: 'julia@college.edu', image: "/blank_student.jpg" },
 ];
 

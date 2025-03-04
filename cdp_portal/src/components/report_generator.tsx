@@ -62,7 +62,7 @@ export function ReportGenerator() {
   const data = [
     {
       id: 1,
-      name: "John Doe",
+      name: "Akash Verma",
       branch: "Computer Science",
       company: "Tech Corp",
       package: "15 LPA",
@@ -70,7 +70,7 @@ export function ReportGenerator() {
     },
     {
       id: 2,
-      name: "Jane Smith",
+      name: "Samarth Jain",
       branch: "Electronics",
       company: "Innovation Inc",
       package: "12 LPA",
