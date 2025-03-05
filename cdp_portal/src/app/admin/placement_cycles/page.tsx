@@ -80,7 +80,7 @@ export default function Home() {
             </div>
           </CardContent>
           <CardFooter>
-            <Link href="/cycles">
+            <Link href="/admin/placement_cycles/cycles">
               <Button variant="outline">View All Cycles</Button>
             </Link>
           </CardFooter>
@@ -97,7 +97,7 @@ export default function Home() {
             <RecentActivity />
           </CardContent>
           <CardFooter>
-            <Link href="/activity">
+            <Link href="/admin/placement_cycles/activity">
               <Button variant="outline">View All Activity</Button>
             </Link>
           </CardFooter>

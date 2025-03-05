@@ -133,7 +133,7 @@ export function JobsList({ cycleId }: JobsListProps) {
               <TableRow key={job.id}>
                 <TableCell className="font-medium">
                   <Link
-                    href={`/cycles/${cycleId}/jobs/${job.id}`}
+                    href={`/admin/placement_cycles/cycles/${cycleId}/jobs/${job.id}`}
                     className="hover:underline"
                   >
                     {job.company}

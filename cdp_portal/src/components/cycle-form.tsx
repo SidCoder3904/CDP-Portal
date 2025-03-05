@@ -74,7 +74,7 @@ export function CycleForm() {
     console.log(values);
 
     // Navigate back to the cycles page
-    router.push("/cycles");
+    router.push("/admin/placement_cycles/cycles");
   }
 
   const branches = [
@@ -323,7 +323,7 @@ export function CycleForm() {
           <Button
             variant="outline"
             type="button"
-            onClick={() => router.push("/cycles")}
+            onClick={() => router.push("/admin/placement_cycles/cycles")}
           >
             Cancel
           </Button>
