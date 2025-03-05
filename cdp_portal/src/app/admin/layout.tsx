@@ -15,6 +15,7 @@ export default function RootLayout({
             { label: "Notifications", href: "/admin" },
             { label: " Job Postings", href: "/admin/add_job" },
             { label: "Placement Cycles", href: "/admin/placement_cycles" },
+            { label: "Notices", href: "/admin/notice" },
             { label: "Reports", href: "/admin/report" },
             { label: "Logout", href: "/logout" },
           ]}
