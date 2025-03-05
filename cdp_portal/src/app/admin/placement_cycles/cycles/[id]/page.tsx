@@ -58,7 +58,10 @@ export default function CyclePage({ params }: { params: { id: string } }) {
         <p className="text-muted-foreground">
           The requested cycle does not exist.
         </p>
-        <Link href="/cycles" className="mt-4 inline-block">
+        <Link
+          href="/admin/placement_cycles/cycles"
+          className="mt-4 inline-block"
+        >
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Cycles
@@ -71,7 +74,7 @@ export default function CyclePage({ params }: { params: { id: string } }) {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <Link href="/cycles">
+        <Link href="/admin/placement_cycles/cycles">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>

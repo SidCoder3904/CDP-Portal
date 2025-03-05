@@ -35,7 +35,7 @@ export function Sidebar() {
     <motion.nav
       initial={{ width: 64 }}
       animate={{ width: isOpen ? 240 : 64 }}
-      className="bg-secondary min-h-screen overflow-hidden"
+      className="bg-muted min-h-screen overflow-hidden"
     >
       <div className="p-4">
         <motion.div

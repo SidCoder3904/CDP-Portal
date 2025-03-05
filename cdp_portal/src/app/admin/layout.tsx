@@ -12,10 +12,9 @@ export default function RootLayout({
         <Navbar
           menuItems={[
             { label: "Notifications", href: "/admin" },
-            { label: " Job Postings", href: "/admin/add_job" },
             { label: "Placement Cycles", href: "/admin/placement_cycles" },
             { label: "Reports", href: "/admin/report" },
-            { label: "Logout", href: "/logout" },
+            { label: "Logout", href: "/" },
           ]}
         />
 

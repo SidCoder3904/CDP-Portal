@@ -1,14 +1,25 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Download, Users, Clock, MapPin, DollarSign } from "lucide-react"
-import { JobApplicants } from "@/components/job-applicants"
-import { JobDetails } from "@/components/job-details"
-import { JobWorkflow } from "@/components/job-workflow"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft,
+  Download,
+  Users,
+  Clock,
+  MapPin,
+  DollarSign,
+} from "lucide-react";
+import { JobApplicants } from "@/components/job-applicants";
+import { JobDetails } from "@/components/job-details";
+import { JobWorkflow } from "@/components/job-workflow";
 
-export default function JobPage({ params }: { params: { id: string; jobId: string } }) {
+export default function JobPage({
+  params,
+}: {
+  params: { id: string; jobId: string };
+}) {
   // Mock data - in a real app, this would be fetched from an API
   const jobs = [
     {
@@ -31,33 +42,54 @@ export default function JobPage({ params }: { params: { id: string; jobId: strin
       eligiblePrograms: ["B.Tech", "M.Tech", "MCA"],
       minCGPA: 8.0,
       workflowSteps: [
-        { id: 1, name: "Resume Shortlisting", description: "Initial screening of resumes" },
-        { id: 2, name: "Online Assessment", description: "Technical assessment" },
-        { id: 3, name: "Technical Interview", description: "Technical skills evaluation" },
-        { id: 4, name: "HR Interview", description: "Cultural fit and HR round" },
+        {
+          id: 1,
+          name: "Resume Shortlisting",
+          description: "Initial screening of resumes",
+        },
+        {
+          id: 2,
+          name: "Online Assessment",
+          description: "Technical assessment",
+        },
+        {
+          id: 3,
+          name: "Technical Interview",
+          description: "Technical skills evaluation",
+        },
+        {
+          id: 4,
+          name: "HR Interview",
+          description: "Cultural fit and HR round",
+        },
       ],
       applicants: 120,
       selected: 0,
       rejected: 25,
       inProgress: 95,
     },
-  ]
+  ];
 
-  const job = jobs.find((j) => j.id === params.jobId)
+  const job = jobs.find((j) => j.id === params.jobId);
 
   if (!job) {
     return (
       <div className="container mx-auto py-6">
         <h1 className="text-3xl font-bold tracking-tight">Job not found</h1>
-        <p className="text-muted-foreground">The requested job does not exist.</p>
-        <Link href={`/admin/placement_cycles/cycles/${params.id}`} className="mt-4 inline-block">
+        <p className="text-muted-foreground">
+          The requested job does not exist.
+        </p>
+        <Link
+          href={`/admin/placement_cycles/cycles/${params.id}`}
+          className="mt-4 inline-block"
+        >
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Cycle
           </Button>
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -94,7 +126,9 @@ export default function JobPage({ params }: { params: { id: string; jobId: strin
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{job.deadline}</div>
-            <p className="text-xs text-muted-foreground">Application closing date</p>
+            <p className="text-xs text-muted-foreground">
+              Application closing date
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -104,7 +138,9 @@ export default function JobPage({ params }: { params: { id: string; jobId: strin
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{job.applicants}</div>
-            <p className="text-xs text-muted-foreground">Total registered students</p>
+            <p className="text-xs text-muted-foreground">
+              Total registered students
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -114,7 +150,10 @@ export default function JobPage({ params }: { params: { id: string; jobId: strin
           <MapPin className="mr-1 h-4 w-4" />
           {job.location}
         </Badge>
-        <Badge variant={job.status === "Open" ? "default" : "outline"} className="text-sm py-1">
+        <Badge
+          variant={job.status === "Open" ? "default" : "outline"}
+          className="text-sm py-1"
+        >
           {job.status}
         </Badge>
         <Badge variant="secondary" className="text-sm py-1">
@@ -147,6 +186,5 @@ export default function JobPage({ params }: { params: { id: string; jobId: strin
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
-

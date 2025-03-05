@@ -112,7 +112,7 @@ export function JobForm({ cycleId }: JobFormProps) {
     console.log({ ...values, workflowSteps, cycleId });
 
     // Navigate back to the cycle page
-    router.push(`/cycles/${cycleId}`);
+    router.push(`/admin/placement_cycles/cycles/${cycleId}`);
   }
 
   const branches = [
@@ -476,7 +476,7 @@ export function JobForm({ cycleId }: JobFormProps) {
           <Button
             variant="outline"
             type="button"
-            onClick={() => router.push(`/cycles/${cycleId}`)}
+            onClick={() => router.push(`/admin/placement_cycles/cycles/${cycleId}`)}
           >
             Cancel
           </Button>

@@ -111,7 +111,13 @@ export default function StudentLogin() {
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8">
           {/* ... existing header code ... */}
-
+          <div className="text-center">
+            <div className="w-20 h-20 bg-template rounded-full mx-auto mb-4 flex items-center justify-center">
+              <Icons.shield className="h-10 w-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Student Portal</h2>
+            <p className="text-gray-600 mt-2">Access your Student dashboard</p>
+          </div>
           <Card className="w-full shadow-lg">
             <CardHeader>
               <CardTitle className="text-gray-900">Student Login</CardTitle>
