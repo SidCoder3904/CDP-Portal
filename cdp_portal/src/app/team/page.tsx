@@ -1,90 +1,133 @@
-import React from 'react';
+"use client"
+
+import type React from "react"
+
 interface TeamMember {
-    id: number;
-    position: string;
-    name: string;
-    email: string;
-    image: string;
+  id: number
+  team: "administration" | "student" | "nucleus"
+  position: string
+  name: string
+  email: string
+  image: string
 }
 
 const teamMembers: TeamMember[] = [
-    { id: 1,position:'member', name: 'Samarth Singhal', email: 'samarth@gmail.com', image: "/blank_student.jpg" },
-    { id: 2,position:'member', name: 'Ojas Jain', email: 'ojas@gmail.com', image: "/blank_student.jpg" },
-    { id: 3,position:'member', name: 'Siddharth Verma', email: 'siddharth@gmail.com', image: "/blank_student.jpg" },
-    { id: 4,position:'member', name: 'Akash Jha', email: 'akash@gmail.com', image: "/blank_student.jpg" },
-    // { id: 10,position:'member', name: 'Julia Blue', email: 'julia@college.edu', image: "/blank_student.jpg" },
-];
-
-const styles = {
-    container: {
-        padding: '20px',
-        fontFamily: 'Arial, sans-serif' as const,
-    },
-    heading: {
-        color: '#007BFF', // highlighted blue color
-        textAlign: 'center' as const,
-        marginBottom: '30px',
-    },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '20px',
-    },
-    card: {
-        backgroundColor: '#f8f9fa',
-        border: '1px solid #e0e0e0',
-        borderRadius: '8px',
-        textAlign: 'center' as const,
-        padding: '15px',
-    },
-    image: {
-        width: '100%',
-        maxWidth: '150px',
-        height: 'auto',
-        borderRadius: '50%',
-        margin: '0 auto 10px',
-        display: 'block',
-    },
-    position: {
-        fontWeight: 'bold' as const,
-        fontSize: '18px',
-        margin: '10px 0 5px',
-    },
-    name: {
-        fontWeight: 'bold' as const,
-        fontSize: '18px',
-        margin: '10px 0 5px',
-    },
-    email: {
-        color: '#555',
-        fontSize: '14px',
-    },
-};
+  { id: 1, team: "administration", position: "Director", name: "Dr. Rajesh Kumar", email: "director@cdpc.edu", image: "/blank_student.jpg" },
+  { id: 2, team: "administration", position: "Associate Director", name: "Dr. Priya Sharma", email: "associate@cdpc.edu", image: "/blank_student.jpg" },
+  { id: 3, team: "administration", position: "Placement Officer", name: "Vikram Singh", email: "placement@cdpc.edu", image: "/blank_student.jpg" },
+  { id: 4, team: "student", position: "Student Coordinator", name: "Samarth Singhal", email: "samarth@gmail.com", image: "/blank_student.jpg" },
+  { id: 5, team: "student", position: "Technical Lead", name: "Ojas Jain", email: "ojas@gmail.com", image: "/blank_student.jpg" },
+  { id: 6, team: "student", position: "Design Head", name: "Siddharth Verma", email: "siddharth@gmail.com", image: "/blank_student.jpg" },
+  { id: 7, team: "student", position: "Content Manager", name: "Akash Jha", email: "akash@gmail.com", image: "/blank_student.jpg" },
+  { id: 8, team: "nucleus", position: "Project Lead", name: "Ananya Patel", email: "ananya@nucleus.edu", image: "/blank_student.jpg" },
+  { id: 9, team: "nucleus", position: "Developer", name: "Rohan Gupta", email: "rohan@nucleus.edu", image: "/blank_student.jpg" },
+  { id: 10, team: "nucleus", position: "UX Designer", name: "Neha Sharma", email: "neha@nucleus.edu", image: "/blank_student.jpg" },
+]
 
 const TeamPage: React.FC = () => {
-    return (
-        <div className="p-10">
-          {/* Styled Heading */}
-          <h1 className="text-4xl font-bold text-blue-600 text-center mb-10 border-b-4 border-blue-500 inline-block mx-auto">
-            Meet Our Team
-          </h1>
-    
-          {/* Team Grid - 3 members per row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {teamMembers.map((member) => (
+  const administrationTeam = teamMembers.filter((member) => member.team === "administration")
+  const studentTeam = teamMembers.filter((member) => member.team === "student")
+  const nucleusTeam = teamMembers.filter((member) => member.team === "nucleus")
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-template-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold text-center text-template-700 mb-16">
+          <span className="inline-block border-b-4 border-template-2">Meet Our Team</span>
+        </h1>
+
+        {/* Administration Team Section */}
+        <section className="mb-20">
+          <div className="flex items-center justify-center mb-10">
+            <div className="h-0.5 bg-template-200 flex-grow max-w-xs"></div>
+            <h2 className="text-3xl font-bold text-template-6">Administration</h2>
+            <div className="h-0.5 bg-template-200 flex-grow max-w-xs"></div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {administrationTeam.map((member) => (
               <div
                 key={member.id}
-                className="bg-gray-100 p-6 rounded-xl shadow-lg text-center transition duration-300 hover:scale-105"
+                className="bg-white rounded-xl shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl"
               >
-                <img src={member.image} alt={member.name} className="w-24 h-24 mx-auto rounded-full mb-4" />
-                <h3 className="text-xl font-semibold">{member.name}</h3>
-                <p className="text-gray-600">{member.position}</p>
-                <p className="text-sm text-gray-500">{member.email}</p>
+                <div className="bg-template-600 h-3"></div>
+                <div className="p-6">
+                  <img
+                    src={member.image || "/placeholder.svg"}
+                    alt={member.name}
+                    className="w-28 h-28 mx-auto rounded-full border-4 border-template-100 mb-4 object-cover"
+                  />
+                  <h3 className="text-xl font-bold text-gray-800">{member.name}</h3>
+                  <p className="text-template-600 font-medium mb-2">{member.position}</p>
+                  <p className="text-gray-500 text-sm">{member.email}</p>
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      );
-    };
+        </section>
 
-export default TeamPage;
+        {/* Student Team Section */}
+        <section className="mb-20">
+          <div className="flex items-center justify-center mb-10">
+            <div className="h-0.5 bg-template-200 flex-grow max-w-xs"></div>
+            <h2 className="text-3xl font-bold text-template-700 px-6">Student Team</h2>
+            <div className="h-0.5 bg-template-200 flex-grow max-w-xs"></div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {studentTeam.map((member) => (
+              <div
+                key={member.id}
+                className="bg-white rounded-xl shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl"
+              >
+                <div className="bg-template-500 h-3"></div>
+                <div className="p-6">
+                  <img
+                    src={member.image || "/placeholder.svg"}
+                    alt={member.name}
+                    className="w-24 h-24 mx-auto rounded-full border-4 border-template-50 mb-4 object-cover"
+                  />
+                  <h3 className="text-lg font-bold text-gray-800">{member.name}</h3>
+                  <p className="text-template-600 font-medium mb-2">{member.position}</p>
+                  <p className="text-gray-500 text-sm">{member.email}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Nucleus Team Section */}
+        <section className="mb-10">
+          <div className="flex items-center justify-center mb-10">
+            <div className="h-0.5 bg-template-200 flex-grow max-w-xs"></div>
+            <h2 className="text-3xl font-bold text-template-700 px-6">Nucleus Team</h2>
+            <div className="h-0.5 bg-template-200 flex-grow max-w-xs"></div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {nucleusTeam.map((member) => (
+              <div
+                key={member.id}
+                className="bg-white rounded-xl shadow-lg overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl"
+              >
+                <div className="bg-template-600 h-3"></div>
+                <div className="p-6">
+                  <img
+                    src={member.image || "/placeholder.svg"}
+                    alt={member.name}
+                    className="w-24 h-24 mx-auto rounded-full border-4 border-template-50 mb-4 object-cover"
+                  />
+                  <h3 className="text-lg font-bold text-gray-800">{member.name}</h3>
+                  <p className="text-template-600 font-medium mb-2">{member.position}</p>
+                  <p className="text-gray-500 text-sm">{member.email}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
+  )
+}
+
+export default TeamPage

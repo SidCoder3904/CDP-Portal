@@ -1,10 +1,32 @@
 # app/services/auth_service.py
+import random
 from app import mongo
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
+
 
 class AuthService:
+    @staticmethod
+    def generate_otp(user_id):
+        otp = random.randint(100000, 999999)
+        # Store OTP in the database with an expiration time
+        mongo.db.otps.insert_one({
+            'user_id': ObjectId(user_id),
+            'otp': otp,
+            'expires_at': datetime.utcnow() + timedelta(minutes=5)  # OTP valid for 5 minutes
+        })
+        return otp
+
+    @staticmethod
+    def verify_otp(user_id, otp):
+        record = mongo.db.otps.find_one({'user_id': ObjectId(user_id), 'otp': otp})
+        if record and record['expires_at'] > datetime.utcnow():
+            mongo.db.otps.delete_one({'_id': record['_id']})  # Remove OTP after verification
+            return True
+        return True
+
+
     @staticmethod
     def authenticate_user(email, password):
         user = mongo.db.users.find_one({'email': email})

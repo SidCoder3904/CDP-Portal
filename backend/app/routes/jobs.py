@@ -1,88 +1,94 @@
-# app/routes/placement_cycles.py
+# app/routes/jobs.py
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.services.placement_service import PlacementService
-from app.utils.auth import admin_required
-from app.utils.validators import validate_placement_cycle
+from app.services.job_service import JobService
+from app.utils.auth import admin_required, student_required
+from app.utils.validators import validate_job
 
-placement_cycles_bp = Blueprint('placement_cycles', __name__)
+jobs_bp = Blueprint('jobs', __name__)
 
-@placement_cycles_bp.route('', methods=['GET'])
+@jobs_bp.route('/<job_id>', methods=['GET'])
 @jwt_required()
-def get_placement_cycles():
-    cycles = PlacementService.get_all_placement_cycles()
-    return jsonify(cycles), 200
-
-@placement_cycles_bp.route('/<cycle_id>', methods=['GET'])
-@jwt_required()
-def get_placement_cycle(cycle_id):
-    cycle = PlacementService.get_placement_cycle_by_id(cycle_id)
-    if not cycle:
-        return jsonify({"message": "Placement cycle not found"}), 404
+def get_job(job_id):
+    job = JobService.get_job_by_id(job_id)
+    if not job:
+        return jsonify({"message": "Job not found"}), 404
     
-    return jsonify(cycle), 200
+    return jsonify(job), 200
 
-@placement_cycles_bp.route('', methods=['POST'])
+@jobs_bp.route('/<job_id>', methods=['PUT'])
 @jwt_required()
 @admin_required
-def create_placement_cycle():
+def update_job(job_id):
     data = request.get_json()
     
     # Validate input
-    errors = validate_placement_cycle(data)
+    errors = validate_job(data)
     if errors:
         return jsonify({"errors": errors}), 400
     
-    cycle_id = PlacementService.create_placement_cycle(data)
-    cycle = PlacementService.get_placement_cycle_by_id(cycle_id)
-    
-    return jsonify(cycle), 201
-
-@placement_cycles_bp.route('/<cycle_id>', methods=['PUT'])
-@jwt_required()
-@admin_required
-def update_placement_cycle(cycle_id):
-    data = request.get_json()
-    
-    # Validate input
-    errors = validate_placement_cycle(data)
-    if errors:
-        return jsonify({"errors": errors}), 400
-    
-    updated = PlacementService.update_placement_cycle(cycle_id, data)
+    updated = JobService.update_job(job_id, data)
     if not updated:
-        return jsonify({"message": "Placement cycle not found"}), 404
+        return jsonify({"message": "Job not found"}), 404
     
-    cycle = PlacementService.get_placement_cycle_by_id(cycle_id)
-    return jsonify(cycle), 200
+    job = JobService.get_job_by_id(job_id)
+    return jsonify(job), 200
 
-@placement_cycles_bp.route('/<cycle_id>', methods=['DELETE'])
+@jobs_bp.route('/<job_id>', methods=['DELETE'])
 @jwt_required()
 @admin_required
-def delete_placement_cycle(cycle_id):
-    deleted = PlacementService.delete_placement_cycle(cycle_id)
+def delete_job(job_id):
+    deleted = JobService.delete_job(job_id)
     if not deleted:
-        return jsonify({"message": "Placement cycle not found"}), 404
+        return jsonify({"message": "Job not found"}), 404
     
-    return jsonify({"message": "Placement cycle deleted successfully"}), 200
+    return jsonify({"message": "Job deleted successfully"}), 200
 
-# Jobs within placement cycles
-@placement_cycles_bp.route('/<cycle_id>/jobs', methods=['GET'])
+@jobs_bp.route('/<job_id>/apply', methods=['POST'])
 @jwt_required()
-def get_jobs_by_cycle(cycle_id):
-    jobs = PlacementService.get_jobs_by_cycle(cycle_id)
-    return jsonify(jobs), 200
+@student_required
+def apply_for_job(job_id):
+    current_user = get_jwt_identity()
+    
+    # Check if student is eligible
+    eligible = JobService.check_student_eligibility(job_id, current_user['id'])
+    if not eligible:
+        return jsonify({"message": "You are not eligible for this job"}), 403
+    
+    # Check if student has already applied
+    already_applied = JobService.has_student_applied(job_id, current_user['id'])
+    if already_applied:
+        return jsonify({"message": "You have already applied for this job"}), 400
+    
+    application_id = JobService.create_application(job_id, current_user['id'])
+    application = JobService.get_application_by_id(application_id)
+    
+    return jsonify(application), 201
 
-@placement_cycles_bp.route('/<cycle_id>/jobs', methods=['POST'])
+@jobs_bp.route('/<job_id>/applications', methods=['GET'])
 @jwt_required()
 @admin_required
-def create_job(cycle_id):
+def get_job_applications(job_id):
+    applications = JobService.get_applications_by_job(job_id)
+    return jsonify(applications), 200
+
+@jobs_bp.route('/applications/<application_id>/status', methods=['PUT'])
+@jwt_required()
+@admin_required
+def update_application_status(application_id):
     data = request.get_json()
     
-    # Validate input for job
-    # Implementation of job validation left out for brevity
+    if not data.get('status') or not data.get('currentStage'):
+        return jsonify({"message": "Status and currentStage are required"}), 400
     
-    job_id = PlacementService.create_job(cycle_id, data)
-    job = PlacementService.get_job_by_id(job_id)
+    updated = JobService.update_application_status(
+        application_id, 
+        data.get('status'),
+        data.get('currentStage')
+    )
     
-    return jsonify(job), 201
+    if not updated:
+        return jsonify({"message": "Application not found"}), 404
+    
+    application = JobService.get_application_by_id(application_id)
+    return jsonify(application), 200
