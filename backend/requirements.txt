@@ -1,4 +1,9 @@
 # requirements.txt
+pip
+setuptools
+wheel
+build
+
 flask==3.0.0
 flask-pymongo==2.3.0
 flask-jwt-extended==4.5.3
