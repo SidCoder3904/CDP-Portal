@@ -20,11 +20,11 @@ class AuthService:
 
     @staticmethod
     def verify_otp(user_id, otp):
-        record = mongo.db.otps.find_one({'user_id': ObjectId(user_id), 'otp': otp})
+        record = mongo.db.otps.find_one({'user_id': ObjectId(user_id), 'otp': int(otp)})
         if record and record['expires_at'] > datetime.utcnow():
             mongo.db.otps.delete_one({'_id': record['_id']})  # Remove OTP after verification
             return True
-        return True
+        return False
 
 
     @staticmethod
