@@ -30,7 +30,7 @@ export default function StudentLogin() {
 
   // Get backend URL from environment variables
   const backendUrl =
-    process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+    process.env.NEXT_PUBLIC_NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
   useEffect(() => {
     if (email && !IITRPR_EMAIL_REGEX.test(email)) {
