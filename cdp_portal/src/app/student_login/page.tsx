@@ -56,9 +56,10 @@ export default function StudentLogin() {
         setUserId(response.data.user_id); // Store userId for OTP login
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error
-        ? err.message 
-        : (err as any)?.response?.data?.message || "Failed to send OTP";
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : (err as any)?.response?.data?.message || "Failed to send OTP";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -71,19 +72,23 @@ export default function StudentLogin() {
     setSuccess("");
 
     try {
-      const response = await axios.post(`${backendUrl}/api/auth/login-with-otp`, {
-        user_id: userId,
-        otp: otp,
-      });
+      const response = await axios.post(
+        `${backendUrl}/api/auth/login-with-otp`,
+        {
+          user_id: userId,
+          otp: otp,
+        }
+      );
 
       if (response.status === 200) {
         setSuccess("Logged in successfully!");
         // Handle successful login, e.g., redirect to dashboard
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error 
-        ? err.message
-        : (err as any)?.response?.data?.message || "Failed to login with OTP";
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : (err as any)?.response?.data?.message || "Failed to login with OTP";
       setError(errorMessage);
     } finally {
       setIsLoading(false);

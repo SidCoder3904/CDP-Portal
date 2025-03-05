@@ -8,18 +8,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        {/* Navbar */}
+      <body className="flex flex-col min-h-screen">
         <Navbar
           menuItems={[
             { label: "Notifications", href: "/admin" },
             { label: " Job Postings", href: "/admin/add_job" },
             { label: "Placement Cycles", href: "/admin/placement_cycles" },
+            { label: "Notices", href: "/admin/notice" },
             { label: "Reports", href: "/admin/report" },
             { label: "Logout", href: "/logout" },
           ]}
         />
-        <main>{children}</main>
+
+        <main className="flex-grow max-w-7xl mx-auto w-full">{children}</main>
         {/* <MainFooter /> */}
       </body>
     </html>
