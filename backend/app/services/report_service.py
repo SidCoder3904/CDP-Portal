@@ -1,7 +1,7 @@
 from app.services.database import mongo, to_object_id, serialize_id
 from bson.objectid import ObjectId
 from datetime import datetime
-import pandas as pd
+# import pandas as pd
 import os
 import uuid
 from flask import current_app
@@ -168,7 +168,7 @@ class ReportService:
                 data = json.load(f)
             
             # Convert data to DataFrame
-            df = pd.DataFrame(data)
+            df = []
             
             # Generate file path
             exports_dir = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), 'reports', 'exports')
