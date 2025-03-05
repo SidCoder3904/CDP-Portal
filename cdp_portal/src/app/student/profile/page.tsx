@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -71,11 +71,7 @@ export default function BasicDetails() {
     <div>
       <h1 className="text-2xl text-template font-bold mb-6">Basic Details</h1>
       <Card>
-        <CardHeader>
-          {/* <CardTitle className="text-2xl text-template font-bold mb-6">
-          Basic Details
-        </CardTitle> */}
-        </CardHeader>
+        <CardHeader></CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="col-span-2 flex items-center space-x-4">
@@ -112,41 +108,13 @@ export default function BasicDetails() {
                 onChange={(e) => handleDirectUpdate("phone", e.target.value)}
               />
             </div>
-            <DetailItem
-              label="Date of Birth"
-              value={studentData.dateOfBirth}
-              isVerified={true}
-            />
-            <DetailItem
-              label="Gender"
-              value={studentData.gender}
-              isVerified={true}
-            />
-            <DetailItem
-              label="Address"
-              value={studentData.address}
-              isVerified={false}
-            />
-            <DetailItem
-              label="Major"
-              value={studentData.major}
-              isVerified={true}
-            />
-            <DetailItem
-              label="Student ID"
-              value={studentData.studentId}
-              isVerified={true}
-            />
-            <DetailItem
-              label="Enrollment Year"
-              value={studentData.enrollmentYear}
-              isVerified={true}
-            />
-            <DetailItem
-              label="Expected Graduation Year"
-              value={studentData.expectedGraduationYear}
-              isVerified={true}
-            />
+            <DetailItem label="Date of Birth" value={studentData.dateOfBirth} isVerified={true} />
+            <DetailItem label="Gender" value={studentData.gender} isVerified={true} />
+            <DetailItem label="Address" value={studentData.address} isVerified={false} />
+            <DetailItem label="Major" value={studentData.major} isVerified={true} />
+            <DetailItem label="Student ID" value={studentData.studentId} isVerified={true} />
+            <DetailItem label="Enrollment Year" value={studentData.enrollmentYear} isVerified={true} />
+            <DetailItem label="Expected Graduation Year" value={studentData.expectedGraduationYear} isVerified={true} />
           </div>
           <div className="flex justify-between mt-6">
             <AlertDialog>
@@ -157,15 +125,12 @@ export default function BasicDetails() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action will update your basic information. Please
-                    confirm that the changes are correct.
+                    This action will update your basic information. Please confirm that the changes are correct.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleConfirmUpdate}>
-                    Confirm
-                  </AlertDialogAction>
+                  <AlertDialogAction onClick={handleConfirmUpdate}>Confirm</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -175,18 +140,10 @@ export default function BasicDetails() {
                 { name: "dateOfBirth", label: "Date of Birth", type: "date" },
                 { name: "gender", label: "Gender", type: "text" },
                 { name: "address", label: "Address", type: "text" },
-                { name: "major", label: "Major", type: "text" },
+                { name: "major", label: "Major", type: "select", options: ["CSE", "EE", "CE"] },
                 { name: "studentId", label: "Student ID", type: "text" },
-                {
-                  name: "enrollmentYear",
-                  label: "Enrollment Year",
-                  type: "number",
-                },
-                {
-                  name: "expectedGraduationYear",
-                  label: "Expected Graduation Year",
-                  type: "number",
-                },
+                { name: "enrollmentYear", label: "Enrollment Year", type: "number" },
+                { name: "expectedGraduationYear", label: "Expected Graduation Year", type: "number" },
               ]}
               onSave={handleUpdate}
               triggerButton={<Button className="bg-template">Update Additional Details</Button>}

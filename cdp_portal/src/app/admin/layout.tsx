@@ -13,6 +13,7 @@ export default function RootLayout({
           menuItems={[
             { label: "Notifications", href: "/admin" },
             { label: "Placement Cycles", href: "/admin/placement_cycles" },
+            { label: "Notices", href: "/admin/notice" },
             { label: "Reports", href: "/admin/report" },
             { label: "Logout", href: "/" },
           ]}
