@@ -32,7 +32,7 @@ export default function AdminLogin() {
   const router = useRouter(); // Initialize the router
 
   const backendUrl =
-    process.env.NEXT_PUBLIC_NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
   useEffect(() => {
     if (email && !IITRPR_EMAIL_REGEX.test(email)) {
@@ -42,7 +42,8 @@ export default function AdminLogin() {
     }
   }, [email]);
 
-  async function requestOtp() {
+  async function requestOtp(){
+
     setIsLoading(true);
     setError("");
     setSuccess("");
