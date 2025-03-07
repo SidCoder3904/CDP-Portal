@@ -9,13 +9,19 @@ from datetime import datetime, timedelta
 class AuthService:
     @staticmethod
     def generate_otp(user_id):
-        otp = random.randint(100000, 999999)
+        # otp = random.randint(100000, 999999)
+        otp = 123456
         # Store OTP in the database with an expiration time
-        mongo.db.otps.insert_one({
-            'user_id': ObjectId(user_id),
-            'otp': otp,
-            'expires_at': datetime.utcnow() + timedelta(minutes=5)  # OTP valid for 5 minutes
-        })
+        mongo.db.otps.update_one(
+            {'user_id': ObjectId(user_id)},  # find by user_id
+            {
+                '$set': {
+                    'otp': otp,
+                    'expires_at': datetime.utcnow() + timedelta(minutes=5)
+                }
+            },
+            upsert=True  # creates new document if none exists
+        )
         return otp
 
     @staticmethod
