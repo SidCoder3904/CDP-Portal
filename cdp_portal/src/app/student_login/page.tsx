@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // Import useRouter
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,14 +22,15 @@ const IITRPR_EMAIL_REGEX = /^[a-zA-Z0-9_]+@iitrpr\.ac\.in$/;
 
 export default function StudentLogin() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState(""); // New state for password
-  const [otp, setOtp] = useState(""); // New state for OTP
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [userId, setUserId] = useState(""); // New state for userId
+  const [userId, setUserId] = useState("");
 
-  // Get backend URL from environment variables
+  const router = useRouter(); // Initialize the router
+
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
@@ -54,7 +56,7 @@ export default function StudentLogin() {
 
       if (response.status === 200) {
         setSuccess("OTP sent to your email!");
-        setUserId(response.data.user_id); // Store userId for OTP login
+        setUserId(response.data.user_id);
       }
     } catch (err: unknown) {
       const errorMessage =
@@ -83,7 +85,7 @@ export default function StudentLogin() {
 
       if (response.status === 200) {
         setSuccess("Logged in successfully!");
-        // Handle successful login, e.g., redirect to dashboard
+        setTimeout(() => router.push("/student"), 1500); // Redirect to /student
       }
     } catch (err: unknown) {
       const errorMessage =
@@ -111,7 +113,6 @@ export default function StudentLogin() {
     <div className="min-h-screen bg-white flex flex-col">
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8">
-          {/* ... existing header code ... */}
           <div className="text-center">
             <div className="w-20 h-20 bg-template rounded-full mx-auto mb-4 flex items-center justify-center">
               <Icons.shield className="h-10 w-10 text-white" />
@@ -187,11 +188,9 @@ export default function StudentLogin() {
                 </Button>
               </form>
             </CardContent>
-            {/* ... existing footer code ... */}
           </Card>
         </div>
       </main>
-      {/* ... existing footer code ... */}
     </div>
   );
 }
