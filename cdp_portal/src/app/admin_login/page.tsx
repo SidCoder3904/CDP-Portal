@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,8 +42,7 @@ export default function AdminLogin() {
     }
   }, [email]);
 
-  async function requestOtp(){
-
+  async function requestOtp() {
     setIsLoading(true);
     setError("");
     setSuccess("");
