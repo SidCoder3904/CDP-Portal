@@ -12,10 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlusCircle, Trash2 } from "lucide-react"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+
 const formSchema = z.object({
   company: z.string().min(1, "Company name is required"),
   role: z.string().min(1, "Role is required"),
-  stipend: z.string().min(1, "Stipend/Salary is required"),
+  package: z.string().min(1, "Package is required"),
+  location: z.string().min(1, "Location is required"),
+  deadline: z.string().min(1, "Application deadline is required"),
   accommodation: z.boolean(),
   eligibility: z.object({
     cgpa: z.string().min(1, "CGPA is required"),
@@ -35,12 +39,17 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
-export function JobFloatForm({ onSuccess }: { onSuccess: () => void }) {
+export function JobFloatForm({ onSuccess, cycleId }: { onSuccess: () => void, cycleId: string }) {
   const [activeTab, setActiveTab] = useState("details")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      package: "",
+      location: "",
+      deadline: "",
       accommodation: false,
       eligibility: {
         gender: "All",
@@ -55,13 +64,58 @@ export function JobFloatForm({ onSuccess }: { onSuccess: () => void }) {
     name: "hiringFlow",
   })
 
-  function onSubmit(values: FormValues) {
-    console.log(values)
-    onSuccess()
+  async function onSubmit(values: FormValues) {
+    try {
+      setIsSubmitting(true)
+      setError(null)
+      
+      // Format the data for the API
+      const formattedData = {
+        ...values,
+        cycle: cycleId,
+      }
+      
+      // Get the token from localStorage
+      const token = localStorage.getItem('token')
+      
+      if (!token) {
+        setError("You must be logged in to create a job")
+        return
+      }
+      
+      // Call the API to create the job
+      const response = await fetch(`${API_BASE_URL}/api/placement-cycles/${cycleId}/jobs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formattedData),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to create job")
+      }
+      
+      // Call the success callback
+      onSuccess()
+    } catch (error) {
+      console.error("Error creating job:", error)
+      setError(error instanceof Error ? error.message : "Failed to create job")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">{error}</span>
+        </div>
+      )}
+      
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="details">Details</TabsTrigger>
@@ -79,16 +133,41 @@ export function JobFloatForm({ onSuccess }: { onSuccess: () => void }) {
                 <div className="space-y-2">
                   <Label htmlFor="company">Company</Label>
                   <Input id="company" {...form.register("company")} />
+                  {form.formState.errors.company && (
+                    <p className="text-red-500 text-sm">{form.formState.errors.company.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
                   <Input id="role" {...form.register("role")} />
+                  {form.formState.errors.role && (
+                    <p className="text-red-500 text-sm">{form.formState.errors.role.message}</p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="stipend">Stipend/Salary</Label>
-                  <Input id="stipend" {...form.register("stipend")} />
+                  <Label htmlFor="package">Package</Label>
+                  <Input id="package" {...form.register("package")} />
+                  {form.formState.errors.package && (
+                    <p className="text-red-500 text-sm">{form.formState.errors.package.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location</Label>
+                  <Input id="location" {...form.register("location")} />
+                  {form.formState.errors.location && (
+                    <p className="text-red-500 text-sm">{form.formState.errors.location.message}</p>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="deadline">Application Deadline</Label>
+                  <Input id="deadline" type="date" {...form.register("deadline")} />
+                  {form.formState.errors.deadline && (
+                    <p className="text-red-500 text-sm">{form.formState.errors.deadline.message}</p>
+                  )}
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox id="accommodation" {...form.register("accommodation")} />
@@ -227,12 +306,13 @@ export function JobFloatForm({ onSuccess }: { onSuccess: () => void }) {
             const prevTab = ["details", "eligibility", "hiring-flow", "description"][currentIndex - 1]
             if (prevTab) setActiveTab(prevTab)
           }}
-          disabled={activeTab === "details"}
+          disabled={activeTab === "details" || isSubmitting}
         >
           Previous
         </Button>
         <Button
           type="button"
+          disabled={isSubmitting}
           onClick={() => {
             const currentIndex = ["details", "eligibility", "hiring-flow", "description"].indexOf(activeTab)
             const nextTab = ["details", "eligibility", "hiring-flow", "description"][currentIndex + 1]
@@ -240,7 +320,7 @@ export function JobFloatForm({ onSuccess }: { onSuccess: () => void }) {
             else form.handleSubmit(onSubmit)()
           }}
         >
-          {activeTab === "description" ? "Submit" : "Next"}
+          {activeTab === "description" ? (isSubmitting ? "Submitting..." : "Submit") : "Next"}
         </Button>
       </div>
     </form>

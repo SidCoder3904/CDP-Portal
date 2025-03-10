@@ -19,59 +19,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Search, Filter } from "lucide-react";
 
-export default function CyclesPage() {
-  const cycles = [
-    {
-      id: 1,
-      name: "Placement Cycle 2025",
-      type: "Placement",
-      startDate: "Aug 1, 2024",
-      endDate: "Apr 30, 2025",
-      status: "Active",
-      jobs: 12,
-      students: 450,
-    },
-    {
-      id: 2,
-      name: "Internship Cycle 2024",
-      type: "Internship",
-      startDate: "Sep 15, 2023",
-      endDate: "Dec 31, 2023",
-      status: "Active",
-      jobs: 8,
-      students: 320,
-    },
-    {
-      id: 3,
-      name: "Placement Cycle 2024",
-      type: "Placement",
-      startDate: "Aug 1, 2023",
-      endDate: "Apr 30, 2024",
-      status: "Completed",
-      jobs: 45,
-      students: 425,
-    },
-    {
-      id: 4,
-      name: "Internship Cycle 2023",
-      type: "Internship",
-      startDate: "Sep 15, 2022",
-      endDate: "Dec 31, 2022",
-      status: "Completed",
-      jobs: 32,
-      students: 380,
-    },
-    {
-      id: 5,
-      name: "Summer Internship 2024",
-      type: "Internship",
-      startDate: "Jan 15, 2024",
-      endDate: "Jun 30, 2024",
-      status: "Upcoming",
-      jobs: 0,
-      students: 0,
-    },
-  ];
+export default async function CyclesPage() {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+  
+  console.log(backendUrl);
+
+  // Fetch cycles data from the backend API
+  const response = await fetch(`${backendUrl}/api/placement-cycles`, {
+    cache: 'no-store', // Ensures fresh data on each request
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch cycles: ${response.status}`);
+  }
+  
+  const cycles = await response.json();
+  console.log(cycles);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -144,7 +107,16 @@ export default function CyclesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {cycles.map((cycle) => (
+            {cycles.map((cycle: {
+              id: string;
+              name: string;
+              type: string;
+              startDate: string;
+              endDate: string;
+              status: string;
+              jobs: number;
+              students: number;
+            }) => (
               <TableRow key={cycle.id}>
                 <TableCell className="font-medium">
                   <Link

@@ -45,18 +45,22 @@ class PlacementService:
             The ID of the newly created placement cycle
         """
         cycle = {
-            'name': data['name'],
-            'year': data['year'],
-            'type': data['type'],
-            'status': data['status'],
-            'startDate': datetime.strptime(data['startDate'], '%Y-%m-%d'),
-            'endDate': datetime.strptime(data['endDate'], '%Y-%m-%d'),
-            'eligibleBranches': data['eligibleBranches'],
+            'name': data.get('name'),
+            'type': data.get('type'),
+            'status': data.get('status'),
+            'description': data.get('description'),
+            'startDate': datetime.strptime(data.get('startDate'), '%Y-%m-%d'),
+            'endDate': datetime.strptime(data.get('endDate'), '%Y-%m-%d'),
+            'eligibleBranches': data.get('eligibleBranches'),
+            'eligiblePrograms': data.get('eligiblePrograms'),
             'createdAt': datetime.utcnow(),
             'updatedAt': datetime.utcnow()
         }
+
         result = mongo.db.placement_cycles.insert_one(cycle)
         return str(result.inserted_id)
+
+
     
     @staticmethod
     def update_placement_cycle(cycle_id, data):

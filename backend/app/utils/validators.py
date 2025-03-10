@@ -114,13 +114,13 @@ def validate_placement_cycle(data):
     if not data.get('name'):
         errors['name'] = 'Name is required'
     
-    if not data.get('year'):
-        errors['year'] = 'Year is required'
-    elif not re.match(r"^\d{4}(-\d{4})?$", data.get('year', '')):
-        errors['year'] = 'Year must be in format YYYY or YYYY-YYYY'
+    if not data.get('type') or data.get('type') not in ['Placement', 'Internship']:
+        errors['type'] = 'Type must be Placement or Internship'
     
-    if not data.get('type') or data.get('type') not in ['internship', 'placement']:
-        errors['type'] = 'Type must be internship or placement'
+    if not data.get('description'):
+        errors['description'] = 'Description is required'
+    elif len(data.get('description', '')) < 10:
+        errors['description'] = 'Description must be at least 10 characters'
     
     if not data.get('status') or data.get('status') not in ['active', 'completed', 'upcoming']:
         errors['status'] = 'Status must be active, completed, or upcoming'
@@ -135,6 +135,11 @@ def validate_placement_cycle(data):
         errors['eligibleBranches'] = 'Eligible branches are required and must be a list'
     elif len(data.get('eligibleBranches', [])) == 0:
         errors['eligibleBranches'] = 'At least one eligible branch is required'
+    
+    if not data.get('eligiblePrograms') or not isinstance(data.get('eligiblePrograms'), list):
+        errors['eligiblePrograms'] = 'Eligible programs are required and must be a list'
+    elif len(data.get('eligiblePrograms', [])) == 0:
+        errors['eligiblePrograms'] = 'At least one eligible program is required'
     
     # Validate start and end dates
     try:
@@ -169,12 +174,8 @@ def validate_job(data):
     if not data.get('role'):
         errors['role'] = 'Job role is required'
     
-    # Validate stipend/salary based on job type
-    if 'type' in data:
-        if data['type'] == 'internship' and not data.get('stipend'):
-            errors['stipend'] = 'Stipend is required for internships'
-        elif data['type'] == 'placement' and not data.get('salary'):
-            errors['salary'] = 'Salary is required for placements'
+    if not data.get('jobDescription'):
+        errors['jobDescription'] = 'Job description is required'
     
     # Validate eligibility criteria
     if not data.get('eligibility') or not isinstance(data.get('eligibility'), dict):
@@ -189,8 +190,8 @@ def validate_job(data):
         elif isinstance(eligibility.get('cgpa'), str) and not eligibility.get('cgpa').replace('.', '', 1).isdigit():
             errors['eligibility.cgpa'] = 'CGPA must be a valid number'
         
-        if not eligibility.get('gender') or eligibility.get('gender') not in ['all', 'male', 'female']:
-            errors['eligibility.gender'] = 'Gender must be all, male, or female'
+        if not eligibility.get('gender') or eligibility.get('gender') not in ['All', 'Male', 'Female']:
+            errors['eligibility.gender'] = 'Gender must be All, Male, or Female'
         
         if not eligibility.get('branches') or not isinstance(eligibility.get('branches'), list):
             errors['eligibility.branches'] = 'Eligible branches are required and must be a list'
@@ -208,12 +209,6 @@ def validate_job(data):
                 errors[f'hiringFlow[{i}].step'] = 'Step name is required'
             if not step.get('description'):
                 errors[f'hiringFlow[{i}].description'] = 'Step description is required'
-    
-    # Validate job description
-    if not data.get('jobDescription'):
-        errors['jobDescription'] = 'Job description is required'
-    elif len(data.get('jobDescription', '')) < 50:
-        errors['jobDescription'] = 'Job description must be at least 50 characters'
     
     return errors if errors else None
 

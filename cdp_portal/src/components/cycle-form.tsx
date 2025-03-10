@@ -24,6 +24,9 @@ import { Separator } from "@/components/ui/separator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useState } from "react";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -47,13 +50,13 @@ const formSchema = z.object({
   eligiblePrograms: z.array(z.string()).min(1, {
     message: "Select at least one program.",
   }),
-  coordinators: z.string().min(1, {
-    message: "Coordinators are required.",
-  }),
+
 });
 
 export function CycleForm() {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -65,16 +68,57 @@ export function CycleForm() {
       endDate: "",
       eligibleBranches: [],
       eligiblePrograms: [],
-      coordinators: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // In a real app, this would send the data to an API
-    console.log(values);
-
-    // Navigate back to the cycles page
-    router.push("/admin/placement_cycles/cycles");
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      
+      // Format the data for the API
+      const formattedData = {
+        name: values.name,
+        type: values.type,
+        description: values.description,
+        status: "active", // Default status for new cycles
+        startDate: values.startDate,
+        endDate: values.endDate,
+        eligibleBranches: values.eligibleBranches,
+        eligiblePrograms: values.eligiblePrograms,
+      };
+      
+      // Get the token from localStorage
+      const token = localStorage.getItem('token');
+      
+      // if (!token) {
+      //   setError("You must be logged in to create a placement cycle");
+      //   return;
+      // }
+      
+      // Call the API to create the cycle
+      const response = await fetch(`${API_BASE_URL}/api/placement-cycles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formattedData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create placement cycle");
+      }
+      
+      // Navigate back to the cycles page
+      router.push("/admin/placement_cycles/cycles");
+    } catch (error) {
+      console.error("Error creating placement cycle:", error);
+      setError(error instanceof Error ? error.message : "Failed to create placement cycle");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const branches = [
@@ -88,13 +132,17 @@ export function CycleForm() {
   const programs = [
     { id: "btech", label: "B.Tech" },
     { id: "mtech", label: "M.Tech" },
-    { id: "mca", label: "MCA" },
     { id: "phd", label: "PhD" },
   ];
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-6">
             <FormField
@@ -179,27 +227,6 @@ export function CycleForm() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="coordinators"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Coordinators</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter coordinator names (one per line)..."
-                      className="min-h-[80px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Enter one coordinator per line
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -324,10 +351,13 @@ export function CycleForm() {
             variant="outline"
             type="button"
             onClick={() => router.push("/admin/placement_cycles/cycles")}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
-          <Button type="submit">Create Cycle</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : "Create Cycle"}
+          </Button>
         </div>
       </form>
     </Form>

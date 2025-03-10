@@ -39,43 +39,42 @@ import { Upload } from "lucide-react";
 
 interface JobFormProps {
   cycleId: string;
+  onSuccess?: () => void;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+
 const formSchema = z.object({
-  company: z.string().min(2, {
-    message: "Company name must be at least 2 characters.",
+  company: z.string().min(1, "Company name is required"),
+  role: z.string().min(1, "Role is required"),
+  package: z.string().min(1, "Package is required"),
+  location: z.string().min(1, "Location is required"),
+  deadline: z.string().min(1, "Application deadline is required"),
+  accommodation: z.boolean().default(false),
+  eligibility: z.object({
+    cgpa: z.string().min(1, "CGPA is required"),
+    gender: z.enum(["All", "Male", "Female"]),
+    branches: z.array(z.string()).min(1, "At least one branch must be selected"),
+    programs: z.array(z.string()).min(1, "At least one program must be selected"),
   }),
-  role: z.string().min(2, {
-    message: "Job role must be at least 2 characters.",
-  }),
-  description: z.string().min(10, {
-    message: "Job description must be at least 10 characters.",
-  }),
-  package: z.string().min(1, {
-    message: "Package is required.",
-  }),
-  location: z.string().min(1, {
-    message: "Location is required.",
-  }),
-  deadline: z.string().min(1, {
-    message: "Application deadline is required.",
-  }),
-  eligibleBranches: z.array(z.string()).min(1, {
-    message: "Select at least one branch.",
-  }),
-  minCGPA: z.string().min(1, {
-    message: "Minimum CGPA is required.",
-  }),
-  eligibleGenders: z.array(z.string()).min(1, {
-    message: "Select at least one gender option.",
-  }),
-  eligiblePrograms: z.array(z.string()).min(1, {
-    message: "Select at least one program.",
-  }),
+  hiringFlow: z
+    .array(
+      z.object({
+        step: z.string().min(1, "Step is required"),
+        description: z.string().min(1, "Description is required"),
+      }),
+    )
+    .min(1, "At least one hiring step is required"),
+  jobDescription: z.string().min(1, "Job description is required"),
 });
 
-export function JobForm({ cycleId }: JobFormProps) {
+type FormValues = z.infer<typeof formSchema>;
+
+export function JobForm({ cycleId, onSuccess }: JobFormProps) {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const [workflowSteps, setWorkflowSteps] = useState([
     {
       id: 1,
@@ -91,28 +90,83 @@ export function JobForm({ cycleId }: JobFormProps) {
     { id: 4, name: "HR Interview", description: "Cultural fit and HR round" },
   ]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       company: "",
       role: "",
-      description: "",
       package: "",
       location: "",
       deadline: "",
-      eligibleBranches: [],
-      minCGPA: "7.0",
-      eligibleGenders: ["Male", "Female", "Other"],
-      eligiblePrograms: [],
+      accommodation: false,
+      eligibility: {
+        cgpa: "7.0",
+        gender: "All",
+        branches: [],
+        programs: [],
+      },
+      hiringFlow: workflowSteps.map(step => ({
+        step: step.name,
+        description: step.description,
+      })),
+      jobDescription: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // In a real app, this would send the data to an API
-    console.log({ ...values, workflowSteps, cycleId });
-
-    // Navigate back to the cycle page
+  // Fix the default onSuccess parameter
+  const defaultOnSuccess = () => {
     router.push(`/admin/placement_cycles/cycles/${cycleId}`);
+  };
+  
+  // Use the provided onSuccess or the default one
+  const handleSuccess = onSuccess || defaultOnSuccess;
+
+  async function onSubmit(values: FormValues) {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      
+      // Format the data for the API
+      const formattedData = {
+        ...values,
+        cycle: cycleId,
+        hiringFlow: workflowSteps.map(step => ({
+          step: step.name,
+          description: step.description,
+        })),
+      };
+      
+      // Get the token from localStorage
+      const token = localStorage.getItem('token');
+      
+      // if (!token) {
+      //   setError("You must be logged in to create a job");
+      //   return;
+      // }
+      
+      // Call the API to create the job
+      const response = await fetch(`${API_BASE_URL}/api/placement-cycles/${cycleId}/jobs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formattedData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create job");
+      }
+      
+      // Call the success callback
+      handleSuccess();
+    } catch (error) {
+      console.error("Error creating job:", error);
+      setError(error instanceof Error ? error.message : "Failed to create job");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const branches = [
@@ -131,14 +185,20 @@ export function JobForm({ cycleId }: JobFormProps) {
   ];
 
   const genders = [
+    { id: "All", label: "All" },
     { id: "Male", label: "Male" },
     { id: "Female", label: "Female" },
-    { id: "Other", label: "Other" },
   ];
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-6">
             <FormField
@@ -215,7 +275,7 @@ export function JobForm({ cycleId }: JobFormProps) {
 
             <FormField
               control={form.control}
-              name="description"
+              name="jobDescription"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Job Description</FormLabel>
@@ -231,6 +291,27 @@ export function JobForm({ cycleId }: JobFormProps) {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="accommodation"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Accommodation Provided</FormLabel>
+                    <FormDescription>
+                      Check if accommodation is provided for this role
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+
             <div className="space-y-2">
               <Label>Job Description Document</Label>
               <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center">
@@ -241,7 +322,7 @@ export function JobForm({ cycleId }: JobFormProps) {
                 <p className="text-xs text-muted-foreground">
                   Supports PDF, DOCX (Max 5MB)
                 </p>
-                <Button variant="outline" size="sm" className="mt-2">
+                <Button variant="outline" size="sm" className="mt-2" type="button">
                   Upload File
                 </Button>
               </div>
@@ -259,8 +340,8 @@ export function JobForm({ cycleId }: JobFormProps) {
               <CardContent className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="eligibleBranches"
-                  render={() => (
+                  name="eligibility.branches"
+                  render={({ field }) => (
                     <FormItem>
                       <div className="mb-4">
                         <FormLabel>Eligible Branches</FormLabel>
@@ -270,40 +351,28 @@ export function JobForm({ cycleId }: JobFormProps) {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         {branches.map((branch) => (
-                          <FormField
+                          <FormItem
                             key={branch.id}
-                            control={form.control}
-                            name="eligibleBranches"
-                            render={({ field }) => {
-                              return (
-                                <FormItem
-                                  key={branch.id}
-                                  className="flex flex-row items-start space-x-3 space-y-0"
-                                >
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(branch.id)}
-                                      onCheckedChange={(checked) => {
-                                        return checked
-                                          ? field.onChange([
-                                              ...field.value,
-                                              branch.id,
-                                            ])
-                                          : field.onChange(
-                                              field.value?.filter(
-                                                (value) => value !== branch.id
-                                              )
-                                            );
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    {branch.label}
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
-                          />
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(branch.id)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...field.value, branch.id])
+                                    : field.onChange(
+                                        field.value?.filter(
+                                          (value) => value !== branch.id
+                                        )
+                                      );
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {branch.label}
+                            </FormLabel>
+                          </FormItem>
                         ))}
                       </div>
                       <FormMessage />
@@ -313,8 +382,8 @@ export function JobForm({ cycleId }: JobFormProps) {
 
                 <FormField
                   control={form.control}
-                  name="eligiblePrograms"
-                  render={() => (
+                  name="eligibility.programs"
+                  render={({ field }) => (
                     <FormItem>
                       <div className="mb-4">
                         <FormLabel>Eligible Programs</FormLabel>
@@ -324,42 +393,28 @@ export function JobForm({ cycleId }: JobFormProps) {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         {programs.map((program) => (
-                          <FormField
+                          <FormItem
                             key={program.id}
-                            control={form.control}
-                            name="eligiblePrograms"
-                            render={({ field }) => {
-                              return (
-                                <FormItem
-                                  key={program.id}
-                                  className="flex flex-row items-start space-x-3 space-y-0"
-                                >
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(
-                                        program.id
-                                      )}
-                                      onCheckedChange={(checked) => {
-                                        return checked
-                                          ? field.onChange([
-                                              ...field.value,
-                                              program.id,
-                                            ])
-                                          : field.onChange(
-                                              field.value?.filter(
-                                                (value) => value !== program.id
-                                              )
-                                            );
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    {program.label}
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
-                          />
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(program.id)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...field.value, program.id])
+                                    : field.onChange(
+                                        field.value?.filter(
+                                          (value) => value !== program.id
+                                        )
+                                      );
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {program.label}
+                            </FormLabel>
+                          </FormItem>
                         ))}
                       </div>
                       <FormMessage />
@@ -369,7 +424,7 @@ export function JobForm({ cycleId }: JobFormProps) {
 
                 <FormField
                   control={form.control}
-                  name="minCGPA"
+                  name="eligibility.cgpa"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Minimum CGPA</FormLabel>
@@ -399,53 +454,27 @@ export function JobForm({ cycleId }: JobFormProps) {
 
                 <FormField
                   control={form.control}
-                  name="eligibleGenders"
-                  render={() => (
+                  name="eligibility.gender"
+                  render={({ field }) => (
                     <FormItem>
-                      <div className="mb-4">
-                        <FormLabel>Gender Eligibility</FormLabel>
-                        <FormDescription>
-                          Select eligible genders for this job
-                        </FormDescription>
-                      </div>
-                      <div className="flex gap-4">
-                        {genders.map((gender) => (
-                          <FormField
-                            key={gender.id}
-                            control={form.control}
-                            name="eligibleGenders"
-                            render={({ field }) => {
-                              return (
-                                <FormItem
-                                  key={gender.id}
-                                  className="flex flex-row items-start space-x-3 space-y-0"
-                                >
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(gender.id)}
-                                      onCheckedChange={(checked) => {
-                                        return checked
-                                          ? field.onChange([
-                                              ...field.value,
-                                              gender.id,
-                                            ])
-                                          : field.onChange(
-                                              field.value?.filter(
-                                                (value) => value !== gender.id
-                                              )
-                                            );
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    {gender.label}
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
-                          />
-                        ))}
-                      </div>
+                      <FormLabel>Gender Eligibility</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select gender eligibility" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {genders.map((gender) => (
+                            <SelectItem key={gender.id} value={gender.id}>
+                              {gender.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -480,7 +509,9 @@ export function JobForm({ cycleId }: JobFormProps) {
           >
             Cancel
           </Button>
-          <Button type="submit">Create Job</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : "Create Job"}
+          </Button>
         </div>
       </form>
     </Form>
