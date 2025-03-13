@@ -3,7 +3,6 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,95 +15,61 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Icons } from "@/components/icons";
-
-// Regex pattern for iitrpr.ac.in email validation
-const IITRPR_EMAIL_REGEX = /^[a-zA-Z0-9_]+@iitrpr\.ac\.in$/;
+import { useAuth } from "@/context/auth-context";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [userId, setUserId] = useState("");
 
-  const router = useRouter(); // Initialize the router
+  const router = useRouter();
+  const { requestOtp, loginWithOtp, isLoading, isAuthenticated, user } = useAuth();
 
-  const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-
+  // Redirect if already logged in
   useEffect(() => {
-    if (email && !IITRPR_EMAIL_REGEX.test(email)) {
-      setError("Please use a valid IIT Ropar Admin email (abc@iitrpr.ac.in)");
-    } else {
-      setError("");
-    }
-  }, [email]);
-
-  async function requestOtp() {
-    setIsLoading(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      const response = await axios.post(`${backendUrl}/api/auth/request-otp`, {
-        email: email,
-        password: password,
-      });
-
-      if (response.status === 200) {
-        setSuccess("OTP sent to your email!");
-        setUserId(response.data.user_id);
+    if (isAuthenticated) {
+      if (user?.role === 'admin') {
+        router.push("/admin");
+      } else {
+        // If not an admin, redirect to unauthorized page
+        router.push("/unauthorized");
       }
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : (err as any)?.response?.data?.message || "Failed to send OTP";
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
-  }
+  }, [isAuthenticated, router, user]);
 
-  async function loginWithOtp() {
-    setIsLoading(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      const response = await axios.post(
-        `${backendUrl}/api/auth/login-with-otp`,
-        {
-          user_id: userId,
-          otp: otp,
-        }
-      );
-
-      if (response.status === 200) {
-        setSuccess("Logged in successfully!");
-        setTimeout(() => router.push("/admin"), 1500); // Redirect to /Admin
-      }
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : (err as any)?.response?.data?.message || "Failed to login with OTP";
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  function onSubmit(e: React.FormEvent) {
+  async function handleRequestOtp(e: React.FormEvent) {
     e.preventDefault();
-    if (!IITRPR_EMAIL_REGEX.test(email)) return;
+    setError("");
+    setSuccess("");
 
-    if (!userId) {
-      requestOtp();
-    } else {
-      loginWithOtp();
+    try {
+      const userId = await requestOtp(email, password);
+      setSuccess("OTP sent to your email!");
+      setUserId(userId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send OTP");
+    }
+  }
+
+  async function handleLoginWithOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    try {
+      await loginWithOtp(userId, otp);
+      setSuccess("Logged in successfully!");
+      
+      // Get redirect path or default to admin dashboard
+      const redirectPath = localStorage.getItem("redirectAfterLogin") || "/admin";
+      localStorage.removeItem("redirectAfterLogin");
+      
+      setTimeout(() => router.push(redirectPath), 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to login with OTP");
     }
   }
 
@@ -123,69 +88,97 @@ export default function AdminLogin() {
             <CardHeader>
               <CardTitle className="text-gray-900">Admin Login</CardTitle>
               <CardDescription>
-                Sign in with your Admin email address
+                Sign in with your admin credentials
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={onSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-700">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    placeholder="Admin@iitrpr.ac.in"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full"
-                    pattern="[a-zA-Z0-9_]+@iitrpr\.ac\.in"
-                  />
-                  <Label htmlFor="password" className="text-gray-700">
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    placeholder="Enter your password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="w-full"
-                  />
-                  {userId && (
-                    <>
-                      <Label htmlFor="otp" className="text-gray-700">
-                        OTP
-                      </Label>
-                      <Input
-                        id="otp"
-                        placeholder="Enter OTP"
-                        type="text"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        required
-                        className="w-full"
-                      />
-                    </>
-                  )}
-                  {error && <p className="text-red-500 text-sm">{error}</p>}
-                  {success && (
-                    <p className="text-green-500 text-sm">{success}</p>
-                  )}
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-template hover:bg-template/90 text-white"
-                  disabled={isLoading || !!error}
-                >
-                  {isLoading && (
-                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {userId ? "Login with OTP" : "Request OTP"}
-                </Button>
-              </form>
+              {!userId ? (
+                // Step 1: Request OTP form
+                <form onSubmit={handleRequestOtp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-gray-700">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      placeholder="admin@example.com"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full"
+                    />
+                    <Label htmlFor="password" className="text-gray-700">
+                      Password
+                    </Label>
+                    <Input
+                      id="password"
+                      placeholder="Enter your password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full"
+                    />
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
+                    {success && (
+                      <p className="text-green-500 text-sm">{success}</p>
+                    )}
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full bg-template hover:bg-template/90 text-white"
+                    disabled={isLoading || !!error}
+                  >
+                    {isLoading && (
+                      <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Request OTP
+                  </Button>
+                </form>
+              ) : (
+                // Step 2: Enter OTP form
+                <form onSubmit={handleLoginWithOtp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="otp" className="text-gray-700">
+                      OTP
+                    </Label>
+                    <Input
+                      id="otp"
+                      placeholder="Enter OTP"
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      required
+                      className="w-full"
+                    />
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
+                    {success && (
+                      <p className="text-green-500 text-sm">{success}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <Button
+                      type="submit"
+                      className="w-full bg-template hover:bg-template/90 text-white"
+                      disabled={isLoading || !!error}
+                    >
+                      {isLoading && (
+                        <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Login with OTP
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setUserId("")}
+                    >
+                      Back
+                    </Button>
+                  </div>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>
