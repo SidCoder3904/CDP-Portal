@@ -261,5 +261,4 @@ export function useAuth() {
   return context;
 }
 
-// Remove this function as it's now in api.ts
-// export async function fetchWithAuth... 
+
