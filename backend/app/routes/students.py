@@ -1,9 +1,12 @@
 # app/routes/students.py
+from json import dumps
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.student_service import StudentService
 from app.utils.auth import admin_required, student_required
 from app.utils.validators import validate_student
+from app.services.job_service import JobService
+
 
 students_bp = Blueprint('students', __name__)
 
@@ -83,3 +86,17 @@ def verify_item(student_id, section, item_id):
         return jsonify({"message": f"{section.capitalize()} item not found"}), 404
     
     return jsonify({"message": f"{section.capitalize()} item verified successfully"}), 200
+
+
+@students_bp.route('/me/applications', methods=['GET'])
+@jwt_required()
+# @student_required
+def get_my_applications():
+    """Get all applications submitted by the current student"""
+    current_user = get_jwt_identity()
+    student_id = current_user['id']
+    
+    applications = JobService.get_applications_by_student(student_id)
+    
+    # Convert ObjectId to string for JSON serialization
+    return dumps(applications), 200

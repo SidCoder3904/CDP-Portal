@@ -92,3 +92,51 @@ def update_application_status(application_id):
     
     application = JobService.get_application_by_id(application_id)
     return jsonify(application), 200
+
+@jobs_bp.route('', methods=['GET'])
+@jwt_required()
+def get_all_jobs():
+    """Get all available jobs with optional filtering"""
+    current_user = get_jwt_identity()
+    
+    # Get query parameters for filtering
+    query_text = request.args.get('query', '')
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 20))
+    
+    # Build filters based on query parameters
+    filters = {}
+    
+    # Filter by job type if specified
+    job_type = request.args.get('type')
+    if job_type:
+        filters['jobType'] = job_type
+    
+    # Filter by status if specified
+    status = request.args.get('status')
+    if status:
+        filters['status'] = status
+    
+    # Get jobs with pagination
+    jobs, total = JobService.search_jobs(query_text, filters, page, per_page)
+    
+    # For students, add application status to each job
+    if current_user.get('role') == 'student':
+        student_id = current_user.get('id')
+        for job in jobs:
+            # Check if student has applied
+            job['hasApplied'] = JobService.has_student_applied(str(job['_id']), student_id)
+            
+            # Check if student is eligible
+            job['isEligible'] = JobService.check_student_eligibility(str(job['_id']), student_id)
+    
+    # Convert ObjectId to string for JSON serialization
+    from bson.json_util import dumps
+    return dumps({
+        'jobs': jobs,
+        'total': total,
+        'page': page,
+        'per_page': per_page,
+        'pages': (total + per_page - 1) // per_page
+    }), 200
+

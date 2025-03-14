@@ -586,3 +586,54 @@ class JobService:
                 'totalApplications': 0,
                 'statusCounts': {}
             }
+    @staticmethod
+    def get_applications_by_student(student_id):
+        """
+        Get all applications submitted by a student with job details.
+        
+        Args:
+            student_id: The ID of the student
+            
+        Returns:
+            List of application documents with job details
+        """
+        try:
+            # Convert string ID to ObjectId if needed
+            if isinstance(student_id, str):
+                student_id = ObjectId(student_id)
+                
+            pipeline = [
+                {'$match': {'studentId': student_id}},
+                {'$sort': {'createdAt': -1}},
+                {'$lookup': {
+                    'from': 'jobs',
+                    'localField': 'jobId',
+                    'foreignField': '_id',
+                    'as': 'job'
+                }},
+                {'$unwind': '$job'},
+                {'$project': {
+                    '_id': 1,
+                    'jobId': {'$toString': '$jobId'},
+                    'studentId': {'$toString': '$studentId'},
+                    'status': 1,
+                    'currentStage': 1,
+                    'appliedAt': '$createdAt',
+                    'updatedAt': 1,
+                    'job': {
+                        '_id': {'$toString': '$job._id'},
+                        'company': '$job.company',
+                        'role': '$job.role',
+                        'location': '$job.location',
+                        'salary': '$job.salary',
+                        'jobType': '$job.jobType',
+                        'logo': '$job.logo'
+                    }
+                }}
+            ]
+            
+            applications = list(mongo.db.applications.aggregate(pipeline))
+            return applications
+        except Exception as e:
+            print(f"Error retrieving student applications: {str(e)}")
+            return []
