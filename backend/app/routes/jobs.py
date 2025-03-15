@@ -4,6 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.job_service import JobService
 from app.utils.auth import admin_required, student_required
 from app.utils.validators import validate_job
+from bson.objectid import ObjectId
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -49,6 +50,13 @@ def delete_job(job_id):
 @student_required
 def apply_for_job(job_id):
     current_user = get_jwt_identity()
+    data = request.get_json() or {}
+    
+    # Get resume ID from request
+    resume_id = data.get('resumeId')
+
+    if not resume_id:
+        return jsonify({"message": "Resume ID is required"}), 400
     
     # Check if student is eligible
     eligible = JobService.check_student_eligibility(job_id, current_user['id'])
@@ -60,7 +68,24 @@ def apply_for_job(job_id):
     if already_applied:
         return jsonify({"message": "You have already applied for this job"}), 400
     
-    application_id = JobService.create_application(job_id, current_user['id'])
+    
+    
+    # Check if resume exists and belongs to the student
+    # resume = mongo.db.documents.find_one({
+    #     '_id': ObjectId(resume_id),
+    #     'student_id': ObjectId(current_user['id']),
+    #     'type': 'resume'
+    # })
+
+    # if not resume:
+    #     return jsonify({"message": "Invalid resume selected"}), 400
+    
+    # Create application with resume ID
+    application_data = {
+        'resumeId': resume_id
+    }
+    
+    application_id = JobService.create_application(job_id, current_user['id'], application_data)
     application = JobService.get_application_by_id(application_id)
     
     return jsonify(application), 201
@@ -124,11 +149,15 @@ def get_all_jobs():
     if current_user.get('role') == 'student':
         student_id = current_user.get('id')
         for job in jobs:
+            job_id = job['_id']
+            if isinstance(job_id, dict) and '$oid' in job_id:
+                job_id = job_id['$oid']
+                
             # Check if student has applied
-            job['hasApplied'] = JobService.has_student_applied(str(job['_id']), student_id)
+            job['hasApplied'] = JobService.has_student_applied(job_id, student_id)
             
             # Check if student is eligible
-            job['isEligible'] = JobService.check_student_eligibility(str(job['_id']), student_id)
+            job['isEligible'] = JobService.check_student_eligibility(job_id, student_id)
     
     # Convert ObjectId to string for JSON serialization
     from bson.json_util import dumps

@@ -100,3 +100,5 @@ def get_my_applications():
     
     # Convert ObjectId to string for JSON serialization
     return dumps(applications), 200
+
+

@@ -8,6 +8,7 @@ import { useJobsApi, JobListing, JobApplication } from "@/lib/api/jobs";
 import { Icons } from "@/components/icons";
 
 
+
 export default function JobListings() {
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -62,15 +63,16 @@ export default function JobListings() {
     setActiveJobId(jobId);
   };
   
-  const handleApplyForJob = async (jobId: string) => {
+  const handleApplyForJob = async (jobId: string, resumeId: string) => {
     try {
       setIsApplying(true);
-      await jobsApi.applyForJob(jobId);
+      await jobsApi.applyForJob(jobId, resumeId);
       
       // Update applications list
       const newApplications = await jobsApi.getMyApplications();
       setApplications(newApplications);
       
+
     } catch (error) {
       console.error("Failed to apply for job:", error);
 
@@ -111,7 +113,7 @@ export default function JobListings() {
               job={jobs.find((job) => job._id === activeJobId)!}
               activeTab={activeTab[activeJobId]}
               handleTabClick={(tab) => handleTabClick(activeJobId, tab)}
-              onApply={handleApplyForJob}
+              onApply={(jobId) => handleApplyForJob(jobId, "")}
               isApplied={appliedJobs.has(activeJobId)}
               isApplying={isApplying}
             />

@@ -91,14 +91,20 @@ export function useJobsApi() {
     return response.json();
   };
 
-  const applyForJob = async (jobId: string): Promise<JobApplication> => {
+  const applyForJob = async (jobId: string, resumeId: string): Promise<JobApplication> => {
     const response = await fetchWithAuth(`/api/jobs/${jobId}/apply`, {
-      method: 'POST'
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ resumeId })
     });
+    
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to apply for job');
     }
+    
     return response.json();
   };
 
