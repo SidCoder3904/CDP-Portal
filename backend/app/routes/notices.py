@@ -1,82 +1,52 @@
-# app/routes/notices.py
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.services.notice_service import NoticeService
-from app.utils.auth import admin_required
-from app.utils.validators import validate_notice
+from flask import Blueprint, jsonify, request
+from app import mongo  # Import Flask-PyMongo instance
 
-notices_bp = Blueprint('notices', __name__)
+notices_bp = Blueprint("notices", __name__)
 
-@notices_bp.route('', methods=['GET'])
-def get_notices():
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 10))
-    notice_type = request.args.get('type')
-    company = request.args.get('company')
-    
-    notices, total = NoticeService.get_notices(page, per_page, notice_type, company)
-    
-    return jsonify({
-        'notices': notices,
-        'pagination': {
-            'total': total,
-            'page': page,
-            'per_page': per_page,
-            'pages': (total + per_page - 1) // per_page
-        }
-    }), 200
+@notices_bp.route("/notices", methods=["GET"])
+def list_notices():
+    """Fetch all notices, sorted by creation date (newest first)."""
+    try:
+        notices = mongo.db.notices.find().sort("created_at", -1)  # Sorting in descending order
+        notice_list = []
 
-@notices_bp.route('/<notice_id>', methods=['GET'])
-def get_notice(notice_id):
-    notice = NoticeService.get_notice_by_id(notice_id)
-    if not notice:
-        return jsonify({"message": "Notice not found"}), 404
-    
-    return jsonify(notice), 200
+        for notice in notices:
+            notice["_id"] = str(notice["_id"])  # Convert ObjectId to string for JSON serialization
+            notice_list.append(notice)
 
-@notices_bp.route('', methods=['POST'])
-@jwt_required()
-@admin_required
+        return jsonify(notice_list), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@notices_bp.route("/notices", methods=["POST"])
 def create_notice():
-    data = request.get_json()
-    
-    # Validate input
-    errors = validate_notice(data)
-    if errors:
-        return jsonify({"errors": errors}), 400
-    
-    # Get current user
-    current_user = get_jwt_identity()
-    
-    notice_id = NoticeService.create_notice(data, current_user['id'])
-    notice = NoticeService.get_notice_by_id(notice_id)
-    
-    return jsonify(notice), 201
+    """Create a new notice."""
+    try:
+        data = request.json
+        if not data or "title" not in data or "content" not in data:
+            return jsonify({"error": "Missing required fields"}), 400
+        
+        new_notice = {
+            "title": data["title"],
+            "content": data["content"],
+            "created_at": data.get("created_at")  # Optional, else MongoDB adds default timestamp
+        }
 
-@notices_bp.route('/<notice_id>', methods=['PUT'])
-@jwt_required()
-@admin_required
-def update_notice(notice_id):
-    data = request.get_json()
-    
-    # Validate input
-    errors = validate_notice(data)
-    if errors:
-        return jsonify({"errors": errors}), 400
-    
-    updated = NoticeService.update_notice(notice_id, data)
-    if not updated:
-        return jsonify({"message": "Notice not found"}), 404
-    
-    notice = NoticeService.get_notice_by_id(notice_id)
-    return jsonify(notice), 200
+        result = mongo.db.notices.insert_one(new_notice)
+        return jsonify({"message": "Notice added", "id": str(result.inserted_id)}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@notices_bp.route('/<notice_id>', methods=['DELETE'])
-@jwt_required()
-@admin_required
+@notices_bp.route("/notices/<string:notice_id>", methods=["DELETE"])
 def delete_notice(notice_id):
-    deleted = NoticeService.delete_notice(notice_id)
-    if not deleted:
-        return jsonify({"message": "Notice not found"}), 404
-    
-    return jsonify({"message": "Notice successfully deleted"}), 200
+    """Delete a notice by its ID."""
+    from bson.objectid import ObjectId
+    try:
+        result = mongo.db.notices.delete_one({"_id": ObjectId(notice_id)})
+
+        if result.deleted_count == 0:
+            return jsonify({"error": "Notice not found"}), 404
+
+        return jsonify({"message": "Notice deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

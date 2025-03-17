@@ -1,65 +1,144 @@
-# app/routes/comments.py
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.services.comment_service import CommentService
-from app.utils.auth import admin_required
-from app.utils.validators import validate_comment
+from bson import ObjectId
+from datetime import datetime
+from app.services.comment_service import create_comment, get_comments_by_notice, reply_to_comment, get_all_comments
+from app.services.user_service import get_user_by_id, is_admin
+from app.services.notice_service import get_notice_by_id
 
 comments_bp = Blueprint('comments', __name__)
 
-@comments_bp.route('/notices/<notice_id>/comments', methods=['GET'])
-def get_comments(notice_id):
-    comments = CommentService.get_comments_by_notice(notice_id)
-    return jsonify(comments), 200
-
-@comments_bp.route('/notices/<notice_id>/comments', methods=['POST'])
-@jwt_required()
-def add_comment(notice_id):
+@comments_bp.route('', methods=['POST'])
+def add_comment():
+    """Create a new comment/query"""
+    current_user_id = get_jwt_identity()
     data = request.get_json()
     
-    # Validate input
-    errors = validate_comment(data)
-    if errors:
-        return jsonify({"errors": errors}), 400
+    if not data or not all(k in data for k in ('notice_id', 'content')):
+        return jsonify({"error": "Missing required fields"}), 400
     
-    current_user = get_jwt_identity()
+    # Validate notice exists
+    notice = get_notice_by_id(data['notice_id'])
+    if not notice:
+        return jsonify({"error": "Notice not found"}), 404
     
-    comment_id = CommentService.create_comment(notice_id, current_user['id'], data.get('content'))
-    comment = CommentService.get_comment_by_id(comment_id)
+    comment_data = {
+        "notice_id": ObjectId(data['notice_id']),
+        "user_id": ObjectId(current_user_id),
+        "content": data['content'],
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
     
-    return jsonify(comment), 201
+    comment_id = create_comment(comment_data)
+    
+    return jsonify({
+        "message": "Comment added successfully",
+        "comment_id": str(comment_id)
+    }), 201
+
+@comments_bp.route('/notice/<notice_id>', methods=['GET'])
+def get_notice_comments(notice_id):
+    """Get all comments for a specific notice"""
+    try:
+        comments = get_comments_by_notice(notice_id)
+        
+        # Format the response
+        formatted_comments = []
+        for comment in comments:
+            user = get_user_by_id(comment['user_id'])
+            user_name = user.get('email', 'Unknown').split('@')[0] if user else 'Unknown'
+            
+            replied_by_name = None
+            if 'replied_by' in comment and comment['replied_by']:
+                admin = get_user_by_id(comment['replied_by'])
+                replied_by_name = admin.get('email', 'Admin').split('@')[0] if admin else 'Admin'
+            
+            formatted_comment = {
+                "id": str(comment['_id']),
+                "notice_id": str(comment['notice_id']),
+                "user": user_name,
+                "content": comment['content'],
+                "created_at": comment['created_at'].isoformat(),
+                "has_reply": bool(comment.get('admin_reply')),
+                "admin_reply": comment.get('admin_reply'),
+                "replied_by": replied_by_name,
+                "replied_at": comment.get('replied_at', '').isoformat() if comment.get('replied_at') else None
+            }
+            
+            formatted_comments.append(formatted_comment)
+        
+        return jsonify({"comments": formatted_comments}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @comments_bp.route('/<comment_id>/reply', methods=['POST'])
-@jwt_required()
-@admin_required
-def reply_to_comment(comment_id):
+def admin_reply(comment_id):
+    """Reply to a comment (admin only)"""
+    current_user_id = get_jwt_identity()
+    
+    # Check if user is admin
+    if not is_admin(current_user_id):
+        return jsonify({"error": "Unauthorized. Admin access required"}), 403
+    
     data = request.get_json()
     
-    # Validate input
-    if not data.get('content'):
-        return jsonify({"errors": {"content": "Reply content is required"}}), 400
+    if not data or 'reply' not in data:
+        return jsonify({"error": "Reply content is required"}), 400
     
-    current_user = get_jwt_identity()
+    reply_data = {
+        "admin_reply": data['reply'],
+        "replied_by": ObjectId(current_user_id),
+        "replied_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
     
-    updated = CommentService.add_reply(comment_id, current_user['id'], data.get('content'))
-    if not updated:
-        return jsonify({"message": "Comment not found"}), 404
+    success = reply_to_comment(comment_id, reply_data)
     
-    comment = CommentService.get_comment_by_id(comment_id)
-    return jsonify(comment), 200
+    if success:
+        return jsonify({"message": "Reply added successfully"}), 200
+    else:
+        return jsonify({"error": "Comment not found or reply failed"}), 404
 
-@comments_bp.route('/<comment_id>', methods=['DELETE'])
-@jwt_required()
-def delete_comment(comment_id):
-    current_user = get_jwt_identity()
+@comments_bp.route('', methods=['GET'])
+def list_all_comments():
+    """Get all comments (admin only)"""
+    current_user_id = get_jwt_identity()
     
-    # Check if user is admin or comment owner
-    can_delete = CommentService.can_delete_comment(comment_id, current_user['id'], current_user['role'])
-    if not can_delete:
-        return jsonify({"message": "Unauthorized to delete this comment"}), 403
+    # Check if user is admin
+    if not is_admin(current_user_id):
+        return jsonify({"error": "Unauthorized. Admin access required"}), 403
     
-    deleted = CommentService.delete_comment(comment_id)
-    if not deleted:
-        return jsonify({"message": "Comment not found"}), 404
+    comments = get_all_comments()
     
-    return jsonify({"message": "Comment successfully deleted"}), 200
+    # Format the response
+    formatted_comments = []
+    for comment in comments:
+        user = get_user_by_id(comment['user_id'])
+        user_name = user.get('email', 'Unknown').split('@')[0] if user else 'Unknown'
+        
+        notice = get_notice_by_id(str(comment['notice_id']))
+        notice_title = notice.get('title', 'Unknown Notice') if notice else 'Unknown Notice'
+        
+        replied_by_name = None
+        if 'replied_by' in comment and comment['replied_by']:
+            admin = get_user_by_id(comment['replied_by'])
+            replied_by_name = admin.get('email', 'Admin').split('@')[0] if admin else 'Admin'
+        
+        formatted_comment = {
+            "id": str(comment['_id']),
+            "notice_id": str(comment['notice_id']),
+            "notice_title": notice_title,
+            "user": user_name,
+            "content": comment['content'],
+            "created_at": comment['created_at'].isoformat(),
+            "has_reply": bool(comment.get('admin_reply')),
+            "admin_reply": comment.get('admin_reply'),
+            "replied_by": replied_by_name,
+            "replied_at": comment.get('replied_at', '').isoformat() if comment.get('replied_at') else None
+        }
+        
+        formatted_comments.append(formatted_comment)
+    
+    return jsonify({"comments": formatted_comments}), 200
+

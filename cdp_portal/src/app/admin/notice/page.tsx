@@ -114,10 +114,8 @@ export default function AdminNotices() {
   // Save notice (add or edit)
   const handleSaveNotice = () => {
     if (!formData.title.trim()) {
-      toast({
-        title: "Error",
+      toast("Error", {
         description: "Title is required",
-        variant: "destructive",
       })
       return
     }
@@ -125,8 +123,7 @@ export default function AdminNotices() {
     if (isEditing && currentNotice) {
       // Update existing notice
       setNotices(notices.map((notice) => (notice.id === currentNotice.id ? { ...notice, ...formData } : notice)))
-      toast({
-        title: "Notice updated",
+      toast("Notice updated", {
         description: "The notice has been updated successfully",
       })
     } else {
@@ -136,8 +133,7 @@ export default function AdminNotices() {
         ...formData,
       }
       setNotices([newNotice, ...notices])
-      toast({
-        title: "Notice added",
+      toast("Notice added", {
         description: "The notice has been added successfully",
       })
     }
@@ -149,8 +145,7 @@ export default function AdminNotices() {
   const handleDeleteNotice = () => {
     if (currentNotice) {
       setNotices(notices.filter((notice) => notice.id !== currentNotice.id))
-      toast({
-        title: "Notice deleted",
+      toast("Notice deleted", {
         description: "The notice has been deleted successfully",
       })
       setIsDeleteDialogOpen(false)
@@ -311,4 +306,3 @@ export default function AdminNotices() {
     </div>
   )
 }
-

@@ -1,37 +1,57 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import axios from "axios"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CalendarDays, Building2, GraduationCap } from "lucide-react"
+import { CalendarDays, Building2 } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
+
+interface Notice {
+  id: string
+  title: string
+  content: string
+  created_by: string
+  created_at: string
+  updated_at: string
+}
 
 export function NoticeList() {
-  const notices = [
-    {
-      id: 1,
-      title: "Campus Recruitment Drive - Tech Giants 2024",
-      date: "February 15, 2024",
-      company: "Multiple Companies",
-      type: "Placement",
-      content:
-        "Registration open for final year B.Tech/M.Tech students for the upcoming campus recruitment drive. Top tech companies will be participating.",
-    },
-    {
-      id: 2,
-      title: "Summer Internship Opportunities",
-      date: "February 14, 2024",
-      company: "Various Organizations",
-      type: "Internship",
-      content:
-        "Pre-final year students can now apply for summer internships. Multiple positions available across different domains.",
-    },
-    {
-      id: 3,
-      title: "Resume Building Workshop",
-      date: "February 13, 2024",
-      company: "Career Development Cell",
-      type: "Workshop",
-      content:
-        "Mandatory workshop for all final year students. Learn how to create an impactful resume from industry experts.",
-    },
-  ]
+  const [notices, setNotices] = useState<Notice[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"
+
+        const response = await axios.get(`${backendUrl}/api/notices`, {
+          withCredentials: true, // Ensures cookies (if required) are sent
+        })
+
+        setNotices(response.data.notices || [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch notices")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchNotices()
+  }, [])
+
+  if (loading) {
+    return <div className="text-center py-8">Loading notices...</div>
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-500">{error}</div>
+  }
+
+  if (notices.length === 0) {
+    return <div className="text-center py-8">No notices available</div>
+  }
 
   return (
     <div className="space-y-4">
@@ -40,7 +60,7 @@ export function NoticeList() {
           <CardHeader>
             <div className="flex items-start justify-between">
               <CardTitle className="text-lg font-semibold text-template">{notice.title}</CardTitle>
-              <Badge variant="secondary">{notice.type}</Badge>
+              <Badge variant="secondary">Notice</Badge>
             </div>
           </CardHeader>
           <CardContent>
@@ -48,15 +68,11 @@ export function NoticeList() {
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <CalendarDays className="h-4 w-4" />
-                {notice.date}
+                {formatDistanceToNow(new Date(notice.created_at), { addSuffix: true })}
               </div>
               <div className="flex items-center gap-1">
                 <Building2 className="h-4 w-4" />
-                {notice.company}
-              </div>
-              <div className="flex items-center gap-1">
-                <GraduationCap className="h-4 w-4" />
-                For: {notice.type === "Internship" ? "Pre-final Year" : "Final Year"}
+                Posted by: {notice.created_by}
               </div>
             </div>
           </CardContent>
@@ -65,4 +81,3 @@ export function NoticeList() {
     </div>
   )
 }
-

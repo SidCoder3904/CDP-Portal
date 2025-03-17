@@ -7,7 +7,8 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'hard-to-guess-string'
-    MONGO_URI = os.environ.get('MONGO_URI') or 'mongodb://localhost:27017/placement_portal'
+    MONGO_URI = os.environ.get('MONGO_URI') or 'mongodb+srv://singlasamarth28:uxEfpEoOLoRYxgNI@cluster.t79va.mongodb.net/placement_portal'
+    JWT_SECRET_KEY='your_secret_key'
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
