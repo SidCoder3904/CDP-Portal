@@ -27,11 +27,12 @@ export default function Navbar({ menuItems }: NavbarProps) {
   const [hoverStyle, setHoverStyle] = useState({});
   const [activeStyle, setActiveStyle] = useState({ left: "0px", width: "0px" });
   const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [mounted, setMounted] = useState(false);
 
-  // Filter out login items if user is authenticated
-  const filteredMenuItems = isAuthenticated 
-    ? menuItems.filter(item => !item.href.includes('login'))
-    : menuItems;
+  // Set mounted state after component mounts
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const setTabRef = (index: number) => (el: HTMLDivElement | null) => {
     tabRefs.current[index] = el;
@@ -62,17 +63,19 @@ export default function Navbar({ menuItems }: NavbarProps) {
   }, [activeIndex]);
 
   useEffect(() => {
-    requestAnimationFrame(() => {
-      const firstTab = tabRefs.current[0];
-      if (firstTab) {
-        const { offsetLeft, offsetWidth } = firstTab;
-        setActiveStyle({
-          left: `${offsetLeft}px`,
-          width: `${offsetWidth}px`,
-        });
-      }
-    });
-  }, []);
+    if (mounted) {
+      requestAnimationFrame(() => {
+        const firstTab = tabRefs.current[0];
+        if (firstTab) {
+          const { offsetLeft, offsetWidth } = firstTab;
+          setActiveStyle({
+            left: `${offsetLeft}px`,
+            width: `${offsetWidth}px`,
+          });
+        }
+      });
+    }
+  }, [mounted]);
 
   return (
     <div className="flex flex-col w-full bg-white">
@@ -96,7 +99,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
             </div>
           </div>
           
-          {isAuthenticated && (
+          {mounted && isAuthenticated && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2">
@@ -113,7 +116,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Link href="/profile" className="w-full">
+                  <Link href={user?.role === 'admin' ? '/admin/profile' : '/student/profile'} className="w-full">
                     Profile
                   </Link>
                 </DropdownMenuItem>
@@ -145,7 +148,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
               />
 
               <div className="relative flex space-x-[6px] items-center">
-                {filteredMenuItems.map((item, index) => {
+                {menuItems.map((item, index) => {
                   if (!item.href) {
                     console.error(`Missing href for menu item: ${item.label}`);
                     return null;

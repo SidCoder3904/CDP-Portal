@@ -174,7 +174,7 @@ class JobService:
         
             
             # Check branch eligibility
-            if student.get('branch') not in job.get('eligibility', {}).get('branches', []):
+            if student.get('major') not in job.get('eligibility', {}).get('branches', []):
                 return False
             
             

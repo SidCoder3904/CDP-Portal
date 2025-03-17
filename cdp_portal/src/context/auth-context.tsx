@@ -43,20 +43,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initializeAuth = () => {
       try {
-        const storedToken = localStorage.getItem("access_token");
-        const storedUser = localStorage.getItem("user");
-        
-        if (storedToken && storedUser) {
-          // Verify token hasn't expired
-          const decodedToken = parseJwt(storedToken);
-          const currentTime = Date.now() / 1000;
+        // Use synchronous localStorage access to prevent hydration issues
+        if (typeof window !== 'undefined') {
+          const storedToken = localStorage.getItem("access_token");
+          const storedUser = localStorage.getItem("user");
           
-          if (decodedToken && decodedToken.exp && decodedToken.exp > currentTime) {
-            setToken(storedToken);
-            setUser(JSON.parse(storedUser));
+          console.log("Initializing auth state:", { 
+            hasToken: !!storedToken, 
+            hasUser: !!storedUser 
+          });
+          
+          if (storedToken && storedUser) {
+            // Verify token hasn't expired
+            const decodedToken = parseJwt(storedToken);
+            const currentTime = Date.now() / 1000;
+            
+            if (decodedToken && decodedToken.exp && decodedToken.exp > currentTime) {
+              console.log("Valid token found, setting auth state");
+              setToken(storedToken);
+              setUser(JSON.parse(storedUser));
+            } else {
+              console.log("Token expired, attempting refresh");
+              refreshToken();
+            }
           } else {
-            // Token expired, try to refresh
-            refreshToken();
+            console.log("No stored auth data found");
+            setToken(null);
+            setUser(null);
           }
         }
       } catch (e) {
@@ -67,19 +80,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
     
+    // Initialize auth state
     initializeAuth();
+    
+    // Add event listener for storage changes (for multi-tab support)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "access_token" || e.key === "user") {
+        console.log("Storage changed, reinitializing auth");
+        initializeAuth();
+      }
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange);
+      return () => window.removeEventListener('storage', handleStorageChange);
+    }
   }, []);
 
   const clearAuthData = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user");
+    }
     setToken(null);
     setUser(null);
   };
 
   const refreshToken = async () => {
     try {
+      if (typeof window === 'undefined') return;
+      
       const refreshToken = localStorage.getItem("refresh_token");
       
       if (!refreshToken) {
@@ -87,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       
+      console.log("Attempting to refresh token");
       const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
         method: "POST",
         headers: {
@@ -97,9 +129,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (response.ok) {
         const data = await response.json();
+        console.log("Token refreshed successfully");
         localStorage.setItem("access_token", data.access_token);
         setToken(data.access_token);
       } else {
+        console.log("Token refresh failed");
         clearAuthData();
       }
     } catch (error) {
@@ -113,15 +147,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     
     try {
-      console.log(`Attempting to connect to: ${API_BASE_URL}/api/auth/request-otp`);
-      
       const response = await fetch(`${API_BASE_URL}/api/auth/request-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
-        credentials: "include", // Important for cookies
       });
       
       if (!response.ok) {
@@ -139,7 +170,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-
   // Login with OTP function
   const loginWithOtp = async (userId: string, otp: string) => {
     setIsLoading(true);
@@ -151,7 +181,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ user_id: userId, otp }),
-        credentials: "include", // Important for cookies
       });
       
       if (!response.ok) {
@@ -161,10 +190,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       const data = await response.json();
       
+      console.log("Login successful, storing auth data");
+      
       // Store tokens and user data
-      localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("refresh_token", data.refresh_token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
       
       setToken(data.access_token);
       setUser(data.user);
@@ -187,7 +220,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          credentials: "include", // Important for cookies
         });
       }
     } catch (error) {
@@ -210,6 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Decode JWT to check expiration
         const decodedToken = parseJwt(token);
         if (!decodedToken) {
+          console.log("Invalid token format");
           clearAuthData();
           return;
         }
@@ -219,6 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // If token is about to expire (less than 5 minutes remaining)
         if (expirationTime - currentTime < 5 * 60 * 1000) {
+          console.log("Token about to expire, refreshing");
           await refreshToken();
         }
       } catch (error) {
@@ -235,6 +269,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     return () => clearInterval(interval);
   }, [token]);
+
+  // Debug output for authentication state
+  useEffect(() => {
+    console.log("Auth state updated:", { 
+      isAuthenticated: !!token,
+      hasUser: !!user,
+      isLoading
+    });
+  }, [token, user, isLoading]);
 
   return (
     <AuthContext.Provider
