@@ -1,6 +1,7 @@
+// components/basic-details.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
@@ -21,39 +22,69 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FileUploader } from "@/components/file-uploader";
 import { ImageCropModal } from "@/components/image-crop-model";
-
-// Placeholder data
-const initialStudentData = {
-  name: "Akash Verma",
-  email: "verma@egmail.com",
-  phone: "+91 941914191",
-  dateOfBirth: "02-04-2003",
-  gender: "Male",
-  address: "330 Sector 7, Gandhi Nagar, Indore",
-  major: "Computer Science",
-  studentId: "CSB1098",
-  enrollmentYear: "2022",
-  expectedGraduationYear: "2026",
-  passportImage: "/placeholder.svg?height=200&width=200",
-};
+import { useStudentApi, StudentProfile } from "@/lib/api/students";
+import { Icons } from "@/components/icons";
 
 export default function BasicDetails() {
-  const [studentData, setStudentData] = useState(initialStudentData);
-  const [editableData, setEditableData] = useState(initialStudentData);
+  const [studentData, setStudentData] = useState<StudentProfile | null>(null);
+  const [editableData, setEditableData] = useState<StudentProfile | null>(null);
   const [isImageCropModalOpen, setIsImageCropModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const studentApi = useStudentApi();
+
+  useEffect(() => {
+    async function fetchStudentData() {
+      try {
+        setIsLoading(true);
+        const profile = await studentApi.getMyProfile();
+        setStudentData(profile);
+        setEditableData(profile);
+      } catch (error) {
+        console.error("Failed to fetch student profile:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchStudentData();
+  }, []);
 
   const handleDirectUpdate = (field: string, value: string) => {
+    if (!editableData) return;
     setEditableData({ ...editableData, [field]: value });
   };
 
-  const handleConfirmUpdate = () => {
-    setStudentData(editableData);
+  const handleConfirmUpdate = async () => {
+    if (!editableData) return;
+
+    try {
+      setIsUpdating(true);
+      const updatedProfile = await studentApi.updateMyProfile(editableData);
+      setStudentData(updatedProfile);
+      setEditableData(updatedProfile);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleUpdate = (newData: Partial<typeof studentData>) => {
-    setStudentData({ ...studentData, ...newData });
-    setEditableData({ ...editableData, ...newData });
+  const handleUpdate = async (newData: Partial<StudentProfile>) => {
+    if (!studentData) return;
+
+    try {
+      setIsUpdating(true);
+      const updatedProfile = await studentApi.updateMyProfile(newData);
+      setStudentData(updatedProfile);
+      setEditableData(updatedProfile);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handlePassportImageUpload = (file: File) => {
@@ -62,10 +93,53 @@ export default function BasicDetails() {
     setIsImageCropModalOpen(true);
   };
 
-  const handleCropComplete = (croppedImageUrl: string) => {
-    setStudentData({ ...studentData, passportImage: croppedImageUrl });
-    setEditableData({ ...editableData, passportImage: croppedImageUrl });
+  const handleCropComplete = async (croppedImageUrl: string) => {
+    if (!editableData) return;
+
+    try {
+      setIsUpdating(true);
+      // Fetch the image from the URL and convert it to a blob
+      const response = await fetch(croppedImageUrl);
+      const croppedImageBlob = await response.blob();
+
+      // Create a File from the Blob
+      const imageFile = new File([croppedImageBlob], "passport-image.jpg", {
+        type: "image/jpeg",
+      });
+
+      // Upload the image to the server
+      const result = await studentApi.uploadPassportImage(imageFile);
+
+      // Update the local state with the new image URL
+      const updatedData = { ...studentData!, passportImage: result.imageUrl };
+      setStudentData(updatedData);
+      setEditableData(updatedData);
+
+      setIsImageCropModalOpen(false);
+      setSelectedImage(null); // Clear the selected image after processing
+    } catch (error) {
+      console.error("Failed to upload image:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Icons.spinner className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading profile data...</span>
+      </div>
+    );
+  }
+
+  if (!studentData || !editableData) {
+    return (
+      <div className="p-4">
+        <p>Unable to load student profile. Please try again later.</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -77,12 +151,21 @@ export default function BasicDetails() {
             <div className="col-span-2 flex items-center space-x-4">
               <Avatar className="w-24 h-24">
                 <AvatarImage src={studentData.passportImage} alt="Passport" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarFallback>
+                  {studentData.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <FileUploader
                 onFileUpload={handlePassportImageUpload}
                 acceptedFileTypes={{ "image/*": [".jpeg", ".jpg", ".png"] }}
               />
+              {isUpdating && (
+                <Icons.spinner className="h-4 w-4 animate-spin ml-2" />
+              )}
             </div>
             <div>
               <Label htmlFor="name">Name</Label>
@@ -108,29 +191,69 @@ export default function BasicDetails() {
                 onChange={(e) => handleDirectUpdate("phone", e.target.value)}
               />
             </div>
-            <DetailItem label="Date of Birth" value={studentData.dateOfBirth} isVerified={true} />
-            <DetailItem label="Gender" value={studentData.gender} isVerified={true} />
-            <DetailItem label="Address" value={studentData.address} isVerified={false} />
-            <DetailItem label="Major" value={studentData.major} isVerified={true} />
-            <DetailItem label="Student ID" value={studentData.studentId} isVerified={true} />
-            <DetailItem label="Enrollment Year" value={studentData.enrollmentYear} isVerified={true} />
-            <DetailItem label="Expected Graduation Year" value={studentData.expectedGraduationYear} isVerified={true} />
+            <DetailItem
+              label="Date of Birth"
+              value={studentData.dateOfBirth}
+              isVerified={true}
+            />
+            <DetailItem
+              label="Gender"
+              value={studentData.gender}
+              isVerified={true}
+            />
+            <DetailItem
+              label="Address"
+              value={studentData.address}
+              isVerified={false}
+            />
+            <DetailItem
+              label="Major"
+              value={studentData.major}
+              isVerified={true}
+            />
+            <DetailItem
+              label="Student ID"
+              value={studentData.studentId}
+              isVerified={true}
+            />
+            <DetailItem
+              label="Enrollment Year"
+              value={studentData.enrollmentYear}
+              isVerified={true}
+            />
+            <DetailItem
+              label="Expected Graduation Year"
+              value={studentData.expectedGraduationYear}
+              isVerified={true}
+            />
           </div>
           <div className="flex justify-between mt-6">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline">Confirm Basic Info Updates</Button>
+                <Button variant="outline" disabled={isUpdating}>
+                  {isUpdating ? (
+                    <>
+                      <Icons.spinner className="h-4 w-4 animate-spin mr-2" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Confirm Basic Info Updates"
+                  )}
+                </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action will update your basic information. Please confirm that the changes are correct.
+                    This action will update your basic information. Please
+                    confirm that the changes are correct.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleConfirmUpdate}>Confirm</AlertDialogAction>
+                  <AlertDialogAction onClick={handleConfirmUpdate}>
+                    Confirm
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -140,13 +263,37 @@ export default function BasicDetails() {
                 { name: "dateOfBirth", label: "Date of Birth", type: "date" },
                 { name: "gender", label: "Gender", type: "text" },
                 { name: "address", label: "Address", type: "text" },
-                { name: "major", label: "Major", type: "select", options: ["CSE", "EE", "CE"] },
+                {
+                  name: "major",
+                  label: "Major",
+                  type: "select",
+                  options: ["CSE", "EE", "CE"],
+                },
                 { name: "studentId", label: "Student ID", type: "text" },
-                { name: "enrollmentYear", label: "Enrollment Year", type: "number" },
-                { name: "expectedGraduationYear", label: "Expected Graduation Year", type: "number" },
+                {
+                  name: "enrollmentYear",
+                  label: "Enrollment Year",
+                  type: "number",
+                },
+                {
+                  name: "expectedGraduationYear",
+                  label: "Expected Graduation Year",
+                  type: "number",
+                },
               ]}
               onSave={handleUpdate}
-              triggerButton={<Button className="bg-template">Update Additional Details</Button>}
+              triggerButton={
+                <Button className="bg-template" disabled={isUpdating}>
+                  {isUpdating ? (
+                    <>
+                      <Icons.spinner className="h-4 w-4 animate-spin mr-2" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Additional Details"
+                  )}
+                </Button>
+              }
             />
           </div>
         </CardContent>
