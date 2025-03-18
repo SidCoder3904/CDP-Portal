@@ -19,7 +19,7 @@ def create_app(config_class=Config):
     # Initialize extensions
     mongo.init_app(app)
     jwt.init_app(app)
-    CORS(app, supports_credentials=True, origins=["http://localhost:3000"], methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type", "Authorization"])
+    CORS(app,supports_credentials=True)
 
     # Check if MongoDB is initialized correctly
     try:

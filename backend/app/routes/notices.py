@@ -1,52 +1,81 @@
 from flask import Blueprint, jsonify, request
-from app import mongo  # Import Flask-PyMongo instance
+from bson.objectid import ObjectId
+from datetime import datetime
+from app import mongo  # Import the mongo instance from app/__init__.py
 
 notices_bp = Blueprint("notices", __name__)
 
-@notices_bp.route("/notices", methods=["GET"])
+def serialize_notice(notice):
+    """Convert MongoDB document to JSON serializable format."""
+    return {
+        "_id": str(notice["_id"]),  # Convert ObjectId to string
+        "title": notice.get("title", ""),  # Use .get() to avoid KeyError
+        "content": notice.get("content", ""),  # Use .get() to avoid KeyError
+        "created_by": str(notice.get("created_by", "")),  # Convert ObjectId to string if exists
+        "created_at": notice.get("created_at", ""),
+        "updated_at": notice.get("updated_at", ""),
+    }
+
+
+
+@notices_bp.route("/", methods=["GET"])
 def list_notices():
     """Fetch all notices, sorted by creation date (newest first)."""
     try:
-        notices = mongo.db.notices.find().sort("created_at", -1)  # Sorting in descending order
-        notice_list = []
+        notices_cursor = mongo.db.notification.find().sort("created_at", -1)
+        notices_list = list(notices_cursor)
 
-        for notice in notices:
-            notice["_id"] = str(notice["_id"])  # Convert ObjectId to string for JSON serialization
-            notice_list.append(notice)
+        # Serialize each document
+        serialized_notices = [serialize_notice(notice) for notice in notices_list]
 
-        return jsonify(notice_list), 200
+        return jsonify({"notices": serialized_notices}), 200
     except Exception as e:
+        print(f"Error in list_notices: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-@notices_bp.route("/notices", methods=["POST"])
+
+
+@notices_bp.route("/", methods=["POST"])
 def create_notice():
     """Create a new notice."""
     try:
         data = request.json
-        if not data or "title" not in data or "content" not in data:
+        
+        # Validate required fields
+        if not data or "title" not in data or "content" not in data or "created_by" not in data:
             return jsonify({"error": "Missing required fields"}), 400
         
+        # Prepare the new notice document
         new_notice = {
             "title": data["title"],
             "content": data["content"],
-            "created_at": data.get("created_at")  # Optional, else MongoDB adds default timestamp
+            "created_by": data["created_by"],  # No ObjectId conversion needed
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
         }
-
-        result = mongo.db.notices.insert_one(new_notice)
-        return jsonify({"message": "Notice added", "id": str(result.inserted_id)}), 201
+        
+        # Insert into MongoDB
+        result = mongo.db.notification.insert_one(new_notice)
+        
+        return jsonify({
+            "message": "Notice added successfully",
+            "id": str(result.inserted_id)  # Convert ObjectId to string
+        }), 201
     except Exception as e:
+        print(f"Error in create_notice: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-@notices_bp.route("/notices/<string:notice_id>", methods=["DELETE"])
+@notices_bp.route("/<string:notice_id>", methods=["DELETE"])
 def delete_notice(notice_id):
     """Delete a notice by its ID."""
-    from bson.objectid import ObjectId
     try:
-        result = mongo.db.notices.delete_one({"_id": ObjectId(notice_id)})
-
+        # Find and delete notice using PyMongo
+        result = mongo.db.notification.delete_one({"_id": ObjectId(notice_id)})
+        
         if result.deleted_count == 0:
             return jsonify({"error": "Notice not found"}), 404
-
-        return jsonify({"message": "Notice deleted"}), 200
+        
+        return jsonify({"message": "Notice deleted successfully"}), 200
     except Exception as e:
+        print(f"Error in delete_notice: {str(e)}")
         return jsonify({"error": str(e)}), 500

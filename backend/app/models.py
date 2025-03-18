@@ -27,7 +27,7 @@ class Application(Document):
 class Notice(Document):
     title = StringField(required=True)
     content = StringField(required=True)
-    created_by = ObjectIdField(required=True)
+    created_by = StringField(required=True)
     created_at = DateTimeField(default=datetime.utcnow)
     updated_at = DateTimeField(default=datetime.utcnow)
 

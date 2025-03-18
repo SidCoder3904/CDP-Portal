@@ -9,7 +9,7 @@ export default function NoticePage() {
       <main className="container mx-auto px-4 py-8">
         <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
           <div>
-            <h2 className="text-2xl font-bold text-template mb-4">Latest Notices</h2>
+            <h2 className="text-2xl font-bold text-template mb-4">Latest Notifications</h2>
             <Separator className="mb-6" />
             <NoticeList />
           </div>

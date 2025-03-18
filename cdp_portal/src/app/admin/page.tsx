@@ -17,7 +17,7 @@ export default function AdminNoticePage() {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-template mb-4">
-                Recent Notices
+                Recent Notifications
               </h2>
               <NoticeListAdmin />
               {/* <JobFloatForm onSuccess={() => {}} /> */}
