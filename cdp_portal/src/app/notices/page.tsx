@@ -1,40 +1,59 @@
+"use client"
+
 import { Download, FileText, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface Notice {
+  _id: string;
   title: string;
+  description?: string;
   link: string;
-  type: "pdf" | "view";
   date: string;
 }
 
 export default function NoticeList() {
-  const notices: Notice[] = [
-    {
-      title:
-        "Academic Calendar February 2025 to July 2025 for B.Sc-B.Ed 2024 batch",
-      link: "#",
-      type: "view",
-      date: "2025-02-01",
-    },
-    {
-      title:
-        "Academic Calendar 2nd semester of AY 2024-25 and 1st semester of AY 2025-26",
-      link: "#",
-      type: "view",
-      date: "2024-12-15",
-    },
-    {
-      title:
-        "Academic Calendar September 2024 to January 2025 for B.Sc-B.Ed 2024 batch",
-      link: "#",
-      type: "pdf",
-      date: "2024-09-01",
-    },
-    // Add more notices as needed
-  ];
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notices`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch notices');
+        }
+        const data = await response.json();
+        console.log('Fetched notices:', data); // Debug log
+        setNotices(data.notices || []);
+      } catch (error) {
+        console.error('Error fetching notices:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to load notices');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNotices();
+  }, []);
+
+  const handleDownload = (notice: Notice) => {
+    if (notice.link) {
+      window.open(notice.link, '_blank');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-4xl mx-auto p-4 flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 space-y-4">
@@ -44,8 +63,8 @@ export default function NoticeList() {
       </h1>
 
       <div className="grid gap-4">
-        {notices.map((notice, index) => (
-          <Card key={index} className="group hover:shadow-md transition-shadow">
+        {notices.map((notice) => (
+          <Card key={notice._id} className="group hover:shadow-md transition-shadow">
             <CardContent className="p-4 flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 flex-1">
                 <div className="mt-1">
@@ -53,6 +72,9 @@ export default function NoticeList() {
                 </div>
                 <div className="space-y-1">
                   <p className="font-medium">{notice.title}</p>
+                  {notice.description && (
+                    <p className="text-sm text-muted-foreground">{notice.description}</p>
+                  )}
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-xs">
                       {new Date(notice.date).toLocaleDateString("en-US", {
@@ -61,13 +83,8 @@ export default function NoticeList() {
                         day: "numeric",
                       })}
                     </Badge>
-                    <Badge
-                      variant={
-                        notice.type === "pdf" ? "destructive" : "default"
-                      }
-                      className="text-xs"
-                    >
-                      {notice.type.toUpperCase()}
+                    <Badge variant="destructive" className="text-xs">
+                      PDF
                     </Badge>
                   </div>
                 </div>
@@ -76,6 +93,7 @@ export default function NoticeList() {
                 variant="ghost"
                 size="icon"
                 className="opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => handleDownload(notice)}
               >
                 <Download className="h-4 w-4" />
                 <span className="sr-only">Download {notice.title}</span>

@@ -68,13 +68,25 @@ def validate_notice(data):
     elif len(data.get('title', '')) < 5:
         errors['title'] = 'Title must be at least 5 characters'
     
-    if not data.get('content'):
-        errors['content'] = 'Content is required'
-    elif len(data.get('content', '')) < 10:
-        errors['content'] = 'Content must be at least 10 characters'
+    if not data.get('link'):
+        errors['link'] = 'File link is required'
     
-    if not data.get('type') or data.get('type') not in ['placement', 'internship', 'workshop']:
-        errors['type'] = 'Type must be placement, internship, or workshop'
+    if not data.get('type'):
+        errors['type'] = 'Type is required'
+    elif data.get('type') != 'pdf':
+        errors['type'] = 'Type must be pdf'
+    
+    if not data.get('date'):
+        errors['date'] = 'Date is required'
+    else:
+        try:
+            datetime.strptime(data.get('date'), '%Y-%m-%d')
+        except ValueError:
+            errors['date'] = 'Invalid date format. Use YYYY-MM-DD'
+    
+    # Description is optional
+    if data.get('description') and len(data.get('description', '')) > 1000:
+        errors['description'] = 'Description cannot exceed 1000 characters'
     
     return errors if errors else None
 
