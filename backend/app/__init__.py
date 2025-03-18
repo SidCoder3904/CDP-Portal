@@ -23,7 +23,7 @@ def create_app(config_class=Config):
 
     CORS(app, supports_credentials=True, resources={
         r"/api/*": {
-            "origins": ["http://localhost:3000", "cdp-portal-chi.vercel.app"],
+            "origins": ["http://localhost:3000", "https://cdp-portal-chi.vercel.app/"],
             "allow_headers": ["Content-Type", "Authorization"],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
         }
