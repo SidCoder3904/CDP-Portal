@@ -15,7 +15,7 @@ load_dotenv()
 cloudinary.config(
     cloud_name="dszmntl6x",
     api_key="232819685446349",
-    api_secret="4H7wqHwFXwJrqgxtQkp5JbxPTG0"
+    api_secret="4H7wqHwFXwJrqgxtQkp5JbxPTG0",
 )
 
 def upload_file(file):
@@ -51,8 +51,15 @@ def upload_file(file):
 
 def delete_file(public_id):
     try:
-        result = cloudinary.uploader.destroy(public_id, resource_type="raw")
-        return result['result'] == 'ok'
+        # For raw files, we need to include the file extension in the public_id
+        # and specify resource_type as "raw"
+        result = cloudinary.uploader.destroy(
+            public_id,
+            resource_type="raw",
+            invalidate=True
+        )
+        logger.info(f"Cloudinary delete result: {result}")
+        return result.get('result') == 'ok'
     except Exception as e:
         logger.error(f"Error deleting from Cloudinary: {str(e)}", exc_info=True)
         return False

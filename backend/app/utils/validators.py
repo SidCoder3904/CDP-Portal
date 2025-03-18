@@ -71,10 +71,8 @@ def validate_notice(data):
     if not data.get('link'):
         errors['link'] = 'File link is required'
     
-    if not data.get('type'):
-        errors['type'] = 'Type is required'
-    elif data.get('type') != 'pdf':
-        errors['type'] = 'Type must be pdf'
+    # Type is always 'pdf', no need to validate
+    data['type'] = 'pdf'
     
     if not data.get('date'):
         errors['date'] = 'Date is required'

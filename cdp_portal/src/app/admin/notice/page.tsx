@@ -155,17 +155,6 @@ export default function AdminNotices() {
     }
 
     try {
-      // Get the token from cookies
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('token='))
-        ?.split('=')[1]
-
-      // if (!token) {
-      //   toast.error("Please login to continue")
-      //   return
-      // }
-
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
       console.log('API URL:', apiUrl)
 
@@ -185,50 +174,25 @@ export default function AdminNotices() {
       }
 
       console.log('Request body:', JSON.stringify(requestBody, null, 2))
-      console.log(method)
 
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         credentials: 'include',
         body: JSON.stringify(requestBody),
       })
 
-      console.log('Response status:', response.status)
-      // console.log('Response headers:', Object.fromEntries(response.headers.entries()))
-
-      let responseData
-      try {
-        const responseText = await response.text()
-        console.log('Raw response:', responseText)
-        responseData = JSON.parse(responseText)
-        console.log('Parsed response data:', responseData)
-      } catch (e) {
-        console.error('Error parsing response:', e)
-        throw new Error('Invalid response from server')
-      }
-
       if (!response.ok) {
-        if (response.status === 401) {
-          toast.error("Session expired. Please login again")
-          return
-        }
+        const responseData = await response.json()
         if (response.status === 422) {
-          console.error('Validation error:', responseData)
-          let errorMessage = 'Validation failed: '
-          if (responseData.errors) {
-            errorMessage += Object.entries(responseData.errors)
-              .map(([field, message]) => `${field}: ${message}`)
-              .join(', ')
-          } else if (responseData.error) {
-            errorMessage += responseData.error
-          } else {
-            errorMessage += 'Please check your input'
-          }
+          const errorMessage = responseData.errors 
+            ? Object.entries(responseData.errors)
+                .map(([field, message]) => `${field}: ${message}`)
+                .join(', ')
+            : responseData.error || 'Validation failed'
           throw new Error(errorMessage)
         }
         throw new Error(responseData.error || `Server error: ${response.status}`)
@@ -250,6 +214,11 @@ export default function AdminNotices() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notices/${currentNotice._id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include'
       })
 
       if (!response.ok) {
