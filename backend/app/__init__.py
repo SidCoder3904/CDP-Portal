@@ -8,7 +8,7 @@ import os
 
 
 mongo = PyMongo()
-jwt = JWTManager()
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -18,8 +18,16 @@ def create_app(config_class=Config):
     
     # Initialize extensions
     mongo.init_app(app)
-    jwt.init_app(app)
+    JWTManager(app)
     CORS(app)
+
+    CORS(app, supports_credentials=True, resources={
+        r"/api/*": {
+            "origins": ["http://localhost:3000", "https://cdp-portal-chi.vercel.app/"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+        }
+    })
 
     # Check if MongoDB is initialized correctly
     try:

@@ -4,17 +4,35 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from "@/context/auth-context";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { User, LogOut } from "lucide-react";
 
 interface NavbarProps {
   menuItems: { label: string; href: string }[];
 }
 
 export default function Navbar({ menuItems }: NavbarProps) {
+  const { isAuthenticated, user, logout } = useAuth();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [hoverStyle, setHoverStyle] = useState({});
   const [activeStyle, setActiveStyle] = useState({ left: "0px", width: "0px" });
   const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted state after component mounts
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const setTabRef = (index: number) => (el: HTMLDivElement | null) => {
     tabRefs.current[index] = el;
@@ -45,17 +63,19 @@ export default function Navbar({ menuItems }: NavbarProps) {
   }, [activeIndex]);
 
   useEffect(() => {
-    requestAnimationFrame(() => {
-      const firstTab = tabRefs.current[0];
-      if (firstTab) {
-        const { offsetLeft, offsetWidth } = firstTab;
-        setActiveStyle({
-          left: `${offsetLeft}px`,
-          width: `${offsetWidth}px`,
-        });
-      }
-    });
-  }, []);
+    if (mounted) {
+      requestAnimationFrame(() => {
+        const firstTab = tabRefs.current[0];
+        if (firstTab) {
+          const { offsetLeft, offsetWidth } = firstTab;
+          setActiveStyle({
+            left: `${offsetLeft}px`,
+            width: `${offsetWidth}px`,
+          });
+        }
+      });
+    }
+  }, [mounted]);
 
   return (
     <div className="flex flex-col w-full bg-white">
@@ -78,6 +98,36 @@ export default function Navbar({ menuItems }: NavbarProps) {
               </div>
             </div>
           </div>
+          
+          {mounted && isAuthenticated && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  {user?.email?.split('@')[0]}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Link href={user?.role === 'admin' ? '/admin' : '/student'} className="w-full">
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href={user?.role === 'admin' ? '/admin/profile' : '/student/profile'} className="w-full">
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-red-600 cursor-pointer">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 

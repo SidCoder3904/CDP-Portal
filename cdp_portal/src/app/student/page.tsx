@@ -1,9 +1,12 @@
 import { Separator } from "@/components/ui/separator"
 import { NoticeList } from "@/components/notice_list"
 import { CommentSection } from "@/components/comment_section"
+import { ProtectedRoute } from "@/context/protected-routes";
+
 
 export default function NoticePage() {
   return (
+    <ProtectedRoute allowedRoles={["student"]}>
     <div className="min-h-screen bg-white">
 
       <main className="container mx-auto px-4 py-8">
@@ -19,6 +22,7 @@ export default function NoticePage() {
         </div>
       </main>
     </div>
+    </ProtectedRoute>
   )
 }
 

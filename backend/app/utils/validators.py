@@ -303,3 +303,26 @@ def validate_application(data):
         errors['answers'] = 'Answers must be a list'
     
     return errors if errors else None
+
+
+def validate_student_profile(data):
+    """Validate student profile data"""
+    errors = {}
+    
+    # Validate name if present
+    if "name" in data and not data["name"]:
+        errors["name"] = "Name is required"
+    
+    # Validate email if present
+    if "email" in data:
+        if not data["email"]:
+            errors["email"] = "Email is required"
+        # Add email format validation if needed
+    
+    # Validate phone if present
+    if "phone" in data and not data["phone"]:
+        errors["phone"] = "Phone number is required"
+    
+    # Add more validations as needed for other fields
+    
+    return errors

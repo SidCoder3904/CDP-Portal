@@ -1,144 +1,253 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
-
-interface JobListing {
-  id: string
-  logo?: string
-  title: string
-  company: string
-  location: string
-  timePosted: string
-  jobFunctions: string[]
-  salary: string
-  description: string[]
-  status: string
-  jobType: "Internship" | "Placement"
-  degreesEligible: string[]
-  branchesEligible: string[]
-  batchesEligible: number[]
-  cgpaCutoff: number
-}
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { JobListing } from "@/lib/api/jobs";
+import { Icons } from "@/components/icons";
+import ResumeSelectDialog from "@/components/resume-select-dialog";
 
 interface JobDetailsProps {
-  job: JobListing
-  activeTab?: "description" | "eligibility"
-  handleTabClick: (tab: "description" | "eligibility") => void
+  job: JobListing;
+  activeTab?: "description" | "eligibility";
+  handleTabClick: (tab: "description" | "eligibility") => void;
+  onApply: (jobId: string, resumeId: string) => Promise<void>;
+  isApplied: boolean;
+  isApplying: boolean;
 }
 
-function JobDetails({ job, activeTab = "description", handleTabClick }: JobDetailsProps) {
+export default function JobDetails({
+  job,
+  activeTab = "description",
+  handleTabClick,
+  onApply,
+  isApplied,
+  isApplying
+}: JobDetailsProps) {
+  const [isResumeDialogOpen, setIsResumeDialogOpen] = useState(false);
+  
+  // Format job description as an array
+  const jobDescriptionArray = Array.isArray(job.jobDescription) 
+    ? job.jobDescription 
+    : [job.jobDescription];
+
+  // Format date for display
+  const formatDate = (dateString?: string | Date) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "today";
+    if (diffDays === 1) return "yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return `${Math.floor(diffDays / 30)} months ago`;
+  };
+
+  const postedDate = job.createdAt ? formatDate(job.createdAt) : "";
+  
+  const handleApplyClick = () => {
+    setIsResumeDialogOpen(true);
+  };
+  
+  const handleResumeSubmit = async (resumeId: string) => {
+    await onApply(job._id, resumeId);
+    setIsResumeDialogOpen(false);
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
-            {job.logo && (
-              <img
-                src={job.logo || "/placeholder.svg"}
-                alt={`${job.company} logo`}
-                className="w-full h-full object-contain"
-              />
-            )}
-          </div>
-          <div>
-            <h2 className="text-gray-700">{job.title}</h2>
-            <p className="text-2xl text-template font-semibold">{job.company}</p>
-            <p className="text-gray-500">
-              {job.location} • {job.jobType}
-            </p>
-          </div>
-        </div>
-        <Badge
-          variant={
-            job.status === "Not Selected"
-              ? "destructive"
-              : job.status === "Yet to apply"
-                ? "secondary"
-                : job.status === "Applications closed"
-                  ? "outline"
-                  : "default"
-          }
-          className="text-xs"
-        >
-          {job.status}
-        </Badge>
-      </div>
-      {/* Tabs */}
-      <div className="flex border-b text-gray-500">
-        <button
-          className={`px-4 py-2 text-sm font-medium focus:outline-none ${
-            activeTab === "description" ? "border-b-2 border-template text-template font-bold" : "hover:text-gray-700"
-          }`}
-          onClick={() => handleTabClick("description")}
-        >
-          Job Description
-        </button>
-        <button
-          className={`px-4 py-2 text-sm font-medium focus:outline-none ${
-            activeTab === "eligibility" ? "border-b-2 border-template text-template font-bold" : "hover:text-gray-700"
-          }`}
-          onClick={() => handleTabClick("eligibility")}
-        >
-          Eligibility Criteria
-        </button>
-      </div>
-
-      {/* Tab Content */}
-      <div style={{ minHeight: "300px" }}>
-        {activeTab === "description" ? (
-          <div className="grid gap-6 mt-4">
-            <div className="grid gap-2">
-              <h4 className="font-semibold">Opening Overview</h4>
-              <div className="grid gap-2 text-sm">
-                <div className="grid grid-cols-1 gap-2">
-                  <span className="text-muted-foreground">Job Functions:</span>
-                  <span>{job.jobFunctions.join(", ")}</span>
+    <>
+      <Card className="border rounded-lg shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center">
+              {job.logo && (
+                <div className="w-16 h-16 mr-4 overflow-hidden rounded-md">
+                  <img
+                    src={job.logo}
+                    alt={`${job.company} logo`}
+                    className="w-full h-full object-contain"
+                  />
                 </div>
-                <div className="grid grid-cols-1 gap-2">
-                  <span className="text-muted-foreground">Job Profile CTC:</span>
-                  <span>{job.salary}</span>
+              )}
+              <div>
+                <h2 className="text-2xl font-bold">{job.role}</h2>
+                <p className="text-gray-600 text-lg">{job.company}</p>
+                <div className="flex items-center mt-1 text-gray-500">
+                  {job.location && <span className="mr-3">{job.location}</span>}
+                  {postedDate && (
+                    <span className="text-sm">Posted {postedDate}</span>
+                  )}
                 </div>
               </div>
             </div>
-
-            <div className="grid gap-2">
-              <h4 className="font-semibold">Job Description</h4>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                {job.description.map((desc, index) => (
-                  <li key={index}>{desc}</li>
-                ))}
-              </ul>
+            <div className="flex flex-col items-end">
+              <Badge
+                variant={
+                  job.jobType === "Internship" ? "secondary" : "outline"
+                }
+                className="mb-2"
+              >
+                {job.jobType || "Placement"}
+              </Badge>
+              
+              {job.isEligible === false && (
+                <Badge variant="destructive" className="mb-2">
+                  Not Eligible
+                </Badge>
+              )}
+              
+              <Button 
+                onClick={handleApplyClick} 
+                disabled={isApplied || isApplying || job.isEligible === false}
+                className="bg-template hover:bg-template/90"
+              >
+                {isApplying ? (
+                  <>
+                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    Applying...
+                  </>
+                ) : isApplied ? (
+                  "Applied"
+                ) : job.isEligible === false ? (
+                  "Not Eligible"
+                ) : (
+                  "Apply Now"
+                )}
+              </Button>
             </div>
           </div>
-        ) : (
-          <div className="mt-4 grid gap-6">
-            <div className="grid gap-2">
-              <h4 className="font-semibold">Eligibility Overview</h4>
-              <div className="grid gap-2 text-sm">
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <span className="text-muted-foreground">Degrees Eligible:</span>
-                  <span>{job.degreesEligible.join(", ")}</span>
+
+          {(job.salary || job.stipend) && (
+            <div className="mb-4 p-3 bg-gray-50 rounded-md">
+              <p className="font-medium">Compensation</p>
+              <p className="text-gray-700">
+                {job.salary ? `Salary: ${job.salary}` : ''}
+                {job.salary && job.stipend ? ' | ' : ''}
+                {job.stipend ? `Stipend: ${job.stipend}` : ''}
+              </p>
+            </div>
+          )}
+
+          <Tabs
+            defaultValue={activeTab}
+            value={activeTab}
+            onValueChange={(value) =>
+              handleTabClick(value as "description" | "eligibility")
+            }
+            className="mt-6"
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="description">Job Description</TabsTrigger>
+              <TabsTrigger value="eligibility">Eligibility</TabsTrigger>
+            </TabsList>
+            <TabsContent value="description" className="mt-4">
+              <div className="space-y-4">
+                {job.jobFunctions && job.jobFunctions.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Job Functions</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {job.jobFunctions.map((func, index) => (
+                        <Badge key={index} variant="outline">
+                          {func}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Description</h3>
+                  <div className="text-gray-700">
+                    {Array.isArray(job.jobDescription) ? (
+                      <ul className="list-disc pl-5 space-y-2">
+                        {jobDescriptionArray.map((desc, index) => (
+                          <li key={index}>{desc}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>{job.jobDescription}</p>
+                    )}
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <span className="text-muted-foreground">Branches Eligible:</span>
-                  <span>{job.branchesEligible.join(", ")}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <span className="text-muted-foreground">Batches Eligible:</span>
-                  <span>{job.batchesEligible.join(", ")}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <span className="text-muted-foreground">CGPA Cutoff:</span>
-                  <span>{job.cgpaCutoff}</span>
+
+                {job.hiringFlow && job.hiringFlow.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Hiring Process</h3>
+                    <ol className="list-decimal pl-5 space-y-2">
+                      {job.hiringFlow.map((step, index) => (
+                        <li key={index} className="text-gray-700">
+                          <span className="font-medium">{step.step}:</span> {step.description}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+                
+                {job.accommodation !== undefined && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Additional Information</h3>
+                    <p className="text-gray-700">
+                      Accommodation: {job.accommodation ? "Provided" : "Not Provided"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="eligibility" className="mt-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Eligibility Criteria</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-gray-50 rounded-md">
+                      <p className="font-medium">Minimum CGPA</p>
+                      <p className="text-gray-700">{job.eligibility.cgpa}</p>
+                    </div>
+                    <div className="p-3 bg-gray-50 rounded-md">
+                      <p className="font-medium">Gender</p>
+                      <p className="text-gray-700">{job.eligibility.gender}</p>
+                    </div>
+                    {job.eligibility.degrees && (
+                      <div className="p-3 bg-gray-50 rounded-md">
+                        <p className="font-medium">Eligible Degrees</p>
+                        <p className="text-gray-700">
+                          {job.eligibility.degrees.join(", ")}
+                        </p>
+                      </div>
+                    )}
+                    <div className="p-3 bg-gray-50 rounded-md">
+                      <p className="font-medium">Eligible Branches</p>
+                      <p className="text-gray-700">
+                        {job.eligibility.branches.join(", ")}
+                      </p>
+                    </div>
+                    {job.eligibility.batches && (
+                      <div className="p-3 bg-gray-50 rounded-md">
+                        <p className="font-medium">Eligible Batches</p>
+                        <p className="text-gray-700">
+                          {job.eligibility.batches.join(", ")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+      
+      <ResumeSelectDialog
+        isOpen={isResumeDialogOpen}
+        onClose={() => setIsResumeDialogOpen(false)}
+        onSubmit={handleResumeSubmit}
+        isSubmitting={isApplying}
+      />
+    </>
+  );
 }
-
-export default JobDetails
 

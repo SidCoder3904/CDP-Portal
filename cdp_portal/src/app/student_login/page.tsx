@@ -16,6 +16,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Icons } from "@/components/icons";
+import { useAuth } from "@/context/auth-context";
+
 
 // Regex pattern for iitrpr.ac.in email validation
 const IITRPR_EMAIL_REGEX = /^[a-zA-Z0-9_]+@iitrpr\.ac\.in$/;
@@ -24,12 +26,14 @@ export default function StudentLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [userId, setUserId] = useState("");
 
   const router = useRouter(); // Initialize the router
+
+  const { requestOtp, loginWithOtp, isLoading } = useAuth();
+
 
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
@@ -42,59 +46,101 @@ export default function StudentLogin() {
     }
   }, [email]);
 
-  async function requestOtp() {
-    setIsLoading(true);
+  // async function requestOtp() {
+  //   setIsLoading(true);
+  //   setError("");
+  //   setSuccess("");
+
+  //   try {
+  //     console.log(backendUrl);
+  //     const response = await axios.post(`${backendUrl}/api/auth/request-otp`, {
+  //       email: email,
+  //       password: password,
+  //     });
+
+  //     if (response.status === 200) {
+  //       setSuccess("OTP sent to your email!");
+  //       setUserId(response.data.user_id);
+  //     }
+  //   } catch (err: unknown) {
+  //     const errorMessage =
+  //       err instanceof Error
+  //         ? err.message
+  //         : (err as any)?.response?.data?.message || "Failed to send OTP";
+  //     setError(errorMessage);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }
+
+  // async function loginWithOtp() {
+  //   setIsLoading(true);
+  //   setError("");
+  //   setSuccess("");
+
+  //   try {
+  //     const response = await axios.post(
+  //       `${backendUrl}/api/auth/login-with-otp`,
+  //       {
+  //         user_id: userId,
+  //         otp: otp,
+  //       }
+  //     );
+
+  //     if (response.status === 200) {
+  //       setSuccess("Logged in successfully!");
+  //       setTimeout(() => router.push("/student"), 1500); // Redirect to /student
+  //     }
+  //   } catch (err: unknown) {
+  //     const errorMessage =
+  //       err instanceof Error
+  //         ? err.message
+  //         : (err as any)?.response?.data?.message || "Failed to login with OTP";
+  //     setError(errorMessage);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }
+
+  // function onSubmit(e: React.FormEvent) {
+  //   e.preventDefault();
+  //   if (!IITRPR_EMAIL_REGEX.test(email)) return;
+
+  //   if (!userId) {
+  //     requestOtp();
+  //   } else {
+  //     loginWithOtp();
+  //   }
+  // }
+
+  async function handleRequestOtp() {
     setError("");
     setSuccess("");
 
     try {
-      console.log(backendUrl);
-      const response = await axios.post(`${backendUrl}/api/auth/request-otp`, {
-        email: email,
-        password: password,
-      });
-
-      if (response.status === 200) {
-        setSuccess("OTP sent to your email!");
-        setUserId(response.data.user_id);
-      }
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : (err as any)?.response?.data?.message || "Failed to send OTP";
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
+      const userId = await requestOtp(email, password);
+      setSuccess("OTP sent to your email!");
+      setUserId(userId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send OTP");
     }
   }
 
-  async function loginWithOtp() {
-    setIsLoading(true);
+  async function handleLoginWithOtp() {
     setError("");
     setSuccess("");
 
     try {
-      const response = await axios.post(
-        `${backendUrl}/api/auth/login-with-otp`,
-        {
-          user_id: userId,
-          otp: otp,
-        }
-      );
-
-      if (response.status === 200) {
-        setSuccess("Logged in successfully!");
-        setTimeout(() => router.push("/student"), 1500); // Redirect to /student
-      }
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : (err as any)?.response?.data?.message || "Failed to login with OTP";
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
+      await loginWithOtp(userId, otp);
+      setSuccess("Logged in successfully!");
+      
+      // Get redirect path or default to student dashboard
+      const redirectPath = localStorage.getItem("redirectAfterLogin") || "/student";
+      localStorage.removeItem("redirectAfterLogin");
+      
+      setTimeout(() => router.push(redirectPath), 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to login with OTP");
     }
   }
 
@@ -103,11 +149,13 @@ export default function StudentLogin() {
     if (!IITRPR_EMAIL_REGEX.test(email)) return;
 
     if (!userId) {
-      requestOtp();
+      handleRequestOtp();
     } else {
-      loginWithOtp();
+      handleLoginWithOtp();
     }
   }
+
+
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
