@@ -163,19 +163,26 @@ class JobService:
         try:
             # Get job and student details
             job = JobService.get_job_by_id(job_id)
-            student = StudentService.get_student_by_id(student_id)
+            student = StudentService.get_student_by_user_id(student_id)
+
+            print(job)
+            print(student)
+
             
             if not job or not student:
                 return False
+        
             
             # Check branch eligibility
-            if student.get('branch') not in job.get('eligibility', {}).get('branches', []):
+            if student.get('major') not in job.get('eligibility', {}).get('branches', []):
                 return False
             
+            
             # Check gender eligibility
-            gender_req = job.get('eligibility', {}).get('gender')
-            if gender_req and gender_req != 'all' and student.get('gender') != gender_req:
+            gender_req = job.get('eligibility', {}).get('gender').lower() 
+            if gender_req and gender_req != 'all' and student.get('gender').lower() != gender_req:
                 return False
+            
             
             # Check CGPA requirement
             min_cgpa = float(job.get('eligibility', {}).get('cgpa', 0))
@@ -238,22 +245,31 @@ class JobService:
             The ID of the newly created application
         """
         try:
+            # Convert string IDs to ObjectId if needed
+            if isinstance(job_id, str):
+                job_id = ObjectId(job_id)
+            if isinstance(student_id, str):
+                student_id = ObjectId(student_id)
+            
             # Create base application
             application = {
-                'jobId': job_id,
-                'studentId': student_id,
+                'job_id': job_id,
+                'student_id': student_id,
                 'status': 'applied',
-                'currentStage': 'Application Submitted',
-                'createdAt': datetime.utcnow(),
-                'updatedAt': datetime.utcnow()
+                'current_stage': 'Application Submitted',
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
             }
             
             # Add additional data if provided
             if data:
                 if 'resumeId' in data:
-                    application['resumeId'] = data['resumeId']
+                    resume_id = data['resumeId']
+                    if isinstance(resume_id, str):
+                        resume_id = ObjectId(resume_id)
+                    application['resume_id'] = resume_id
                 if 'coverLetter' in data:
-                    application['coverLetter'] = data['coverLetter']
+                    application['cover_letter'] = data['coverLetter']
                 if 'answers' in data:
                     application['answers'] = data['answers']
             
@@ -261,8 +277,8 @@ class JobService:
             
             # Update job applications count
             mongo.db.jobs.update_one(
-                {'_id': ObjectId(job_id)},
-                {'$inc': {'applicationsCount': 1}}
+                {'_id': job_id},
+                {'$inc': {'applications_count': 1}}
             )
             
             return str(result.inserted_id)
@@ -586,3 +602,54 @@ class JobService:
                 'totalApplications': 0,
                 'statusCounts': {}
             }
+    @staticmethod
+    def get_applications_by_student(student_id):
+        """
+        Get all applications submitted by a student with job details.
+        
+        Args:
+            student_id: The ID of the student
+            
+        Returns:
+            List of application documents with job details
+        """
+        try:
+            # Convert string ID to ObjectId if needed
+            if isinstance(student_id, str):
+                student_id = ObjectId(student_id)
+                
+            pipeline = [
+                {'$match': {'studentId': student_id}},
+                {'$sort': {'createdAt': -1}},
+                {'$lookup': {
+                    'from': 'jobs',
+                    'localField': 'jobId',
+                    'foreignField': '_id',
+                    'as': 'job'
+                }},
+                {'$unwind': '$job'},
+                {'$project': {
+                    '_id': 1,
+                    'jobId': {'$toString': '$jobId'},
+                    'studentId': {'$toString': '$studentId'},
+                    'status': 1,
+                    'currentStage': 1,
+                    'appliedAt': '$createdAt',
+                    'updatedAt': 1,
+                    'job': {
+                        '_id': {'$toString': '$job._id'},
+                        'company': '$job.company',
+                        'role': '$job.role',
+                        'location': '$job.location',
+                        'salary': '$job.salary',
+                        'jobType': '$job.jobType',
+                        'logo': '$job.logo'
+                    }
+                }}
+            ]
+            
+            applications = list(mongo.db.applications.aggregate(pipeline))
+            return applications
+        except Exception as e:
+            print(f"Error retrieving student applications: {str(e)}")
+            return []

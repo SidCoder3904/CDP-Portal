@@ -2,17 +2,23 @@
 
 import type React from "react";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-interface Field {
-  name: string;
-  label: string;
-  type: string;
-  options?: string[]; // Added to support dropdowns
-}
+  interface Field {
+    name: string;
+    label: string;
+    type: string;
+    options?: string[]; // Added to support dropdowns
+  }
 
 interface EditDialogProps {
   title: string;
@@ -21,10 +27,17 @@ interface EditDialogProps {
   triggerButton: React.ReactNode;
 }
 
-export function EditDialog({ title, fields, onSave, triggerButton }: EditDialogProps) {
+export function EditDialog({
+  title,
+  fields,
+  onSave,
+  triggerButton,
+}: EditDialogProps) {
   const [formData, setFormData] = useState({});
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -42,7 +55,10 @@ export function EditDialog({ title, fields, onSave, triggerButton }: EditDialogP
         </DialogHeader>
         <div className="grid gap-4 py-4">
           {fields.map((field) => (
-            <div key={field.name} className="grid grid-cols-4 items-center gap-4">
+            <div
+              key={field.name}
+              className="grid grid-cols-4 items-center gap-4"
+            >
               <Label htmlFor={field.name} className="text-right">
                 {field.label}
               </Label>

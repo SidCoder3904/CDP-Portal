@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 // import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/navbar";
-import MainFooter from "@/components/main_footer";
+import { AuthProvider } from "@/context/auth-context";
+
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -27,20 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {/* Navbar */}
-        <Navbar
-          menuItems={[
-            { label: "Home", href: "/" },
-            { label: "Our Team", href: "/team" },
-            { label: "For Recruiters", href: "/for_recruiters" },
-            { label: "Notices", href: "/notices" },
-            { label: "Student Login", href: "/student_login" },
-            { label: "Admin Login", href: "/admin_login" },
-          ]}
-        />
-        <main>{children}</main>
-        {/* Footer */}
-        <MainFooter />
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
