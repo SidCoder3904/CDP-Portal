@@ -1,122 +1,200 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
+import { Trash2 } from 'lucide-react';
+import { useStudentApi, Position } from "@/lib/api/students";
+import { Icons } from "@/components/icons";
 
-// Placeholder data
-const initialPositionsData = [
-  {
-    id: 1,
-    title: "Student Council President",
-    organization: "Indian Institute of Technology, Ropar",
-    duration: "2022-2023",
-    description:
-      "Led student initiatives and represented student body in university meetings.",
-    responsibilities: "Organized events, managed budget, liaised with faculty",
-    achievements:
-      "Increased student engagement by 30%, implemented new sustainability initiatives",
-  },
-  {
-    id: 2,
-    title: "Coding Club Lead",
-    organization: "Indian Institute of Technology, Ropar",
-    duration: "2021-2022",
-    description:
-      "Organized coding workshops and hackathons for fellow students.",
-    responsibilities:
-      "Planned weekly meetings, coordinated with guest speakers, managed club resources",
-    achievements:
-      "Doubled club membership, hosted successful hackathon with 100+ participants",
-  },
-];
+export default function PositionsPage() {
+  const [positionsData, setPositionsData] = useState<Position[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export default function Positions() {
-  const [positionsData, setPositionsData] = useState(initialPositionsData);
+  const studentApi = useStudentApi();
 
-  const handleAdd = (newData: any) => {
-    setPositionsData([...positionsData, { id: Date.now(), ...newData }]);
+  useEffect(() => {
+    async function fetchPositionsData() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await studentApi.getMyPositions();
+        setPositionsData(data);
+      } catch (error) {
+        console.error("Failed to fetch positions data:", error);
+        setError("Failed to load positions data. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchPositionsData();
+  }, []);
+
+  const handleAdd = async (newData: Partial<Position>) => {
+    try {
+      setIsUpdating(true);
+      setError(null);
+      const addedPosition = await studentApi.addPosition(newData);
+      setPositionsData([...positionsData, addedPosition]);
+    } catch (error) {
+      console.error("Failed to add position:", error);
+      setError("Failed to add position. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleUpdate = (id: number, newData: any) => {
-    setPositionsData(
-      positionsData.map((pos) => (pos.id === id ? { ...pos, ...newData } : pos))
+  const handleUpdate = async (id: string, newData: Partial<Position>) => {
+    try {
+      setIsUpdating(true);
+      setError(null);
+      const updatedPosition = await studentApi.updatePosition(id, newData);
+      setPositionsData(
+        positionsData.map((pos) => (pos.id === id ? updatedPosition : pos))
+      );
+    } catch (error) {
+      console.error("Failed to update position:", error);
+      setError("Failed to update position. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      setIsUpdating(true);
+      setError(null);
+      await studentApi.deletePosition(id);
+      setPositionsData(positionsData.filter((pos) => pos.id !== id));
+    } catch (error) {
+      console.error("Failed to delete position:", error);
+      setError("Failed to delete position. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Icons.spinner className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading positions data...</span>
+      </div>
     );
-  };
+  }
 
-  const handleDelete = (id: number) => {
-    setPositionsData(positionsData.filter((pos) => pos.id !== id));
-  };
+  if (error) {
+    return (
+      <div className="p-4 text-red-500 bg-red-50 rounded-md">
+        <p>{error}</p>
+        <Button 
+          onClick={() => window.location.reload()} 
+          className="mt-4"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div>
       <h1 className="text-2xl text-template font-bold mb-6">
         Positions of Responsibility
       </h1>
-      {positionsData.map((position) => (
-        <Card key={position.id} className="mb-6">
-          <CardHeader>
-            <CardTitle>{position.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <DetailItem
-                label="Organization"
-                value={position.organization}
-                isVerified={true}
-              />
-              <DetailItem
-                label="Duration"
-                value={position.duration}
-                isVerified={true}
-              />
-              <DetailItem
-                label="Description"
-                value={position.description}
-                isVerified={false}
-              />
-              <DetailItem
-                label="Responsibilities"
-                value={position.responsibilities}
-                isVerified={true}
-              />
-              <DetailItem
-                label="Achievements"
-                value={position.achievements}
-                isVerified={false}
-              />
-            </div>
-            <div className="flex justify-end space-x-2 mt-4">
-              <EditDialog
-                title="Update Position"
-                fields={[
-                  { name: "title", label: "Title", type: "text" },
-                  { name: "organization", label: "Organization", type: "text" },
-                  { name: "duration", label: "Duration", type: "text" },
-                  { name: "description", label: "Description", type: "text" },
-                  {
-                    name: "responsibilities",
-                    label: "Responsibilities",
-                    type: "text",
-                  },
-                  { name: "achievements", label: "Achievements", type: "text" },
-                ]}
-                onSave={(data) => handleUpdate(position.id, data)}
-                triggerButton={<Button variant="outline">Edit</Button>}
-              />
-              <Button
-                variant="destructive"
-                onClick={() => handleDelete(position.id)}
-              >
-                <Trash2 className="w-4 h-4 mr-2" /> Delete
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+      {positionsData.length === 0 ? (
+        <div className="text-center p-8 bg-gray-50 rounded-md">
+          <p className="text-gray-500 mb-4">No positions found. Add your first position of responsibility.</p>
+        </div>
+      ) : (
+        positionsData.map((position) => (
+          <Card key={position.id} className="mb-6">
+            <CardHeader>
+              <CardTitle>{position.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <DetailItem
+                  label="Organization"
+                  value={position.organization}
+                  isVerified={position.isVerified.organization}
+                />
+                <DetailItem
+                  label="Duration"
+                  value={position.duration}
+                  isVerified={position.isVerified.duration}
+                />
+                <DetailItem
+                  label="Description"
+                  value={position.description}
+                  isVerified={position.isVerified.description}
+                />
+                <DetailItem
+                  label="Responsibilities"
+                  value={position.responsibilities}
+                  isVerified={position.isVerified.responsibilities}
+                />
+                <DetailItem
+                  label="Achievements"
+                  value={position.achievements}
+                  isVerified={position.isVerified.achievements}
+                />
+              </div>
+              <div className="flex justify-end space-x-2 mt-4">
+                <EditDialog
+                  title="Update Position"
+                  fields={[
+                    { name: "title", label: "Title", type: "text" },
+                    { name: "organization", label: "Organization", type: "text" },
+                    { name: "duration", label: "Duration", type: "text" },
+                    { name: "description", label: "Description", type: "text" },
+                    {
+                      name: "responsibilities",
+                      label: "Responsibilities",
+                      type: "text",
+                    },
+                    { name: "achievements", label: "Achievements", type: "text" },
+                  ]}
+                  onSave={(data) => handleUpdate(position.id, data)}
+                  triggerButton={
+                    <Button variant="outline" disabled={isUpdating}>
+                      {isUpdating ? (
+                        <>
+                          <Icons.spinner className="h-4 w-4 animate-spin mr-2" />
+                          Updating...
+                        </>
+                      ) : (
+                        "Edit"
+                      )}
+                    </Button>
+                  }
+                />
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDelete(position.id)}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? (
+                    <>
+                      <Icons.spinner className="h-4 w-4 animate-spin mr-2" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" /> Delete
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      )}
       <EditDialog
         title="Add Position"
         fields={[
@@ -128,7 +206,18 @@ export default function Positions() {
           { name: "achievements", label: "Achievements", type: "text" },
         ]}
         onSave={handleAdd}
-        triggerButton={<Button className="bg-template">Add Position</Button>}
+        triggerButton={
+          <Button className="bg-template" disabled={isUpdating}>
+            {isUpdating ? (
+              <>
+                <Icons.spinner className="h-4 w-4 animate-spin mr-2" />
+                Adding...
+              </>
+            ) : (
+              "Add Position"
+            )}
+          </Button>
+        }
       />
     </div>
   );

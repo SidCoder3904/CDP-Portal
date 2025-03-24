@@ -1,4 +1,3 @@
-// components/basic-details.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -32,6 +31,7 @@ export default function BasicDetails() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const studentApi = useStudentApi();
 
@@ -39,11 +39,13 @@ export default function BasicDetails() {
     async function fetchStudentData() {
       try {
         setIsLoading(true);
+        setError(null);
         const profile = await studentApi.getMyProfile();
         setStudentData(profile);
         setEditableData(profile);
       } catch (error) {
         console.error("Failed to fetch student profile:", error);
+        setError("Failed to load profile data. Please try again later.");
       } finally {
         setIsLoading(false);
       }
@@ -62,11 +64,13 @@ export default function BasicDetails() {
 
     try {
       setIsUpdating(true);
+      setError(null);
       const updatedProfile = await studentApi.updateMyProfile(editableData);
       setStudentData(updatedProfile);
       setEditableData(updatedProfile);
     } catch (error) {
       console.error("Failed to update profile:", error);
+      setError("Failed to update profile. Please try again.");
     } finally {
       setIsUpdating(false);
     }
@@ -77,11 +81,13 @@ export default function BasicDetails() {
 
     try {
       setIsUpdating(true);
+      setError(null);
       const updatedProfile = await studentApi.updateMyProfile(newData);
       setStudentData(updatedProfile);
       setEditableData(updatedProfile);
     } catch (error) {
       console.error("Failed to update profile:", error);
+      setError("Failed to update profile. Please try again.");
     } finally {
       setIsUpdating(false);
     }
@@ -98,6 +104,7 @@ export default function BasicDetails() {
 
     try {
       setIsUpdating(true);
+      setError(null);
       // Fetch the image from the URL and convert it to a blob
       const response = await fetch(croppedImageUrl);
       const croppedImageBlob = await response.blob();
@@ -119,6 +126,7 @@ export default function BasicDetails() {
       setSelectedImage(null); // Clear the selected image after processing
     } catch (error) {
       console.error("Failed to upload image:", error);
+      setError("Failed to upload image. Please try again.");
     } finally {
       setIsUpdating(false);
     }
@@ -129,6 +137,17 @@ export default function BasicDetails() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <Icons.spinner className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-2">Loading profile data...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-red-500 bg-red-50 rounded-md">
+        <p>{error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Retry
+        </Button>
       </div>
     );
   }
@@ -194,37 +213,41 @@ export default function BasicDetails() {
             <DetailItem
               label="Date of Birth"
               value={studentData.dateOfBirth}
-              isVerified={true}
+              isVerified={studentData.verificationStatus?.dateOfBirth || false}
             />
             <DetailItem
               label="Gender"
               value={studentData.gender}
-              isVerified={true}
+              isVerified={studentData.verificationStatus?.gender || false}
             />
             <DetailItem
               label="Address"
               value={studentData.address}
-              isVerified={false}
+              isVerified={studentData.verificationStatus?.address || false}
             />
             <DetailItem
               label="Major"
               value={studentData.major}
-              isVerified={true}
+              isVerified={studentData.verificationStatus?.major || false}
             />
             <DetailItem
               label="Student ID"
               value={studentData.studentId}
-              isVerified={true}
+              isVerified={studentData.verificationStatus?.studentId || false}
             />
             <DetailItem
               label="Enrollment Year"
               value={studentData.enrollmentYear}
-              isVerified={true}
+              isVerified={
+                studentData.verificationStatus?.enrollmentYear || false
+              }
             />
             <DetailItem
               label="Expected Graduation Year"
               value={studentData.expectedGraduationYear}
-              isVerified={true}
+              isVerified={
+                studentData.verificationStatus?.expectedGraduationYear || false
+              }
             />
           </div>
           <div className="flex justify-between mt-6">
