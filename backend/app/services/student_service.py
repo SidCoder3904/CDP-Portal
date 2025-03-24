@@ -23,7 +23,48 @@ class StudentService:
         except Exception as e:
             print(f"Error retrieving student by ID: {str(e)}")
             return None
-    
+    @classmethod
+    def get_students_with_pagination(cls, filters=None, page=1, per_page=20):
+        """
+        Retrieve students with optional filtering and pagination for admin verification
+        
+        Args:
+            filters: Dictionary of filter conditions
+            page: Page number for pagination
+            per_page: Number of items per page
+        
+        Returns:
+            Tuple of (students list, total count)
+        """
+        try:
+            query = {}
+            
+            # Apply filters if provided
+            if filters:
+                if filters.get('branch') and filters['branch'] != 'all':
+                    query['branch'] = filters['branch']
+                
+                if 'cgpa' in filters:
+                    query['cgpa'] = filters['cgpa']
+                
+                if filters.get('roll_number'):
+                    query['student_id'] = {'$regex': filters['roll_number'], '$options': 'i'}
+            
+            # Calculate skip value for pagination
+            skip = (page - 1) * per_page
+            
+            # Get total count of students matching filters
+            total = mongo.db.student.count_documents(query)
+            
+            # Retrieve paginated students
+            students = list(mongo.db.student.find(query)
+                            .skip(skip)
+                            .limit(per_page))
+            
+            return students, total
+        except Exception as e:
+            print(f"Error retrieving students for verification: {str(e)}")
+            return [], 0
     @staticmethod
     def get_student_by_email(email):
         """
