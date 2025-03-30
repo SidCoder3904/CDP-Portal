@@ -37,7 +37,7 @@ def get_my_profile():
     
     # Get verification status
     verification_status = StudentService.get_verification_status(student_id)
-    
+    print("Verification status:", verification_status)
     # Format the student data for the frontend
     formatted_student = {
         "_id": str(student.get("_id", "")),
@@ -97,7 +97,7 @@ def update_my_profile():
     # Get the updated student data
     updated_student = StudentService.get_student_by_id(student_id)
     verification_status = StudentService.get_verification_status(student_id)
-    
+    print("Verification status:", verification_status)
     # Format the student data for the frontend
     formatted_student = {
         "_id": str(updated_student.get("_id", "")),

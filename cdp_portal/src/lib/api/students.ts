@@ -2,15 +2,20 @@
 import { useApi } from "@/lib/api";
 
 export interface VerificationStatus {
-  isVerified: boolean;
-  verifiedBy?: string;
-  verifiedAt?: string;
-  remarks?: string;
-  lastVerifiedValue?: string;
+  dateOfBirth?: "verified" | "rejected" | "pending";
+  gender?: "verified" | "rejected" | "pending";
+  address?: "verified" | "rejected" | "pending";
+  major?: "verified" | "rejected" | "pending";
+  studentId?: "verified" | "rejected" | "pending";
+  enrollmentYear?: "verified" | "rejected" | "pending";
+  expectedGraduationYear?: "verified" | "rejected" | "pending";
+  passportImage?: "verified" | "rejected" | "pending";
+  name?: "verified" | "rejected" | "pending";
+  email?: "verified" | "rejected" | "pending";
+  phone?: "verified" | "rejected" | "pending";
 }
 
 export interface StudentProfile {
-  _id: string;
   name: string;
   email: string;
   phone: string;
@@ -21,16 +26,8 @@ export interface StudentProfile {
   studentId: string;
   enrollmentYear: string;
   expectedGraduationYear: string;
-  passportImage: string;
-  verificationStatus?: {
-    dateOfBirth: boolean;
-    gender: boolean;
-    address: boolean;
-    major: boolean;
-    studentId: boolean;
-    enrollmentYear: boolean;
-    expectedGraduationYear: boolean;
-  };
+  passportImage?: string;
+  verificationStatus: VerificationStatus;
 }
 
 export interface Education {

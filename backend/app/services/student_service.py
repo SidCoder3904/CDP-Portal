@@ -36,11 +36,11 @@ class StudentService:
             Student document or None if not found
         """
         try:
-            print(f"Converting student_id to ObjectId: {student_id}")
+            # print(f"Converting student_id to ObjectId: {student_id}")
             # Convert string ID to ObjectId if needed
             if isinstance(student_id, str):
                 student_id = ObjectId(student_id)
-                print(f"Converted to ObjectId: {student_id}")
+                # print(f"Converted to ObjectId: {student_id}")
                 
             return mongo.db.student.find_one({'_id': student_id})
         except Exception as e:
@@ -987,14 +987,14 @@ class StudentService:
             Dictionary with verification status for each field
         """
         try:
-            print(f"\n=== Getting verification status for student {student_id} ===")
+            # print(f"\n=== Getting verification status for student {student_id} ===")
             # Convert string ID to ObjectId if needed
             if isinstance(student_id, str):
                 student_id = ObjectId(student_id)
-                print(f"Converted student_id to ObjectId: {student_id}")
+                # print(f"Converted student_id to ObjectId: {student_id}")
                 
             student = mongo.db.student.find_one({'_id': student_id})
-            print(f"Raw student document: {student}")
+            # print(f"Raw student document: {student}")
             
             if not student:
                 print("Student not found")
@@ -1002,7 +1002,7 @@ class StudentService:
             
             # Get verification status from student document
             verification = student.get('verification', {})
-            print(f"Raw verification data: {verification}")
+            # print(f"Raw verification data: {verification}")
             
             # Format for frontend
             formatted_status = {
@@ -1018,7 +1018,7 @@ class StudentService:
                 'expectedGraduationYear': verification.get('expected_graduation_year', {}).get('status', 'pending'),
                 'passportImage': verification.get('passport_image', {}).get('status', 'pending')
             }
-            print(f"Formatted verification status: {formatted_status}")
+            # print(f"Formatted verification status: {formatted_status}")
             return formatted_status
             
         except Exception as e:

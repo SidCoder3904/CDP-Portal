@@ -23,6 +23,7 @@ import { FileUploader } from "@/components/file-uploader";
 import { ImageCropModal } from "@/components/image-crop-model";
 import { useStudentApi, StudentProfile } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
 
 export default function BasicDetails() {
   const [studentData, setStudentData] = useState<StudentProfile | null>(null);
@@ -178,10 +179,32 @@ export default function BasicDetails() {
                     .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <FileUploader
-                onFileUpload={handlePassportImageUpload}
-                acceptedFileTypes={{ "image/*": [".jpeg", ".jpg", ".png"] }}
-              />
+              <div className="flex flex-col space-y-2">
+                <FileUploader
+                  onFileUpload={handlePassportImageUpload}
+                  acceptedFileTypes={{ "image/*": [".jpeg", ".jpg", ".png"] }}
+                />
+                {studentData.verificationStatus?.passportImage && (
+                  <Badge
+                    variant={
+                      studentData.verificationStatus.passportImage ===
+                      "verified"
+                        ? "default"
+                        : studentData.verificationStatus.passportImage ===
+                          "rejected"
+                        ? "destructive"
+                        : "outline"
+                    }
+                  >
+                    {studentData.verificationStatus.passportImage === "verified"
+                      ? "Verified"
+                      : studentData.verificationStatus.passportImage ===
+                        "rejected"
+                      ? "Rejected"
+                      : "Pending"}
+                  </Badge>
+                )}
+              </div>
               {isUpdating && (
                 <Icons.spinner className="h-4 w-4 animate-spin ml-2" />
               )}
@@ -193,6 +216,24 @@ export default function BasicDetails() {
                 value={editableData.name}
                 onChange={(e) => handleDirectUpdate("name", e.target.value)}
               />
+              {studentData.verificationStatus?.name && (
+                <Badge
+                  variant={
+                    studentData.verificationStatus.name === "verified"
+                      ? "default"
+                      : studentData.verificationStatus.name === "rejected"
+                      ? "destructive"
+                      : "outline"
+                  }
+                  className="mt-1"
+                >
+                  {studentData.verificationStatus.name === "verified"
+                    ? "Verified"
+                    : studentData.verificationStatus.name === "rejected"
+                    ? "Rejected"
+                    : "Pending"}
+                </Badge>
+              )}
             </div>
             <div>
               <Label htmlFor="email">Email</Label>
@@ -201,6 +242,24 @@ export default function BasicDetails() {
                 value={editableData.email}
                 onChange={(e) => handleDirectUpdate("email", e.target.value)}
               />
+              {studentData.verificationStatus?.email && (
+                <Badge
+                  variant={
+                    studentData.verificationStatus.email === "verified"
+                      ? "default"
+                      : studentData.verificationStatus.email === "rejected"
+                      ? "destructive"
+                      : "outline"
+                  }
+                  className="mt-1"
+                >
+                  {studentData.verificationStatus.email === "verified"
+                    ? "Verified"
+                    : studentData.verificationStatus.email === "rejected"
+                    ? "Rejected"
+                    : "Pending"}
+                </Badge>
+              )}
             </div>
             <div>
               <Label htmlFor="phone">Phone</Label>
@@ -209,44 +268,63 @@ export default function BasicDetails() {
                 value={editableData.phone}
                 onChange={(e) => handleDirectUpdate("phone", e.target.value)}
               />
+              {studentData.verificationStatus?.phone && (
+                <Badge
+                  variant={
+                    studentData.verificationStatus.phone === "verified"
+                      ? "default"
+                      : studentData.verificationStatus.phone === "rejected"
+                      ? "destructive"
+                      : "outline"
+                  }
+                  className="mt-1"
+                >
+                  {studentData.verificationStatus.phone === "verified"
+                    ? "Verified"
+                    : studentData.verificationStatus.phone === "rejected"
+                    ? "Rejected"
+                    : "Pending"}
+                </Badge>
+              )}
             </div>
             <DetailItem
               label="Date of Birth"
               value={studentData.dateOfBirth}
-              isVerified={studentData.verificationStatus?.dateOfBirth || false}
+              status={studentData.verificationStatus?.dateOfBirth || "pending"}
             />
             <DetailItem
               label="Gender"
               value={studentData.gender}
-              isVerified={studentData.verificationStatus?.gender || false}
+              status={studentData.verificationStatus?.gender || "pending"}
             />
             <DetailItem
               label="Address"
               value={studentData.address}
-              isVerified={studentData.verificationStatus?.address || false}
+              status={studentData.verificationStatus?.address || "pending"}
             />
             <DetailItem
               label="Major"
               value={studentData.major}
-              isVerified={studentData.verificationStatus?.major || false}
+              status={studentData.verificationStatus?.major || "pending"}
             />
             <DetailItem
               label="Student ID"
               value={studentData.studentId}
-              isVerified={studentData.verificationStatus?.studentId || false}
+              status={studentData.verificationStatus?.studentId || "pending"}
             />
             <DetailItem
               label="Enrollment Year"
               value={studentData.enrollmentYear}
-              isVerified={
-                studentData.verificationStatus?.enrollmentYear || false
+              status={
+                studentData.verificationStatus?.enrollmentYear || "pending"
               }
             />
             <DetailItem
               label="Expected Graduation Year"
               value={studentData.expectedGraduationYear}
-              isVerified={
-                studentData.verificationStatus?.expectedGraduationYear || false
+              status={
+                studentData.verificationStatus?.expectedGraduationYear ||
+                "pending"
               }
             />
           </div>

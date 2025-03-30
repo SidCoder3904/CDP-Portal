@@ -1,19 +1,35 @@
-import { VerificationStatus } from "./verification-status";
+import { Badge } from "@/components/ui/badge";
+import { Check, X, AlertCircle } from "lucide-react";
 
 interface DetailItemProps {
   label: string;
-  value: React.ReactNode;
-  isVerified: boolean;
+  value: string | number;
+  status: "verified" | "rejected" | "pending";
 }
 
-export function DetailItem({ label, value, isVerified }: DetailItemProps) {
+export function DetailItem({ label, value, status }: DetailItemProps) {
   return (
-    <div className="mb-4">
-      <div className="text-sm font-medium text-gray-500">{label}</div>
-      <div className="mt-1 text-sm text-gray-900">{value}</div>
-      <div className="mt-1">
-        <VerificationStatus isVerified={isVerified} />
+    <div className="space-y-1">
+      <div className="flex justify-between items-center">
+        <p className="text-sm font-medium">{label}</p>
+        {status === "verified" ? (
+          <Badge variant="default" className="flex items-center">
+            <Check className="mr-1 h-3 w-3" />
+            Verified
+          </Badge>
+        ) : status === "rejected" ? (
+          <Badge variant="destructive" className="flex items-center">
+            <X className="mr-1 h-3 w-3" />
+            Rejected
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="flex items-center">
+            <AlertCircle className="mr-1 h-3 w-3" />
+            Pending
+          </Badge>
+        )}
       </div>
+      <p className="text-sm text-muted-foreground">{value}</p>
     </div>
   );
 }
