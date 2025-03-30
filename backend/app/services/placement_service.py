@@ -165,13 +165,17 @@ class PlacementService:
             'cycleId': cycle_id,
             'company': data['company'],
             'role': data['role'],
-            'stipend': data.get('stipend'),
-            'salary': data.get('salary'),
+            'package': data['package'],
+            'location': data['location'],
+            'deadline': data['deadline'],
             'accommodation': data.get('accommodation', False),
             'eligibility': {
-                'cgpa': data['eligibility']['cgpa'],
+                'uniformCgpa': data['eligibility']['uniformCgpa'],
+                'cgpa': data['eligibility']['cgpa'] if data['eligibility']['uniformCgpa'] else None,
+                'cgpaCriteria': data['eligibility']['cgpaCriteria'] if not data['eligibility']['uniformCgpa'] else {},
                 'gender': data['eligibility']['gender'],
-                'branches': data['eligibility']['branches']
+                'branches': data['eligibility']['branches'],
+                'programs': data['eligibility']['programs']
             },
             'hiringFlow': data['hiringFlow'],
             'jobDescription': data['jobDescription'],
@@ -181,6 +185,7 @@ class PlacementService:
         }
         result = mongo.db.jobs.insert_one(job)
         return str(result.inserted_id)
+
     
     @staticmethod
     def get_cycle_statistics(cycle_id):

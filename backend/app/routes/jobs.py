@@ -5,8 +5,10 @@ from app.services.job_service import JobService
 from app.utils.auth import admin_required, student_required
 from app.utils.validators import validate_job
 from bson.objectid import ObjectId
+from bson.json_util import dumps
 
 jobs_bp = Blueprint('jobs', __name__)
+
 
 @jobs_bp.route('/<job_id>', methods=['GET'])
 @jwt_required()
@@ -15,7 +17,11 @@ def get_job(job_id):
     if not job:
         return jsonify({"message": "Job not found"}), 404
     
+    # Convert ObjectId fields to string
+    job["_id"] = str(job["_id"]) if "_id" in job else None
+    
     return jsonify(job), 200
+
 
 @jobs_bp.route('/<job_id>', methods=['PUT'])
 @jwt_required()
@@ -52,6 +58,7 @@ def apply_for_job(job_id):
     current_user = get_jwt_identity()
     data = request.get_json() or {}
     
+
     # Get resume ID from request
     resume_id = data.get('resumeId')
 
@@ -94,8 +101,8 @@ def apply_for_job(job_id):
 @jwt_required()
 @admin_required
 def get_job_applications(job_id):
-    applications = JobService.get_applications_by_job(job_id)
-    return jsonify(applications), 200
+    applications, total = JobService.get_applications_by_job(job_id)
+    return dumps(applications), 200
 
 @jobs_bp.route('/applications/<application_id>/status', methods=['PUT'])
 @jwt_required()
@@ -160,7 +167,7 @@ def get_all_jobs():
             job['isEligible'] = JobService.check_student_eligibility(job_id, student_id)
     
     # Convert ObjectId to string for JSON serialization
-    from bson.json_util import dumps
+    
     return dumps({
         'jobs': jobs,
         'total': total,

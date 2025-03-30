@@ -165,15 +165,15 @@ class JobService:
             job = JobService.get_job_by_id(job_id)
             student = StudentService.get_student_by_user_id(student_id)
 
-            print(job)
-            print(student)
-
             
             if not job or not student:
                 return False
-        
+            
+            eligibility = job.get('eligibility', {})
+    
             
             # Check branch eligibility
+            student_branch = student.get('major', student.get('branch', ''))
             if student.get('major') not in job.get('eligibility', {}).get('branches', []):
                 return False
             
@@ -183,11 +183,35 @@ class JobService:
             if gender_req and gender_req != 'all' and student.get('gender').lower() != gender_req:
                 return False
             
+            # Check program eligibility
+            # student_program = student.get('program', student.get('degree', ''))
+            # if student_program not in eligibility.get('programs', []):
+            #     return False
+                
+            
             
             # Check CGPA requirement
-            min_cgpa = float(job.get('eligibility', {}).get('cgpa', 0))
-            student_cgpa = float(student.get('cgpa', 0))
-            if student_cgpa < min_cgpa:
+            try:
+                student_cgpa = float(student.get('cgpa', 0))
+                
+                if eligibility.get('uniformCgpa', True):
+                    # If uniform CGPA is required, check against the single CGPA value
+                    min_cgpa = float(eligibility.get('cgpa', 0))
+                    if student_cgpa < min_cgpa:
+                        return False
+                else:
+                    # If non-uniform CGPA, check against branch-specific criteria
+                    cgpa_criteria = eligibility.get('cgpaCriteria', {})
+                    if student_branch in cgpa_criteria:
+                        
+                        branch_min_cgpa = (cgpa_criteria.get(student_branch, {}))
+                        prog_min_cgpa = float(branch_min_cgpa.get('btech', 0))
+                        if student_cgpa < prog_min_cgpa:
+                            return False
+                        
+       
+            except (ValueError, TypeError):
+                # If there's an error converting CGPA to float, consider student ineligible
                 return False
             
             # Check cycle eligibility (e.g., if student is already placed)
@@ -223,8 +247,8 @@ class JobService:
         """
         try:
             application = mongo.db.applications.find_one({
-                'jobId': job_id,
-                'studentId': student_id
+                'job_id': ObjectId(job_id),
+                'student_id': ObjectId(student_id)
             })
             return application is not None
         except Exception as e:
@@ -260,6 +284,7 @@ class JobService:
                 'created_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()
             }
+
             
             # Add additional data if provided
             if data:
@@ -272,8 +297,10 @@ class JobService:
                     application['cover_letter'] = data['coverLetter']
                 if 'answers' in data:
                     application['answers'] = data['answers']
-            
+
             result = mongo.db.applications.insert_one(application)
+            
+            
             
             # Update job applications count
             mongo.db.jobs.update_one(
@@ -318,7 +345,7 @@ class JobService:
             List of application documents and total count
         """
         try:
-            query = {'jobId': job_id}
+            query = {'job_id': ObjectId(job_id)}
             
             if status:
                 query['status'] = status
@@ -327,40 +354,39 @@ class JobService:
             total = mongo.db.applications.count_documents(query)
             
             # Load student data for each application
+            # Aggregation pipeline to fetch student details
             pipeline = [
                 {'$match': query},
                 {'$sort': {'createdAt': -1}},
                 {'$skip': (page - 1) * per_page},
                 {'$limit': per_page},
                 {'$lookup': {
-                    'from': 'students',
-                    'localField': 'studentId',
-                    'foreignField': '_id',
+                    'from': 'student',
+                    'localField': 'student_id',  # Ensure this matches applications schema
+                    'foreignField': 'user_id',  # Matches student schema
                     'as': 'student'
                 }},
                 {'$unwind': '$student'},
                 {'$project': {
-                    '_id': 1,
-                    'jobId': 1,
-                    'studentId': 1,
-                    'status': 1,
-                    'currentStage': 1,
-                    'createdAt': 1,
-                    'updatedAt': 1,
-                    'student': {
-                        '_id': 1,
-                        'name': 1,
-                        'rollNumber': 1,
-                        'branch': 1,
-                        'cgpa': 1,
-                        'email': 1
-                    }
+                    '_id': '$student.user_id',
+                    'name': '$student.name',
+                    'email': '$student.email',
+                    'phone': '$student.phone',
+                    'dateOfBirth': '$student.dateOfBirth',
+                    'gender': '$student.gender',
+                    'address': '$student.address',
+                    'major': '$student.major',
+                    'studentId': '$student.studentId',
+                    'enrollmentYear': '$student.enrollmentYear',
+                    'expectedGraduationYear': '$student.expectedGraduationYear',
+                    'passportImage': '$student.passportImage',
+                    'cgpa':'$student.cgpa'
                 }}
             ]
             
-            applications = list(mongo.db.applications.aggregate(pipeline))
+            students = list(mongo.db.applications.aggregate(pipeline))
             
-            return applications, total
+            return students, total
         except Exception as e:
             print(f"Error retrieving applications: {str(e)}")
             return [], 0

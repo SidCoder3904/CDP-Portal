@@ -172,7 +172,16 @@ def validate_job(data):
         errors['company'] = 'Company name is required'
     
     if not data.get('role'):
-        errors['role'] = 'Job role is required'
+        errors['role'] = 'Role is required'
+    
+    if not data.get('package'):
+        errors['package'] = 'Package is required'
+    
+    if not data.get('location'):
+        errors['location'] = 'Location is required'
+    
+    if not data.get('deadline'):
+        errors['deadline'] = 'Application deadline is required'
     
     if not data.get('jobDescription'):
         errors['jobDescription'] = 'Job description is required'
@@ -183,32 +192,37 @@ def validate_job(data):
     else:
         eligibility = data.get('eligibility')
         
-        if not eligibility.get('cgpa'):
-            errors['eligibility.cgpa'] = 'CGPA requirement is required'
-        elif not isinstance(eligibility.get('cgpa'), (int, float, str)):
-            errors['eligibility.cgpa'] = 'CGPA must be a number'
-        elif isinstance(eligibility.get('cgpa'), str) and not eligibility.get('cgpa').replace('.', '', 1).isdigit():
-            errors['eligibility.cgpa'] = 'CGPA must be a valid number'
+        if eligibility.get('uniformCgpa'):
+            if not eligibility.get('cgpa'):
+                errors['eligibility.cgpa'] = 'CGPA is required when using uniform CGPA'
+        else:
+            if not eligibility.get('cgpaCriteria') or not isinstance(eligibility.get('cgpaCriteria'), dict):
+                errors['eligibility.cgpaCriteria'] = 'CGPA criteria are required when not using uniform CGPA'
         
         if not eligibility.get('gender') or eligibility.get('gender') not in ['All', 'Male', 'Female']:
             errors['eligibility.gender'] = 'Gender must be All, Male, or Female'
         
         if not eligibility.get('branches') or not isinstance(eligibility.get('branches'), list):
-            errors['eligibility.branches'] = 'Eligible branches are required and must be a list'
+            errors['eligibility.branches'] = 'At least one branch must be selected'
         elif len(eligibility.get('branches', [])) == 0:
-            errors['eligibility.branches'] = 'At least one eligible branch is required'
+            errors['eligibility.branches'] = 'At least one branch must be selected'
+        
+        if not eligibility.get('programs') or not isinstance(eligibility.get('programs'), list):
+            errors['eligibility.programs'] = 'At least one program must be selected'
+        elif len(eligibility.get('programs', [])) == 0:
+            errors['eligibility.programs'] = 'At least one program must be selected'
     
     # Validate hiring flow
     if not data.get('hiringFlow') or not isinstance(data.get('hiringFlow'), list):
-        errors['hiringFlow'] = 'Hiring flow is required and must be a list'
+        errors['hiringFlow'] = 'At least one hiring step is required'
     elif len(data.get('hiringFlow', [])) == 0:
         errors['hiringFlow'] = 'At least one hiring step is required'
     else:
         for i, step in enumerate(data.get('hiringFlow', [])):
             if not step.get('step'):
-                errors[f'hiringFlow[{i}].step'] = 'Step name is required'
+                errors[f'hiringFlow[{i}].step'] = 'Step is required'
             if not step.get('description'):
-                errors[f'hiringFlow[{i}].description'] = 'Step description is required'
+                errors[f'hiringFlow[{i}].description'] = 'Description is required'
     
     return errors if errors else None
 

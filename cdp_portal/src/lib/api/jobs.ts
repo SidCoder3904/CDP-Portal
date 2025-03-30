@@ -1,35 +1,39 @@
 import { useApi } from "@/lib/api";
 
 export interface JobListing {
-  _id: string;
-  company: string;
-  role: string;
-  location?: string;
-  logo?: string;
-  jobDescription: string | string[];
-  stipend?: string | null;
-  salary?: string | null;
-  accommodation?: boolean;
-  jobFunctions?: string[];
-  status?: string;
-  jobType?: "Internship" | "Placement";
-  timePosted?: string;
-  hasApplied?: boolean;
-  isEligible?: boolean;
+  _id: string
+  cycleId: string
+  company: string
+  role: string
+  package: string
+  location?: string
+  deadline?: string
+  accommodation?: boolean
   eligibility: {
-    cgpa: string | number;
-    branches: string[];
-    degrees?: string[];
-    batches?: number[];
-    gender: string;
-  };
-  hiringFlow: {
-    step: string;
-    description: string;
-  }[];
-  cycleId: string;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
+    uniformCgpa: boolean
+    cgpa: string | null
+    cgpaCriteria?: {
+      [branch: string]: {
+        [program: string]: string
+      }
+    }
+    gender: string
+    branches: string[]
+    programs: string[]
+  }
+  hiringFlow: Array<{
+    step: string
+    description: string
+  }>
+  jobDescription: string | string[]
+  status: string
+  createdAt: string
+  updatedAt: string
+  hasApplied: boolean
+  isEligible: boolean
+  jobType: string
+  logo?: string
+  jobFunctions?: string[]
 }
 
 export interface JobApplication {
@@ -39,6 +43,22 @@ export interface JobApplication {
   status: string;
   currentStage: string;
   appliedAt: string;
+}
+
+export interface StudentProfile {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  major: string;
+  studentId: string;
+  enrollmentYear: string;
+  expectedGraduationYear: string;
+  passportImage: string;
+  cgpa:number
 }
 
 export function useJobsApi() {
@@ -92,6 +112,7 @@ export function useJobsApi() {
   };
 
   const applyForJob = async (jobId: string, resumeId: string): Promise<JobApplication> => {
+    console.log(JSON.stringify({ resumeId }));
     const response = await fetchWithAuth(`/api/jobs/${jobId}/apply`, {
       method: 'POST',
       headers: {
@@ -117,10 +138,20 @@ export function useJobsApi() {
     return response.json();
   };
 
+  const getJobApplications = async (jobId: string): Promise<StudentProfile[]> => {
+    const response = await fetchWithAuth(`/api/jobs/${jobId}/applications`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to fetch applications');
+    }
+    return response.json();
+  };
+
   return {
     getJobs,
     getJobById,
     applyForJob,
-    getMyApplications
+    getMyApplications,
+    getJobApplications
   };
 } 

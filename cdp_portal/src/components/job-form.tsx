@@ -36,6 +36,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Upload } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 interface JobFormProps {
   cycleId: string;
@@ -52,7 +53,10 @@ const formSchema = z.object({
   deadline: z.string().min(1, "Application deadline is required"),
   accommodation: z.boolean().default(false),
   eligibility: z.object({
+    uniformCgpa: z.boolean().default(true),
+    cgpaCriteria: z.record(z.record(z.string())).optional(),
     cgpa: z.string().min(1, "CGPA is required"),
+    // branchSpecificCgpa: z.record(z.string()).optional(),
     gender: z.enum(["All", "Male", "Female"]),
     branches: z.array(z.string()).min(1, "At least one branch must be selected"),
     programs: z.array(z.string()).min(1, "At least one program must be selected"),
@@ -74,6 +78,8 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
+
   
   const [workflowSteps, setWorkflowSteps] = useState([
     {
@@ -100,7 +106,9 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
       deadline: "",
       accommodation: false,
       eligibility: {
+        uniformCgpa: true,
         cgpa: "7.0",
+        cgpaCriteria: {},
         gender: "All",
         branches: [],
         programs: [],
@@ -135,15 +143,7 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
           description: step.description,
         })),
       };
-      
-      // Get the token from localStorage
-      const token = localStorage.getItem('token');
-      
-      // if (!token) {
-      //   setError("You must be logged in to create a job");
-      //   return;
-      // }
-      
+            
       // Call the API to create the job
       const response = await fetch(`${API_BASE_URL}/api/placement-cycles/${cycleId}/jobs`, {
         method: 'POST',
@@ -451,6 +451,113 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={form.control}
+                  name="eligibility.uniformCgpa"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Use same CGPA for all branches and programs</FormLabel>
+                        <FormDescription>
+                          When checked, a single CGPA value will be applied to all combinations
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("eligibility.uniformCgpa") ? (
+                  <FormField
+                    control={form.control}
+                    name="eligibility.cgpa"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Minimum CGPA (All Branches and Programs)</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select minimum CGPA" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="6.0">6.0</SelectItem>
+                            <SelectItem value="6.5">6.5</SelectItem>
+                            <SelectItem value="7.0">7.0</SelectItem>
+                            <SelectItem value="7.5">7.5</SelectItem>
+                            <SelectItem value="8.0">8.0</SelectItem>
+                            <SelectItem value="8.5">8.5</SelectItem>
+                            <SelectItem value="9.0">9.0</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  // Existing branch and program-specific CGPA criteria UI
+                  <div className="space-y-4">
+                <FormLabel>CGPA Criteria</FormLabel>
+                <FormDescription>
+                  Set CGPA requirements for each branch and program combination
+                </FormDescription>
+                
+                {form.watch("eligibility.branches").map((branchId) => {
+                  const branch = branches.find(b => b.id === branchId);
+                  
+                  return (
+                    <div key={branchId} className="space-y-2">
+                      <h3 className="font-semibold">{branch?.label}</h3>
+                      {form.watch("eligibility.programs").map((programId) => {
+                        const program = programs.find(p => p.id === programId);
+                        
+                        return (
+                          <div key={`${branchId}-${programId}`} className="flex items-center gap-4">
+                            <span className="w-1/3">{program?.label}:</span>
+                            <FormField
+                              control={form.control}
+                              name={`eligibility.cgpaCriteria.${branchId}.${programId}`}
+                              render={({ field }) => (
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value || "7.0"}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Select CGPA" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="6.0">6.0</SelectItem>
+                                    <SelectItem value="6.5">6.5</SelectItem>
+                                    <SelectItem value="7.0">7.0</SelectItem>
+                                    <SelectItem value="7.5">7.5</SelectItem>
+                                    <SelectItem value="8.0">8.0</SelectItem>
+                                    <SelectItem value="8.5">8.5</SelectItem>
+                                    <SelectItem value="9.0">9.0</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+                )}
+
+                
 
                 <FormField
                   control={form.control}

@@ -52,8 +52,8 @@ def get_placement_cycle(cycle_id):
 
 
 @placement_cycles_bp.route('', methods=['POST'])
-# @jwt_required()
-# @admin_required
+@jwt_required()
+@admin_required
 def create_placement_cycle():
     """Create a new placement cycle"""
     data = request.get_json()
@@ -102,13 +102,13 @@ def delete_placement_cycle(cycle_id):
     return jsonify({"message": "Placement cycle deleted successfully"}), 200
 
 @placement_cycles_bp.route('/<cycle_id>/jobs', methods=['GET'])
-@jwt_required()
+# @jwt_required()
 def get_cycle_jobs(cycle_id):
     """Get all jobs associated with a placement cycle"""
     status = request.args.get('status')
     company = request.args.get('company')
     
-    filters = {'cycle': cycle_id}
+    filters = {'cycleId': cycle_id}
     if status:
         filters['status'] = status
     if company:

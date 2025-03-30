@@ -232,6 +232,7 @@ async function CycleDetail({ id }: { id: string }) {
 }
 
 export default function CyclePage({ params }: { params: { id: string } }) {
+  
   return (
     <Suspense fallback={<LoadingState />}>
       <CycleDetail id={params.id} />

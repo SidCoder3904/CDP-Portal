@@ -69,10 +69,10 @@ export default function ResumeSelectDialog({
   };
   
   const handleSubmit = async () => {
-    if (!selectedResumeId) {
-      setError('Please select a resume to continue');
-      return;
-    }
+    // if (!selectedResumeId) {
+    //   setError('Please select a resume to continue');
+    //   return;
+    // }
     
     await onSubmit(selectedResumeId);
   };
@@ -147,7 +147,9 @@ export default function ResumeSelectDialog({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={isLoading || isSubmitting || !selectedResumeId || resumes.length === 0}
+            // disabled={isLoading || isSubmitting || !selectedResumeId || resumes.length === 0}
+            disabled={isLoading || isSubmitting}
+
           >
             {isSubmitting ? (
               <>

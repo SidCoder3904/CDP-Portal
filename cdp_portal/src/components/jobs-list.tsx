@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,70 +19,65 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, Filter } from "lucide-react";
+import React, { useEffect, useState } from "react";
+
 
 interface JobsListProps {
   cycleId: string;
 }
 
+/**
+ * Represents the shape of each job returned from the backend.
+ */
+interface Job {
+  _id: { $oid: string }; // Correctly representing MongoDB ObjectId
+  company: string;
+  role: string;
+  package: string;
+  location: string;
+  deadline: string;
+  status: string;
+  applicants: number;
+  selected: number;
+}
+
 export function JobsList({ cycleId }: JobsListProps) {
   // Mock data - in a real app, this would be fetched based on the cycleId
-  const jobs = [
-    {
-      id: 1,
-      company: "Google",
-      role: "Software Engineer",
-      package: "₹25 LPA",
-      location: "Bangalore",
-      deadline: "Oct 15, 2023",
-      status: "Open",
-      applicants: 120,
-      selected: 0,
-    },
-    {
-      id: 2,
-      company: "Microsoft",
-      role: "Product Manager",
-      package: "₹22 LPA",
-      location: "Hyderabad",
-      deadline: "Oct 10, 2023",
-      status: "Open",
-      applicants: 85,
-      selected: 0,
-    },
-    {
-      id: 3,
-      company: "Amazon",
-      role: "Software Development Engineer",
-      package: "₹20 LPA",
-      location: "Bangalore",
-      deadline: "Sep 30, 2023",
-      status: "Closed",
-      applicants: 150,
-      selected: 12,
-    },
-    {
-      id: 4,
-      company: "Flipkart",
-      role: "Data Scientist",
-      package: "₹18 LPA",
-      location: "Bangalore",
-      deadline: "Oct 5, 2023",
-      status: "Open",
-      applicants: 65,
-      selected: 0,
-    },
-    {
-      id: 5,
-      company: "Adobe",
-      role: "Frontend Engineer",
-      package: "₹16 LPA",
-      location: "Noida",
-      deadline: "Sep 25, 2023",
-      status: "In Progress",
-      applicants: 110,
-      selected: 8,
-    },
-  ];
+
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const queryParams = new URLSearchParams();
+        if (statusFilter !== "all") queryParams.append("status", statusFilter);
+        if (searchTerm.trim()) queryParams.append("company", searchTerm.trim());
+  
+        const response = await fetch(
+          `${backendUrl}/api/placement-cycles/${cycleId}/jobs?${queryParams.toString()}`
+        );
+  
+        if (!response.ok) throw new Error("Failed to fetch jobs.");
+  
+        const data = await response.json();
+        console.log("Fetched jobs:", data); // ✅ Log jobs
+        setJobs(data);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      }
+    };
+  
+    fetchJobs();
+  }, [cycleId, searchTerm, statusFilter]);
+  
+
+  
+  
 
   return (
     <div className="space-y-4">
@@ -114,6 +110,7 @@ export function JobsList({ cycleId }: JobsListProps) {
         </div>
       </div>
 
+      {jobs.length != 0 ?
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
@@ -130,10 +127,10 @@ export function JobsList({ cycleId }: JobsListProps) {
           </TableHeader>
           <TableBody>
             {jobs.map((job) => (
-              <TableRow key={job.id}>
+              <TableRow key={job._id.$oid}>
                 <TableCell className="font-medium">
                   <Link
-                    href={`/admin/placement_cycles/cycles/${cycleId}/jobs/${job.id}`}
+                    href={`/admin/placement_cycles/cycles/${cycleId}/jobs/${job._id.$oid}`}
                     className="hover:underline"
                   >
                     {job.company}
@@ -162,7 +159,9 @@ export function JobsList({ cycleId }: JobsListProps) {
             ))}
           </TableBody>
         </Table>
-      </div>
+      </div>:
+      <div></div>
+      }
     </div>
   );
 }

@@ -113,7 +113,7 @@ export default function JobListings() {
               job={jobs.find((job) => job._id === activeJobId)!}
               activeTab={activeTab[activeJobId]}
               handleTabClick={(tab) => handleTabClick(activeJobId, tab)}
-              onApply={(jobId) => handleApplyForJob(jobId, "")}
+              onApply={(jobId) => handleApplyForJob(jobId, "abc")}
               isApplied={appliedJobs.has(activeJobId)}
               isApplying={isApplying}
             />

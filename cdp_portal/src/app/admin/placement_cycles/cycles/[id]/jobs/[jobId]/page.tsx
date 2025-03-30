@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,63 +15,34 @@ import {
 import { JobApplicants } from "@/components/job-applicants";
 import { JobDetails } from "@/components/job-details";
 import { JobWorkflow } from "@/components/job-workflow";
+import { useEffect, useState } from "react";
+import { useJobsApi } from "@/lib/api/jobs";
 
 export default function JobPage({
   params,
 }: {
   params: { id: string; jobId: string };
 }) {
-  // Mock data - in a real app, this would be fetched from an API
-  const jobs = [
-    {
-      id: "1",
-      company: "Google",
-      role: "Software Engineer",
-      package: "₹25 LPA",
-      location: "Bangalore",
-      deadline: "Oct 15, 2023",
-      status: "Open",
-      description:
-        "Google is looking for Software Engineers to develop next-generation products and technologies. As a Software Engineer at Google, you'll work on a specific project critical to Google's needs with opportunities to switch teams and projects as you and our fast-paced business grow and evolve.",
-      requirements: [
-        "Bachelor's degree in Computer Science, related technical field, or equivalent practical experience",
-        "Experience in software development in one or more general-purpose programming languages",
-        "Experience working with data structures or algorithms",
-        "Strong problem-solving skills",
-      ],
-      eligibleBranches: ["Computer Science", "Electronics"],
-      eligiblePrograms: ["B.Tech", "M.Tech", "MCA"],
-      minCGPA: 8.0,
-      workflowSteps: [
-        {
-          id: 1,
-          name: "Resume Shortlisting",
-          description: "Initial screening of resumes",
-        },
-        {
-          id: 2,
-          name: "Online Assessment",
-          description: "Technical assessment",
-        },
-        {
-          id: 3,
-          name: "Technical Interview",
-          description: "Technical skills evaluation",
-        },
-        {
-          id: 4,
-          name: "HR Interview",
-          description: "Cultural fit and HR round",
-        },
-      ],
-      applicants: 120,
-      selected: 0,
-      rejected: 25,
-      inProgress: 95,
-    },
-  ];
+  const [job, setJob] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const job = jobs.find((j) => j.id === params.jobId);
+  const jobsApi = useJobsApi();
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        const jobData = await jobsApi.getJobById(params.jobId);
+        setJob(jobData);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
 
   if (!job) {
     return (
@@ -79,10 +51,7 @@ export default function JobPage({
         <p className="text-muted-foreground">
           The requested job does not exist.
         </p>
-        <Link
-          href={`/admin/placement_cycles/cycles/${params.id}`}
-          className="mt-4 inline-block"
-        >
+        <Link href={`/admin/placement_cycles/cycles/${params.id}`}>
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Cycle
@@ -102,9 +71,7 @@ export default function JobPage({
         </Link>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{job.role}</h1>
-          <p className="text-muted-foreground">
-            {job.company} • {job.location}
-          </p>
+          <p className="text-muted-foreground">{job.company} • {job.location}</p>
         </div>
       </div>
 
@@ -115,7 +82,7 @@ export default function JobPage({
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{job.package}</div>
+            <div className="text-2xl font-bold">₹{job.package} LPA</div>
             <p className="text-xs text-muted-foreground">Annual compensation</p>
           </CardContent>
         </Card>
@@ -126,21 +93,7 @@ export default function JobPage({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{job.deadline}</div>
-            <p className="text-xs text-muted-foreground">
-              Application closing date
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Applicants</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{job.applicants}</div>
-            <p className="text-xs text-muted-foreground">
-              Total registered students
-            </p>
+            <p className="text-xs text-muted-foreground">Application closing date</p>
           </CardContent>
         </Card>
       </div>
@@ -151,13 +104,10 @@ export default function JobPage({
           {job.location}
         </Badge>
         <Badge
-          variant={job.status === "Open" ? "default" : "outline"}
+          variant={job.status === "open" ? "default" : "outline"}
           className="text-sm py-1"
         >
-          {job.status}
-        </Badge>
-        <Badge variant="secondary" className="text-sm py-1">
-          Min CGPA: {job.minCGPA}
+          {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
         </Badge>
       </div>
 
@@ -168,18 +118,12 @@ export default function JobPage({
             <TabsTrigger value="workflow">Hiring Workflow</TabsTrigger>
             <TabsTrigger value="applicants">Applicants</TabsTrigger>
           </TabsList>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Export Applicants
-            </Button>
-          </div>
         </div>
         <TabsContent value="details" className="mt-0">
           <JobDetails job={job} />
         </TabsContent>
         <TabsContent value="workflow" className="mt-0">
-          <JobWorkflow steps={job.workflowSteps} />
+          <JobWorkflow steps={job.hiringFlow} />
         </TabsContent>
         <TabsContent value="applicants" className="mt-0">
           <JobApplicants jobId={params.jobId} />

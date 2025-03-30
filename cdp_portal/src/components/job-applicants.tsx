@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useJobsApi } from "@/lib/api/jobs";
 
 interface JobApplicantsProps {
   jobId: string;
@@ -38,65 +39,88 @@ interface JobApplicantsProps {
 export function JobApplicants({ jobId }: JobApplicantsProps) {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [students, setApplications] = useState<any>([]);
+
+
+  const jobsApi = useJobsApi();
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        const applicationData = await jobsApi.getJobApplications(jobId);
+        console.log(applicationData);
+        setApplications(applicationData);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
 
   // Mock data - in a real app, this would be fetched based on the jobId
-  const students = [
-    {
-      id: "S001",
-      name: "Rahul Sharma",
-      rollNo: "CS19001",
-      branch: "Computer Science",
-      program: "B.Tech",
-      cgpa: 9.2,
-      status: "Shortlisted",
-      currentStage: "Technical Interview",
-      appliedOn: "Sep 28, 2023",
-    },
-    {
-      id: "S002",
-      name: "Priya Patel",
-      rollNo: "CS19045",
-      branch: "Computer Science",
-      program: "B.Tech",
-      cgpa: 8.7,
-      status: "In Progress",
-      currentStage: "Online Assessment",
-      appliedOn: "Sep 29, 2023",
-    },
-    {
-      id: "S003",
-      name: "Amit Kumar",
-      rollNo: "EC19023",
-      branch: "Electronics",
-      program: "B.Tech",
-      cgpa: 8.9,
-      status: "Rejected",
-      currentStage: "Resume Shortlisting",
-      appliedOn: "Sep 27, 2023",
-    },
-    {
-      id: "S004",
-      name: "Sneha Gupta",
-      rollNo: "ME19056",
-      branch: "Mechanical",
-      program: "B.Tech",
-      cgpa: 8.5,
-      status: "In Progress",
-      currentStage: "Resume Shortlisting",
-      appliedOn: "Sep 30, 2023",
-    },
-    {
-      id: "S005",
-      name: "Vikram Singh",
-      rollNo: "CS19078",
-      branch: "Computer Science",
-      program: "B.Tech",
-      cgpa: 9.5,
-      status: "Shortlisted",
-      currentStage: "HR Interview",
-      appliedOn: "Sep 26, 2023",
-    },
-  ];
+  // const students = [
+  //   {
+  //     id: "S001",
+  //     name: "Rahul Sharma",
+  //     studentId: "CS19001",
+  //     branch: "Computer Science",
+  //     program: "B.Tech",
+  //     cgpa: 9.2,
+  //     status: "Shortlisted",
+  //     currentStage: "Technical Interview",
+  //     appliedOn: "Sep 28, 2023",
+  //   },
+  //   {
+  //     id: "S002",
+  //     name: "Priya Patel",
+  //     studentId: "CS19045",
+  //     branch: "Computer Science",
+  //     program: "B.Tech",
+  //     cgpa: 8.7,
+  //     status: "In Progress",
+  //     currentStage: "Online Assessment",
+  //     appliedOn: "Sep 29, 2023",
+  //   },
+  //   {
+  //     id: "S003",
+  //     name: "Amit Kumar",
+  //     studentId: "EC19023",
+  //     branch: "Electronics",
+  //     program: "B.Tech",
+  //     cgpa: 8.9,
+  //     status: "Rejected",
+  //     currentStage: "Resume Shortlisting",
+  //     appliedOn: "Sep 27, 2023",
+  //   },
+  //   {
+  //     id: "S004",
+  //     name: "Sneha Gupta",
+  //     studentId: "ME19056",
+  //     branch: "Mechanical",
+  //     program: "B.Tech",
+  //     cgpa: 8.5,
+  //     status: "In Progress",
+  //     currentStage: "Resume Shortlisting",
+  //     appliedOn: "Sep 30, 2023",
+  //   },
+  //   {
+  //     id: "S005",
+  //     name: "Vikram Singh",
+  //     studentId: "CS19078",
+  //     branch: "Computer Science",
+  //     program: "B.Tech",
+  //     cgpa: 9.5,
+  //     status: "Shortlisted",
+  //     currentStage: "HR Interview",
+  //     appliedOn: "Sep 26, 2023",
+  //   },
+  // ];
 
   const toggleSelectAll = () => {
     if (selectedStudents.length === students.length) {
@@ -300,8 +324,8 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
                   />
                 </TableCell>
                 <TableCell className="font-medium">{student.name}</TableCell>
-                <TableCell>{student.rollNo}</TableCell>
-                <TableCell>{student.branch}</TableCell>
+                <TableCell>{student.studentId}</TableCell>
+                <TableCell>{student.major}</TableCell>
                 <TableCell>{student.program}</TableCell>
                 <TableCell>{student.cgpa}</TableCell>
                 <TableCell>{student.currentStage}</TableCell>
