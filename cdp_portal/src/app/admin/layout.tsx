@@ -31,6 +31,7 @@ export default function AdminLayout({
           { label: "Placement Cycles", href: "/admin/placement_cycles" },
           { label: "Notices", href: "/admin/notice" },
           { label: "Reports", href: "/admin/report" },
+          { label: "Verification", href: "/admin/verification" }
         ]}
       />
       <main className="flex-grow max-w-7xl mx-auto w-full">{children}</main>
