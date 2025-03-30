@@ -113,10 +113,21 @@ export interface Project {
 }
 
 export interface Resume {
-  fileName: string;
-  uploadDate: string;
-  fileSize: string;
-  fileUrl: string;
+  _id: string;
+  resume_name: string;
+  file_name: string;
+  upload_date: string;
+  file_size: string;
+  file_url: string;
+  public_id: string;
+  student_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ResumeUpdateData {
+  resumeName?: string;
+  resume?: File;
 }
 
 export function useStudentApi() {
@@ -406,20 +417,23 @@ export function useStudentApi() {
   };
 
   // Resume
-  const getMyResume = async (): Promise<Resume> => {
-    const response = await fetchWithAuth("/api/students/me/resume");
+  const getResumes = async (): Promise<Resume[]> => {
+    const response = await fetchWithAuth("/api/students/me/resumes");
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Failed to fetch resume");
+      throw new Error(error.message || "Failed to fetch resumes");
     }
     return response.json();
   };
 
-  const uploadResume = async (resumeFile: File): Promise<Resume> => {
+  const uploadResume = async (resumeName: string | null, resumeFile: File): Promise<Resume> => {
     const formData = new FormData();
     formData.append("resume", resumeFile);
+    if (resumeName) {
+      formData.append("resumeName", resumeName);
+    }
 
-    const response = await fetchWithAuth("/api/students/me/resume", {
+    const response = await fetchWithAuth("/api/students/me/resumes", {
       method: "POST",
       body: formData,
     });
@@ -429,6 +443,57 @@ export function useStudentApi() {
       throw new Error(error.message || "Failed to upload resume");
     }
 
+    return response.json();
+  };
+
+  const updateResume = async (resumeId: number, data: ResumeUpdateData): Promise<Resume> => {
+    const formData = new FormData();
+    if (data.resumeName) {
+      formData.append("resumeName", data.resumeName);
+    }
+    if (data.resume) {
+      formData.append("resume", data.resume);
+    }
+
+    const response = await fetchWithAuth(`/api/students/me/resumes/${resumeId}`, {
+      method: "PUT",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to update resume");
+    }
+
+    return response.json();
+  };
+
+  const deleteResume = async (resumeId: string): Promise<void> => {
+    const response = await fetchWithAuth(`/api/students/me/resumes/${resumeId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to delete resume");
+    }
+  };
+
+  const downloadResume = async (resumeId: string) => {
+    const response = await fetchWithAuth(`/api/students/download-resume/${resumeId}`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to download resume");
+    }
+    return response.json();
+  };
+
+  const viewResume = async (resumeId: string) => {
+    const response = await fetchWithAuth(`/api/students/view-resume/${resumeId}`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to view resume");
+    }
     return response.json();
   };
 
@@ -452,7 +517,11 @@ export function useStudentApi() {
     addProject,
     updateProject,
     deleteProject,
-    getMyResume,
+    getResumes,
     uploadResume,
+    updateResume,
+    deleteResume,
+    downloadResume,
+    viewResume,
   };
 }

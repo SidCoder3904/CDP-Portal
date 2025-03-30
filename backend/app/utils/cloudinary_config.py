@@ -1,0 +1,137 @@
+import cloudinary.uploader
+import cloudinary.api
+import cloudinary.utils
+import os
+from datetime import datetime
+from typing import Optional, Dict, Any
+from werkzeug.utils import secure_filename
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
+# Configure Cloudinary
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET')
+)
+
+def upload_file(
+    file: Any,
+    folder: str,
+    resource_type: str = "raw",
+    allowed_formats: Optional[list] = None,
+    public_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Upload a file to Cloudinary
+    
+    Args:
+        file: The file to upload
+        folder: The folder name in Cloudinary
+        resource_type: Type of resource (auto, image, video, raw)
+        allowed_formats: List of allowed file formats (with dots, e.g., [".pdf", ".doc"])
+        public_id: Custom public ID for the file
+    
+    Returns:
+        Dict containing upload result
+    """
+    try:
+        # Validate file
+        if not file:
+            raise ValueError("No file provided")
+
+        # Get file extension
+        filename = secure_filename(file.filename)
+        file_ext = os.path.splitext(filename)[1].lower()
+
+        # Validate file format if allowed_formats is specified
+        if allowed_formats and file_ext not in allowed_formats:
+            raise ValueError(f"File format not allowed. Allowed formats: {', '.join(allowed_formats)}")
+
+        upload_params = {
+            "folder": folder,
+            "resource_type": "raw",  # Always use raw for PDF files
+            "format": "pdf",  # Force PDF format
+            "resource_options": {
+                "content_type": "application/pdf",
+                "delivery_type": "upload"
+            }
+        }
+        
+        if public_id:
+            upload_params["public_id"] = public_id
+            
+        result = cloudinary.uploader.upload(file, **upload_params)
+        
+        # Get the secure URL with proper content type
+        file_url = result.get('secure_url')
+        if file_url:
+            # For viewing, use the original URL with inline content disposition
+            view_url = file_url.replace('/upload/', '/upload/fl_attachment:false/')
+            # For downloading, use the fl_attachment parameter
+            download_url = file_url.replace('/upload/', '/upload/fl_attachment/')
+            
+            result['view_url'] = view_url
+            result['download_url'] = download_url
+            logger.info(f"File uploaded successfully. View URL: {view_url}")
+            
+        return result
+    except Exception as e:
+        logger.error(f"Cloudinary upload error: {str(e)}")
+        raise Exception(f"Failed to upload file to Cloudinary: {str(e)}")
+
+def delete_file(public_id: str) -> bool:
+    """
+    Delete a file from Cloudinary
+    
+    Args:
+        public_id: The public ID of the file to delete
+        
+    Returns:
+        bool: True if deletion was successful, False otherwise
+    """
+    try:
+        # For raw files, we need to include the file extension in the public_id
+        # and specify resource_type as "raw"
+        result = cloudinary.uploader.destroy(
+            public_id,
+            resource_type="raw",
+            invalidate=True
+        )
+        logger.info(f"Cloudinary delete result: {result}")
+        return result.get('result') == 'ok'
+    except Exception as e:
+        logger.error(f"Error deleting from Cloudinary: {str(e)}")
+        return False
+
+def generate_public_id(prefix: str, identifier: str) -> str:
+    """
+    Generate a unique public ID for a file
+    
+    Args:
+        prefix: The prefix for the public ID (e.g., 'resume', 'profile')
+        identifier: A unique identifier (e.g., user ID)
+        
+    Returns:
+        A unique public ID
+    """
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+    return f"{prefix}_{identifier}_{timestamp}"
+
+def get_file_url(public_id: str, resource_type: str = "auto") -> str:
+    """
+    Get the URL for a file in Cloudinary
+    
+    Args:
+        public_id: The public ID of the file
+        resource_type: Type of resource (auto, image, video, raw)
+    
+    Returns:
+        URL of the file
+    """
+    try:
+        return cloudinary.utils.cloudinary_url(public_id, resource_type=resource_type)[0]
+    except Exception as e:
+        raise Exception(f"Failed to get file URL from Cloudinary: {str(e)}") 

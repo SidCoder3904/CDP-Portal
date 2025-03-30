@@ -913,6 +913,10 @@ class StudentService:
             ID of the newly created resume record
         """
         try:
+            # Convert student_id to ObjectId if needed
+            if isinstance(resume_data.get('student_id'), str):
+                resume_data['student_id'] = ObjectId(resume_data['student_id'])
+            
             # Add timestamps
             resume_data['created_at'] = datetime.utcnow()
             resume_data['updated_at'] = datetime.utcnow()
