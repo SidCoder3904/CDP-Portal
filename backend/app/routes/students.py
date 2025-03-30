@@ -27,9 +27,11 @@ def json_response(data):
 def get_my_profile():
     """Get the profile of the currently logged-in student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
-    student = StudentService.get_student_by_user_id(student_id)
+    student = StudentService.get_student_by_id(student_id)
+    # print("Student:", student)
     if not student:
         return jsonify({"message": "Student not found"}), 404
     
@@ -61,7 +63,8 @@ def get_my_profile():
 def update_my_profile():
     """Update the profile of the currently logged-in student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
     # print("Received data:", data)
@@ -87,12 +90,12 @@ def update_my_profile():
     # Remove None values
     backend_data = {k: v for k, v in backend_data.items() if v is not None}
     # print("Backend data:", backend_data)
-    updated = StudentService.update_student_by_user_id(student_id, backend_data)
+    updated = StudentService.update_student(student_id, backend_data)
     if not updated:
         return jsonify({"message": "Failed to update student profile"}), 500
     print("Updated student profile")
     # Get the updated student data
-    updated_student = StudentService.get_student_by_user_id(student_id)
+    updated_student = StudentService.get_student_by_id(student_id)
     verification_status = StudentService.get_verification_status(student_id)
     
     # Format the student data for the frontend
@@ -158,7 +161,8 @@ def upload_passport_image():
 def get_my_education():
     """Get all education records for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     education_records = StudentService.get_education_by_student_id(student_id)
     
@@ -187,7 +191,8 @@ def get_my_education():
 def add_education():
     """Add a new education record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
     
@@ -251,20 +256,20 @@ def add_education():
 def update_education(education_id):
     """Update an education record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
-    
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     data = request.get_json()
     
     # Validate the incoming data
-    errors = validate_education(data)
-    if errors:
-        return jsonify({"errors": errors}), 400
+    # errors = validate_education(data)
+    # if errors:
+    #     return jsonify({"errors": errors}), 400
     
     # Check if the education record belongs to the student
     education = StudentService.get_education_by_id(education_id)
-    if not education or str(education.get("student_id")) != student_id:
+    # print("Education:", education)
+    if not education or str(education.get("student_id")) != str(student_id):
         return jsonify({"message": "Education record not found or access denied"}), 404
-    
     # Convert frontend field names to backend field names
     backend_data = {
         "degree": data.get("degree"),
@@ -309,11 +314,11 @@ def update_education(education_id):
 def delete_education(education_id):
     """Delete an education record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
-    
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     # Check if the education record belongs to the student
     education = StudentService.get_education_by_id(education_id)
-    if not education or str(education.get("student_id")) != student_id:
+    if not education or str(education.get("student_id")) != str(student_id):
         return jsonify({"message": "Education record not found or access denied"}), 404
     
     deleted = StudentService.delete_education(education_id)
@@ -329,7 +334,8 @@ def delete_education(education_id):
 def get_my_experience():
     """Get all experience records for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     experience_records = StudentService.get_experience_by_student_id(student_id)
     
@@ -357,7 +363,8 @@ def get_my_experience():
 def add_experience():
     """Add a new experience record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
     
@@ -418,7 +425,8 @@ def add_experience():
 def update_experience(experience_id):
     """Update an experience record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
     
@@ -429,7 +437,7 @@ def update_experience(experience_id):
     
     # Check if the experience record belongs to the student
     experience = StudentService.get_experience_by_id(experience_id)
-    if not experience or str(experience.get("student_id")) != student_id:
+    if not experience or str(experience.get("student_id")) != str(student_id):
         return jsonify({"message": "Experience record not found or access denied"}), 404
     
     # Convert frontend field names to backend field names
@@ -474,11 +482,12 @@ def update_experience(experience_id):
 def delete_experience(experience_id):
     """Delete an experience record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     # Check if the experience record belongs to the student
     experience = StudentService.get_experience_by_id(experience_id)
-    if not experience or str(experience.get("student_id")) != student_id:
+    if not experience or str(experience.get("student_id")) != str(student_id):
         return jsonify({"message": "Experience record not found or access denied"}), 404
     
     deleted = StudentService.delete_experience(experience_id)
@@ -494,7 +503,8 @@ def delete_experience(experience_id):
 def get_my_positions():
     """Get all position records for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     position_records = StudentService.get_positions_by_student_id(student_id)
     
@@ -521,7 +531,8 @@ def get_my_positions():
 def add_position():
     """Add a new position record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
     
@@ -579,7 +590,8 @@ def add_position():
 def update_position(position_id):
     """Update a position record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
     
@@ -590,7 +602,7 @@ def update_position(position_id):
     
     # Check if the position record belongs to the student
     position = StudentService.get_position_by_id(position_id)
-    if not position or str(position.get("student_id")) != student_id:
+    if not position or str(position.get("student_id")) != str(student_id):
         return jsonify({"message": "Position record not found or access denied"}), 404
     
     # Convert frontend field names to backend field names
@@ -633,11 +645,12 @@ def update_position(position_id):
 def delete_position(position_id):
     """Delete a position record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     # Check if the position record belongs to the student
     position = StudentService.get_position_by_id(position_id)
-    if not position or str(position.get("student_id")) != student_id:
+    if not position or str(position.get("student_id")) != str(student_id):
         return jsonify({"message": "Position record not found or access denied"}), 404
     
     deleted = StudentService.delete_position(position_id)
@@ -653,7 +666,8 @@ def delete_position(position_id):
 def get_my_projects():
     """Get all project records for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     project_records = StudentService.get_projects_by_student_id(student_id)
     
@@ -682,7 +696,8 @@ def get_my_projects():
 def add_project():
     """Add a new project record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
     
@@ -746,7 +761,8 @@ def add_project():
 def update_project(project_id):
     """Update a project record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
     
@@ -757,7 +773,7 @@ def update_project(project_id):
     
     # Check if the project record belongs to the student
     project = StudentService.get_project_by_id(project_id)
-    if not project or str(project.get("student_id")) != student_id:
+    if not project or str(project.get("student_id")) != str(student_id):
         return jsonify({"message": "Project record not found or access denied"}), 404
     
     # Convert frontend field names to backend field names
@@ -804,11 +820,12 @@ def update_project(project_id):
 def delete_project(project_id):
     """Delete a project record for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     # Check if the project record belongs to the student
     project = StudentService.get_project_by_id(project_id)
-    if not project or str(project.get("student_id")) != student_id:
+    if not project or str(project.get("student_id")) != str(student_id):
         return jsonify({"message": "Project record not found or access denied"}), 404
     
     deleted = StudentService.delete_project(project_id)
@@ -824,7 +841,8 @@ def delete_project(project_id):
 def get_my_resumes():
     """Get all resumes for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     resumes = StudentService.get_resumes_by_student_id(student_id)
     
@@ -850,11 +868,12 @@ def get_my_resumes():
 def get_resume_by_id(resume_id):
     """Get a specific resume by ID"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     resume = StudentService.get_resume_by_id(resume_id)
     
-    if not resume or str(resume.get("student_id")) != student_id:
+    if not resume or str(resume.get("student_id")) != str(student_id):
         return jsonify({"message": "Resume not found or access denied"}), 404
     
     # Format for frontend
@@ -876,7 +895,8 @@ def get_resume_by_id(resume_id):
 def upload_resume():
     """Upload a new resume for the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     # Check if user already has 3 resumes
     existing_resumes_count = StudentService.count_resumes_by_student_id(student_id)
@@ -952,7 +972,8 @@ def upload_resume():
 def update_resume(resume_id):
     """Update resume details (name and job profile)"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
     
@@ -963,7 +984,7 @@ def update_resume(resume_id):
     
     resume = StudentService.get_resume_by_id(resume_id)
     
-    if not resume or str(resume.get("student_id")) != student_id:
+    if not resume or str(resume.get("student_id")) != str(student_id):
         return jsonify({"message": "Resume not found or access denied"}), 404
     
     # Check if the new name already exists for another resume
@@ -1005,11 +1026,12 @@ def update_resume(resume_id):
 def delete_resume(resume_id):
     """Delete a resume"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     resume = StudentService.get_resume_by_id(resume_id)
     
-    if not resume or str(resume.get("student_id")) != student_id:
+    if not resume or str(resume.get("student_id")) != str(student_id):
         return jsonify({"message": "Resume not found or access denied"}), 404
     
     # Delete the file from the filesystem
@@ -1029,7 +1051,8 @@ def delete_resume(resume_id):
 def download_resume(resume_id):
     """Download a resume"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     resume = StudentService.get_resume_by_id(resume_id)
     
@@ -1037,7 +1060,7 @@ def download_resume(resume_id):
         return jsonify({"message": "Resume not found"}), 404
     
     # Check if the resume belongs to the student or if the user is an admin
-    if str(resume.get("student_id")) != student_id and current_user.get('role') != 'admin':
+    if str(resume.get("student_id")) != str(student_id) and current_user.get('role') != 'admin':
         return jsonify({"message": "Access denied"}), 403
     
     # Extract the actual filename from the URL
@@ -1058,7 +1081,8 @@ def download_resume(resume_id):
 def get_my_applications():
     """Get all applications submitted by the current student"""
     current_user = get_jwt_identity()
-    student_id = current_user['id']
+    user_id = current_user.get('id')
+    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     applications = JobService.get_applications_by_student(student_id)
     

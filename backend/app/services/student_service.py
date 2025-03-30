@@ -4,6 +4,27 @@ from datetime import datetime
 
 class StudentService:
     @staticmethod
+    def get_student_id_by_user_id(user_id):
+        """
+        Get student ID by user ID.
+        
+        Args:
+            user_id: The user ID to look up
+            
+        Returns:
+            Student ID (ObjectId) if found, None otherwise
+        """
+        try:
+            # Convert string ID to ObjectId if needed
+            if isinstance(user_id, str):
+                user_id = ObjectId(user_id)
+            student = mongo.db.student.find_one({'user_id': user_id})
+            return student['_id'] if student else None
+            
+        except Exception as e:
+            print(f"Error retrieving student ID by user ID: {str(e)}")
+            return None
+    @staticmethod
     def get_student_by_id(student_id):
         """
         Get student details by ID.
@@ -19,7 +40,7 @@ class StudentService:
             if isinstance(student_id, str):
                 student_id = ObjectId(student_id)
                 
-            return mongo.db.students.find_one({'_id': student_id})
+            return mongo.db.student.find_one({'_id': student_id})
         except Exception as e:
             print(f"Error retrieving student by ID: {str(e)}")
             return None
