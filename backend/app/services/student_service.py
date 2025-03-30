@@ -15,11 +15,16 @@ class StudentService:
             Student document or None if not found
         """
         try:
+            print(f"Converting student_id to ObjectId: {student_id}")
             # Convert string ID to ObjectId if needed
             if isinstance(student_id, str):
                 student_id = ObjectId(student_id)
+                print(f"Converted to ObjectId: {student_id}")
                 
-            return mongo.db.students.find_one({'_id': student_id})
+            print(f"Querying student collection with ID: {student_id}")
+            student = mongo.db.student.find_one({'_id': student_id})
+            print(f"Query result: {student}")
+            return student
         except Exception as e:
             print(f"Error retrieving student by ID: {str(e)}")
             return None
@@ -41,8 +46,8 @@ class StudentService:
             
             # Apply filters if provided
             if filters:
-                if filters.get('branch') and filters['branch'] != 'all':
-                    query['branch'] = filters['branch']
+                if filters.get('major') and filters['major'] != 'all':
+                    query['major'] = filters['major']
                 
                 if 'cgpa' in filters:
                     query['cgpa'] = filters['cgpa']
@@ -964,48 +969,152 @@ class StudentService:
             Dictionary with verification status for each field
         """
         try:
+            print(f"\n=== Getting verification status for student {student_id} ===")
             # Convert string ID to ObjectId if needed
             if isinstance(student_id, str):
                 student_id = ObjectId(student_id)
+                print(f"Converted student_id to ObjectId: {student_id}")
                 
-            verification = mongo.db.verification.find_one({'student_id': student_id})
+            student = mongo.db.student.find_one({'_id': student_id})
+            print(f"Raw student document: {student}")
             
-            if not verification:
-                # Create default verification status
-                default_status = {
-                    'student_id': student_id,
-                    'name': False,
-                    'email': False,
-                    'phone': False,
-                    'dateOfBirth': False,
-                    'gender': False,
-                    'address': False,
-                    'major': False,
-                    'studentId': False,
-                    'enrollmentYear': False,
-                    'expectedGraduationYear': False,
-                    'passportImage': False,
-                    'created_at': datetime.utcnow(),
-                    'updated_at': datetime.utcnow()
-                }
-                
-                mongo.db.verification.insert_one(default_status)
-                return default_status
+            if not student:
+                print("Student not found")
+                return {}
+            
+            # Get verification status from student document
+            verification = student.get('verification', {})
+            print(f"Raw verification data: {verification}")
             
             # Format for frontend
-            return {
-                'name': verification.get('name', False),
-                'email': verification.get('email', False),
-                'phone': verification.get('phone', False),
-                'dateOfBirth': verification.get('dateOfBirth', False),
-                'gender': verification.get('gender', False),
-                'address': verification.get('address', False),
-                'major': verification.get('major', False),
-                'studentId': verification.get('studentId', False),
-                'enrollmentYear': verification.get('enrollmentYear', False),
-                'expectedGraduationYear': verification.get('expectedGraduationYear', False),
-                'passportImage': verification.get('passportImage', False)
+            formatted_status = {
+                'name': verification.get('name', {}).get('status', 'pending'),
+                'email': verification.get('email', {}).get('status', 'pending'),
+                'phone': verification.get('phone', {}).get('status', 'pending'),
+                'dateOfBirth': verification.get('date_of_birth', {}).get('status', 'pending'),
+                'gender': verification.get('gender', {}).get('status', 'pending'),
+                'address': verification.get('address', {}).get('status', 'pending'),
+                'major': verification.get('major', {}).get('status', 'pending'),
+                'studentId': verification.get('student_id', {}).get('status', 'pending'),
+                'enrollmentYear': verification.get('enrollment_year', {}).get('status', 'pending'),
+                'expectedGraduationYear': verification.get('expected_graduation_year', {}).get('status', 'pending'),
+                'passportImage': verification.get('passport_image', {}).get('status', 'pending')
             }
+            print(f"Formatted verification status: {formatted_status}")
+            return formatted_status
+            
         except Exception as e:
             print(f"Error getting verification status: {str(e)}")
             return {}
+
+    @staticmethod
+    def update_verification_status(student_id, field, status, verified_by, comments=None):
+        """
+        Update the verification status of a specific field for a student
+        
+        Args:
+            student_id: The ID of the student
+            field: The field to update
+            status: The new status ('verified' or 'rejected')
+            verified_by: The ID of the admin who verified
+            comments: Optional comments about the verification
+            
+        Returns:
+            Updated student document or None if update failed
+        """
+        try:
+            print(f"Updating verification status for student {student_id}")
+            print(f"Field: {field}, Status: {status}, Verified by: {verified_by}")
+            
+            # Convert string ID to ObjectId if needed
+            if isinstance(student_id, str):
+                student_id = ObjectId(student_id)
+                print(f"Converted student_id to ObjectId: {student_id}")
+            if isinstance(verified_by, str):
+                verified_by = ObjectId(verified_by)
+                print(f"Converted verified_by to ObjectId: {verified_by}")
+
+            # Update the verification status
+            update_data = {
+                f"verification.{field}.status": status,
+                f"verification.{field}.verified_by": verified_by,
+                f"verification.{field}.verified_at": datetime.utcnow()
+            }
+
+            if comments:
+                update_data[f"verification.{field}.comments"] = comments
+
+            print(f"Update data: {update_data}")
+
+            result = mongo.db.student.update_one(
+                {'_id': student_id},
+                {'$set': update_data}
+            )
+
+            print(f"Update result: modified_count={result.modified_count}, matched_count={result.matched_count}")
+
+            if result.modified_count == 0:
+                print("No documents were modified")
+                return None
+
+            # Get the updated student document
+            updated_student = mongo.db.student.find_one({'_id': student_id})
+            print(f"Updated student document: {updated_student}")
+            return updated_student
+
+        except Exception as e:
+            print(f"Error updating verification status: {str(e)}")
+            return None
+
+    @staticmethod
+    def verify_all_fields(student_id, verified_by):
+        """
+        Verify all fields for a student
+        
+        Args:
+            student_id: The ID of the student
+            verified_by: The ID of the admin who verified
+            
+        Returns:
+            Updated student document or None if update failed
+        """
+        try:
+            # Convert string ID to ObjectId if needed
+            if isinstance(student_id, str):
+                student_id = ObjectId(student_id)
+            if isinstance(verified_by, str):
+                verified_by = ObjectId(verified_by)
+
+            # Get the student document to know which fields to verify
+            student = mongo.db.student.find_one({'_id': student_id})
+            if not student:
+                return None
+
+            # Create update data for all fields
+            update_data = {}
+            fields_to_verify = [
+                'name', 'email', 'phone', 'date_of_birth', 'gender', 'address',
+                'major', 'student_id', 'enrollment_year', 'expected_graduation_year'
+            ]
+
+            for field in fields_to_verify:
+                if field in student:
+                    update_data[f"verification.{field}.status"] = "verified"
+                    update_data[f"verification.{field}.verified_by"] = verified_by
+                    update_data[f"verification.{field}.verified_at"] = datetime.utcnow()
+
+            # Update all fields
+            result = mongo.db.student.update_one(
+                {'_id': student_id},
+                {'$set': update_data}
+            )
+
+            if result.modified_count == 0:
+                return None
+
+            # Get the updated student document
+            return mongo.db.student.find_one({'_id': student_id})
+
+        except Exception as e:
+            print(f"Error verifying all fields: {str(e)}")
+            return None

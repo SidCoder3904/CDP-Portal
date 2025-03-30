@@ -46,6 +46,8 @@ export default function StudentVerificationPage() {
         setLoading(true)
         setError(null)
         const studentData = await adminApi.getStudentById(studentId)
+        console.log("Received student data:", studentData)
+        console.log("Verification status:", studentData.verification)
         setStudent(studentData)
       } catch (err) {
         console.error("Failed to fetch student details:", err)
@@ -77,7 +79,10 @@ export default function StudentVerificationPage() {
 
     try {
       setIsUpdating(true)
+      console.log(`Updating verification status for ${field} to ${status}`)
       const updatedStudent = await adminApi.updateVerificationStatus(studentId, field, status)
+      console.log("Updated student data:", updatedStudent)
+      console.log("Updated verification status:", updatedStudent.verification)
       setStudent(updatedStudent)
     } catch (err) {
       console.error(`Failed to update ${field} verification status:`, err)
@@ -100,7 +105,7 @@ export default function StudentVerificationPage() {
     }
   }
 
-  const isFullyVerified = student && Object.values(student.verification).every((v) => v.status === "verified")
+  const isFullyVerified = student && Object.values(student.verification).every((v) => v === "verified")
 
   if (loading) {
     return (
@@ -201,11 +206,13 @@ export default function StudentVerificationPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">CGPA:</span>
-                  <span className="font-medium">{student.cgpa?.toFixed(2) || "N/A"}</span>
+                  <span className="font-medium">
+                    {typeof student.cgpa === 'number' ? student.cgpa.toFixed(2) : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Verification Status:</span>
-                  <Badge variant={isFullyVerified ? "success" : "destructive"}>
+                  <Badge variant={isFullyVerified ? "default" : "destructive"}>
                     {isFullyVerified ? "Verified" : "Pending"}
                   </Badge>
                 </div>
@@ -229,7 +236,7 @@ export default function StudentVerificationPage() {
                 <VerificationItem
                   label="Name"
                   value={student.name}
-                  status={student.verification.name?.status || "pending"}
+                  status={student.verification.name || "pending"}
                   onVerify={() => handleVerification("name", "verified")}
                   onReject={() => handleVerification("name", "rejected")}
                   isUpdating={isUpdating}
@@ -238,7 +245,7 @@ export default function StudentVerificationPage() {
                 <VerificationItem
                   label="Email"
                   value={student.email}
-                  status={student.verification.email?.status || "pending"}
+                  status={student.verification.email || "pending"}
                   onVerify={() => handleVerification("email", "verified")}
                   onReject={() => handleVerification("email", "rejected")}
                   isUpdating={isUpdating}
@@ -247,7 +254,7 @@ export default function StudentVerificationPage() {
                 <VerificationItem
                   label="Phone"
                   value={student.phone}
-                  status={student.verification.phone?.status || "pending"}
+                  status={student.verification.phone || "pending"}
                   onVerify={() => handleVerification("phone", "verified")}
                   onReject={() => handleVerification("phone", "rejected")}
                   isUpdating={isUpdating}
@@ -256,16 +263,16 @@ export default function StudentVerificationPage() {
                 <VerificationItem
                   label="Date of Birth"
                   value={student.dateOfBirth}
-                  status={student.verification.dateOfBirth?.status || "pending"}
-                  onVerify={() => handleVerification("dateOfBirth", "verified")}
-                  onReject={() => handleVerification("dateOfBirth", "rejected")}
+                  status={student.verification.dateOfBirth || "pending"}
+                  onVerify={() => handleVerification("date_of_birth", "verified")}
+                  onReject={() => handleVerification("date_of_birth", "rejected")}
                   isUpdating={isUpdating}
                 />
 
                 <VerificationItem
                   label="Gender"
                   value={student.gender}
-                  status={student.verification.gender?.status || "pending"}
+                  status={student.verification.gender || "pending"}
                   onVerify={() => handleVerification("gender", "verified")}
                   onReject={() => handleVerification("gender", "rejected")}
                   isUpdating={isUpdating}
@@ -274,7 +281,7 @@ export default function StudentVerificationPage() {
                 <VerificationItem
                   label="Address"
                   value={student.address}
-                  status={student.verification.address?.status || "pending"}
+                  status={student.verification.address || "pending"}
                   onVerify={() => handleVerification("address", "verified")}
                   onReject={() => handleVerification("address", "rejected")}
                   isUpdating={isUpdating}
@@ -285,7 +292,7 @@ export default function StudentVerificationPage() {
                 <VerificationItem
                   label="Major"
                   value={student.major}
-                  status={student.verification.major?.status || "pending"}
+                  status={student.verification.major || "pending"}
                   onVerify={() => handleVerification("major", "verified")}
                   onReject={() => handleVerification("major", "rejected")}
                   isUpdating={isUpdating}
@@ -294,27 +301,36 @@ export default function StudentVerificationPage() {
                 <VerificationItem
                   label="Student ID"
                   value={student.studentId}
-                  status={student.verification.studentId?.status || "pending"}
-                  onVerify={() => handleVerification("studentId", "verified")}
-                  onReject={() => handleVerification("studentId", "rejected")}
+                  status={student.verification.studentId || "pending"}
+                  onVerify={() => handleVerification("student_id", "verified")}
+                  onReject={() => handleVerification("student_id", "rejected")}
                   isUpdating={isUpdating}
                 />
 
                 <VerificationItem
                   label="Enrollment Year"
                   value={student.enrollmentYear}
-                  status={student.verification.enrollmentYear?.status || "pending"}
-                  onVerify={() => handleVerification("enrollmentYear", "verified")}
-                  onReject={() => handleVerification("enrollmentYear", "rejected")}
+                  status={student.verification.enrollmentYear || "pending"}
+                  onVerify={() => handleVerification("enrollment_year", "verified")}
+                  onReject={() => handleVerification("enrollment_year", "rejected")}
                   isUpdating={isUpdating}
                 />
 
                 <VerificationItem
                   label="Expected Graduation Year"
                   value={student.expectedGraduationYear}
-                  status={student.verification.expectedGraduationYear?.status || "pending"}
-                  onVerify={() => handleVerification("expectedGraduationYear", "verified")}
-                  onReject={() => handleVerification("expectedGraduationYear", "rejected")}
+                  status={student.verification.expectedGraduationYear || "pending"}
+                  onVerify={() => handleVerification("expected_graduation_year", "verified")}
+                  onReject={() => handleVerification("expected_graduation_year", "rejected")}
+                  isUpdating={isUpdating}
+                />
+
+                <VerificationItem
+                  label="Passport Image"
+                  value={student.passportImage}
+                  status={student.verification.passportImage || "pending"}
+                  onVerify={() => handleVerification("passport_image", "verified")}
+                  onReject={() => handleVerification("passport_image", "rejected")}
                   isUpdating={isUpdating}
                 />
               </TabsContent>
@@ -361,7 +377,7 @@ function VerificationItem({ label, value, status, onVerify, onReject, isUpdating
 
         <div className="flex items-center space-x-2">
           {status === "verified" ? (
-            <Badge variant="success" className="flex items-center">
+            <Badge variant="default" className="flex items-center">
               <Check className="mr-1 h-3 w-3" />
               Verified
             </Badge>
@@ -379,42 +395,40 @@ function VerificationItem({ label, value, status, onVerify, onReject, isUpdating
         </div>
       </div>
 
-      {status !== "verified" && (
-        <div className="mt-2 flex justify-end space-x-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-            onClick={onReject}
-            disabled={isUpdating}
-          >
-            {isUpdating ? (
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-500"></div>
-            ) : (
-              <>
-                <X className="mr-1 h-3 w-3" />
-                Reject
-              </>
-            )}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600"
-            onClick={onVerify}
-            disabled={isUpdating}
-          >
-            {isUpdating ? (
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-500"></div>
-            ) : (
-              <>
-                <Check className="mr-1 h-3 w-3" />
-                Verify
-              </>
-            )}
-          </Button>
-        </div>
-      )}
+      <div className="mt-2 flex justify-end space-x-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
+          onClick={onReject}
+          disabled={isUpdating}
+        >
+          {isUpdating ? (
+            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-500"></div>
+          ) : (
+            <>
+              <X className="mr-1 h-3 w-3" />
+              Reject
+            </>
+          )}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600"
+          onClick={onVerify}
+          disabled={isUpdating}
+        >
+          {isUpdating ? (
+            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-500"></div>
+          ) : (
+            <>
+              <Check className="mr-1 h-3 w-3" />
+              Verify
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   )
 }

@@ -59,8 +59,8 @@ export default function StudentsListPage() {
     setCurrentPage(1) // Reset to first page when filters change
   }
 
-  const navigateToStudentDetails = (studentId: string) => {
-    router.push(`/admin/verification${studentId}`)
+  const navigateToStudentDetails = (student_id: string) => {
+    router.push(`/admin/verification/${student_id}`)
   }
 
   const totalPages = Math.ceil(totalStudents / perPage)
@@ -171,7 +171,7 @@ export default function StudentsListPage() {
                         <TableCell>{student.cgpa}</TableCell>
                         <TableCell>{student.major}</TableCell>
                         <TableCell>
-                          <Badge variant={student.isVerified ? "success" : "destructive"}>
+                          <Badge variant={student.isVerified ? "default" : "destructive"}>
                             {student.isVerified ? "Verified" : "Pending"}
                           </Badge>
                         </TableCell>

@@ -11,12 +11,7 @@ export interface StudentListItem {
 }
 
 export interface StudentVerification {
-  [key: string]: {
-    status: "verified" | "rejected" | "pending"
-    verifiedBy?: string
-    verifiedAt?: string
-    comments?: string
-  }
+  [key: string]: "verified" | "rejected" | "pending"
 }
 
 export interface StudentDetail extends StudentProfile {
