@@ -92,6 +92,12 @@ def get_student_details(student_id):
         verification_status = StudentService.get_verification_status(student_id)
         print(f"Verification status: {verification_status}")
 
+        # Get the passport image URL from Cloudinary if it exists
+        passport_image = student.get("passport_image")
+        if passport_image and not passport_image.startswith("http"):
+            # If it's not a Cloudinary URL, use the placeholder
+            passport_image = "/placeholder.svg?height=200&width=200"
+
         # Format student data for frontend
         formatted_student = {
             "_id": str(student.get("_id", "")),
@@ -105,7 +111,7 @@ def get_student_details(student_id):
             "studentId": student.get("student_id", ""),
             "enrollmentYear": student.get("enrollment_year", ""),
             "expectedGraduationYear": student.get("expected_graduation_year", ""),
-            "passportImage": student.get("passport_image", "/placeholder.svg?height=200&width=200"),
+            "passportImage": passport_image,
             "cgpa": float(student.get("cgpa", 0.0)),
             "branch": student.get("branch", ""),
             "verification": verification_status

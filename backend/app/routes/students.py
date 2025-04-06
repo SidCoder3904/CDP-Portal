@@ -12,7 +12,7 @@ from bson.objectid import ObjectId
 from bson.json_util import dumps, loads
 import json
 from datetime import datetime
-from app.utils.cloudinary_config import upload_file, delete_file, generate_public_id
+from app.utils.cloudinary_config import upload_file, delete_file, generate_public_id, upload_profile_picture
 
 
 students_bp = Blueprint('students', __name__)
@@ -32,12 +32,17 @@ def get_my_profile():
     student_id = StudentService.get_student_id_by_user_id(user_id)
     
     student = StudentService.get_student_by_id(student_id)
-    # print("Student:", student)
     if not student:
         return jsonify({"message": "Student not found"}), 404
     
     # Get verification status
     verification_status = StudentService.get_verification_status(student_id)
+    
+    # Get the passport image URL from Cloudinary if it exists
+    passport_image = student.get("passport_image")
+    if passport_image and not passport_image.startswith("http"):
+        # If it's not a Cloudinary URL, use the placeholder
+        passport_image = "/placeholder.svg?height=200&width=200"
     
     # Format the student data for the frontend
     formatted_student = {
@@ -52,7 +57,7 @@ def get_my_profile():
         "studentId": student.get("student_id", ""),
         "enrollmentYear": student.get("enrollment_year", ""),
         "expectedGraduationYear": student.get("expected_graduation_year", ""),
-        "passportImage": student.get("passport_image", "/placeholder.svg?height=200&width=200"),
+        "passportImage": passport_image,
         "verificationStatus": verification_status
     }
     
@@ -124,7 +129,7 @@ def update_my_profile():
 def upload_passport_image():
     """Upload a passport image for the currently logged-in student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
     
     if 'passportImage' not in request.files:
         return jsonify({"message": "No image file provided"}), 400
@@ -135,23 +140,30 @@ def upload_passport_image():
         return jsonify({"message": "No image file selected"}), 400
     
     if file:
-        # Secure the filename and save the file
-        filename = secure_filename(f"{student_id}_passport.jpg")
-        
-        # Ensure the upload directory exists
-        upload_dir = os.path.join(os.getcwd(), 'app', 'static', 'uploads', 'passport_images')
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        file_path = os.path.join(upload_dir, filename)
-        file.save(file_path)
-        
-        # Generate the URL for the image
-        image_url = f"/static/uploads/passport_images/{filename}"
-        
-        # Update the student's profile with the new image URL
-        StudentService.update_student_by_user_id(student_id, {"passport_image": image_url})
-        
-        return jsonify({"imageUrl": image_url}), 200
+        try:
+            # Get the current student to check for existing passport image
+            student = StudentService.get_student_by_id(user_id)
+            previous_public_id = student.get('passport_image_public_id') if student else None
+            
+            # Upload to Cloudinary
+            upload_result = upload_profile_picture(
+                file=file,
+                user_id=str(user_id),
+                delete_previous=True,
+                previous_public_id=previous_public_id
+            )
+            
+            # Update the student's profile with the new image URL and public ID
+            StudentService.update_student_by_user_id(user_id, {
+                "passport_image": upload_result['view_url'],
+                "passport_image_public_id": upload_result['public_id']
+            })
+            
+            return jsonify({"imageUrl": upload_result['view_url']}), 200
+            
+        except Exception as e:
+            print(f"Passport image upload error: {str(e)}")
+            return jsonify({"message": f"Failed to upload image: {str(e)}"}), 500
     
     return jsonify({"message": "Failed to upload image"}), 500
 

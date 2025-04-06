@@ -23,6 +23,12 @@ import { FileUploader } from "@/components/file-uploader";
 import { ImageCropModal } from "@/components/image-crop-model";
 import { useStudentApi, StudentProfile } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function BasicDetails() {
   const [studentData, setStudentData] = useState<StudentProfile | null>(null);
@@ -32,6 +38,7 @@ export default function BasicDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isProfilePictureModalOpen, setIsProfilePictureModalOpen] = useState(false);
 
   const studentApi = useStudentApi();
 
@@ -168,7 +175,10 @@ export default function BasicDetails() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="col-span-2 flex items-center space-x-4">
-              <Avatar className="w-24 h-24">
+              <Avatar 
+                className="w-24 h-24 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => studentData.passportImage && setIsProfilePictureModalOpen(true)}
+              >
                 <AvatarImage src={studentData.passportImage} alt="Passport" />
                 <AvatarFallback>
                   {studentData.name
@@ -328,6 +338,22 @@ export default function BasicDetails() {
             onCropComplete={handleCropComplete}
           />
         )}
+        <Dialog open={isProfilePictureModalOpen} onOpenChange={setIsProfilePictureModalOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Profile Picture</DialogTitle>
+            </DialogHeader>
+            {studentData.passportImage && (
+              <div className="flex justify-center">
+                <img
+                  src={studentData.passportImage}
+                  alt="Profile Picture"
+                  className="max-w-full max-h-[80vh] object-contain"
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </Card>
     </div>
   );
