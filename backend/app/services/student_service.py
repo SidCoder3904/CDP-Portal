@@ -185,6 +185,15 @@ class StudentService:
             # Add updated timestamp
             update_data['updated_at'] = datetime.utcnow()
             
+            # If updating passport image, ensure we keep the public ID
+            if 'passport_image' in update_data:
+                # Get current student data
+                current_student = mongo.db.student.find_one({'user_id': user_id})
+                if current_student and 'passport_image_public_id' in current_student:
+                    # Keep the existing public ID if not being updated
+                    if 'passport_image_public_id' not in update_data:
+                        update_data['passport_image_public_id'] = current_student['passport_image_public_id']
+            
             result = mongo.db.student.update_one(
                 {'user_id': user_id},
                 {'$set': update_data}
@@ -913,6 +922,10 @@ class StudentService:
             ID of the newly created resume record
         """
         try:
+            # Convert student_id to ObjectId if needed
+            if isinstance(resume_data.get('student_id'), str):
+                resume_data['student_id'] = ObjectId(resume_data['student_id'])
+            
             # Add timestamps
             resume_data['created_at'] = datetime.utcnow()
             resume_data['updated_at'] = datetime.utcnow()
