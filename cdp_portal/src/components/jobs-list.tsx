@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, Filter } from "lucide-react";
 import React, { useEffect, useState } from "react";
-
+import { useApi } from "@/lib/api";
 
 interface JobsListProps {
   cycleId: string;
@@ -30,7 +30,7 @@ interface JobsListProps {
  * Represents the shape of each job returned from the backend.
  */
 interface Job {
-  _id: { $oid: string }; // Correctly representing MongoDB ObjectId
+  _id: string | { $oid: string }; // Correctly representing MongoDB ObjectId
   company: string;
   role: string;
   package: string;
@@ -42,42 +42,53 @@ interface Job {
 }
 
 export function JobsList({ cycleId }: JobsListProps) {
-  // Mock data - in a real app, this would be fetched based on the cycleId
-
+  const { fetchWithAuth } = useApi();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchJobs = async () => {
+      setIsLoading(true);
       try {
         const queryParams = new URLSearchParams();
         if (statusFilter !== "all") queryParams.append("status", statusFilter);
         if (searchTerm.trim()) queryParams.append("company", searchTerm.trim());
   
-        const response = await fetch(
-          `${backendUrl}/api/placement-cycles/${cycleId}/jobs?${queryParams.toString()}`
+        // Using fetchWithAuth instead of direct fetch
+        // Note: removing /api/ prefix to match backend routes
+        const response = await fetchWithAuth(
+          `/api/placement-cycles/${cycleId}/jobs?${queryParams.toString()}`
         );
   
-        if (!response.ok) throw new Error("Failed to fetch jobs.");
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to fetch jobs");
+        }
   
         const data = await response.json();
-        console.log("Fetched jobs:", data); // ✅ Log jobs
+        console.log("Fetched jobs:", data);
         setJobs(data);
       } catch (error) {
         console.error("Error fetching jobs:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
   
     fetchJobs();
   }, [cycleId, searchTerm, statusFilter]);
   
+  // Handler for updating the search term
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
-  
-  
+  // Handler for updating the status filter
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+  };
 
   return (
     <div className="space-y-4">
@@ -87,13 +98,15 @@ export function JobsList({ cycleId }: JobsListProps) {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search jobs..."
+              placeholder="Search jobs by company..."
               className="pl-8"
+              value={searchTerm}
+              onChange={handleSearchChange}
             />
           </div>
         </div>
         <div className="flex gap-2">
-          <Select defaultValue="all">
+          <Select value={statusFilter} onValueChange={handleStatusChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -110,58 +123,66 @@ export function JobsList({ cycleId }: JobsListProps) {
         </div>
       </div>
 
-      {jobs.length != 0 ?
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Company</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Package</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Deadline</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Applicants</TableHead>
-              <TableHead>Selected</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {jobs.map((job) => (
-              <TableRow key={job._id.$oid}>
-                <TableCell className="font-medium">
-                  <Link
-                    href={`/admin/placement_cycles/cycles/${cycleId}/jobs/${job._id.$oid}`}
-                    className="hover:underline"
-                  >
-                    {job.company}
-                  </Link>
-                </TableCell>
-                <TableCell>{job.role}</TableCell>
-                <TableCell>{job.package}</TableCell>
-                <TableCell>{job.location}</TableCell>
-                <TableCell>{job.deadline}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      job.status === "Open"
-                        ? "default"
-                        : job.status === "Closed"
-                        ? "secondary"
-                        : "outline"
-                    }
-                  >
-                    {job.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>{job.applicants}</TableCell>
-                <TableCell>{job.selected}</TableCell>
+      {isLoading ? (
+        <div className="text-center py-4">Loading jobs...</div>
+      ) : jobs.length > 0 ? (
+        <div className="border rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Company</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Package</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Deadline</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Applicants</TableHead>
+                <TableHead>Selected</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>:
-      <div></div>
-      }
+            </TableHeader>
+            <TableBody>
+              {jobs.map((job) => {
+                // Handle both string and object ID formats
+                const jobId = typeof job._id === 'string' ? job._id : job._id.$oid;
+                
+                return (
+                  <TableRow key={jobId}>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/admin/placement_cycles/cycles/${cycleId}/jobs/${jobId}`}
+                        className="hover:underline"
+                      >
+                        {job.company}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{job.role}</TableCell>
+                    <TableCell>{job.package}</TableCell>
+                    <TableCell>{job.location}</TableCell>
+                    <TableCell>{job.deadline}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          job.status === "open" || job.status === "Open" 
+                            ? "default"
+                            : job.status === "closed" || job.status === "Closed"
+                            ? "secondary"
+                            : "outline"
+                        }
+                      >
+                        {job.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{job.applicants || 0}</TableCell>
+                    <TableCell>{job.selected || 0}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="text-center py-4">No jobs found</div>
+      )}
     </div>
   );
 }
