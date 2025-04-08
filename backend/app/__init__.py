@@ -19,13 +19,15 @@ def create_app(config_class=Config):
     # Initialize extensions
     mongo.init_app(app)
     JWTManager(app)
-    CORS(app)
-
+    
+    # Configure CORS
     CORS(app, supports_credentials=True, resources={
         r"/api/*": {
-            "origins": ["http://localhost:3000", "https://cdp-portal-chi.vercel.app/"],
+            "origins": ["http://localhost:3000", "https://cdp-portal-chi.vercel.app"],
             "allow_headers": ["Content-Type", "Authorization"],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "expose_headers": ["Content-Type", "Authorization"],
+            "max_age": 3600
         }
     })
 
@@ -56,6 +58,7 @@ def create_app(config_class=Config):
     app.register_blueprint(jobs_bp, url_prefix='/api/jobs')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    
     # Error handlers
     from app.utils.errors import register_error_handlers
     register_error_handlers(app)

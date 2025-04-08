@@ -1,144 +1,205 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useStudentApi } from "@/lib/api/students";
 import { FileUploader } from "@/components/file-uploader";
-import { useStudentApi, Resume } from "@/lib/api/students";
-import { Icons } from "@/components/icons";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Loader2, Trash2, Download, Eye } from "lucide-react";
+import { toast } from "sonner";
+
+interface Resume {
+  _id: string;
+  resume_name: string;
+  file_name: string;
+  upload_date: string;
+  file_size: string;
+  file_url: string;
+  public_id: string;
+  student_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function ResumePage() {
-  const [resume, setResume] = useState<Resume | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const studentApi = useStudentApi();
+  const [resumes, setResumes] = useState<Resume[]>([]);
+  const [resumeName, setResumeName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const studentApi = useStudentApi();
-
   useEffect(() => {
-    async function fetchResumeData() {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await studentApi.getMyResume();
-        setResume(data);
-      } catch (error) {
-        console.error("Failed to fetch resume data:", error);
-        setError("Failed to load resume data. Please try again later.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchResumeData();
+    fetchResumes();
   }, []);
 
-  const handleFileUpload = async (file: File) => {
+  const fetchResumes = async () => {
     try {
-      setIsUpdating(true);
-      setError(null);
-      const updatedResume = await studentApi.uploadResume(file);
-      setResume(updatedResume);
-    } catch (error) {
-      console.error("Failed to upload resume:", error);
-      setError("Failed to upload resume. Please try again.");
+      const data = await studentApi.getResumes();
+      setResumes(data);
+    } catch (err) {
+      setError("Failed to fetch resumes");
+      toast.error("Failed to fetch resumes");
     } finally {
-      setIsUpdating(false);
+      setLoading(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Icons.spinner className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading resume data...</span>
-      </div>
-    );
-  }
+  const handleFileUpload = async (file: File) => {
+    try {
+      setUpdating(true);
+      setError(null);
+      
+      const newResume = await studentApi.uploadResume(resumeName, file);
+      setResumes((prev) => [...prev, newResume]);
+      setResumeName("");
+      toast.success("Resume uploaded successfully");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload resume");
+      toast.error("Failed to upload resume");
+    } finally {
+      setUpdating(false);
+    }
+  };
 
-  if (error) {
+  const handleDeleteResume = async (resumeId: string) => {
+    try {
+      await studentApi.deleteResume(resumeId);
+      setResumes((prev) => prev.filter((resume) => resume._id !== resumeId));
+      toast.success("Resume deleted successfully");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete resume");
+      toast.error("Failed to delete resume");
+    }
+  };
+
+  const handleDownloadResume = async (resumeId: string) => {
+    try {
+      const response = await studentApi.downloadResume(resumeId);
+      const { file_url, file_name } = response;
+      
+      // Create a temporary link element for download
+      const link = document.createElement('a');
+      link.href = file_url;
+      link.download = file_name;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to download resume");
+      toast.error("Failed to download resume");
+    }
+  };
+
+  const handleViewResume = async (resumeId: string) => {
+    try {
+      const response = await studentApi.viewResume(resumeId);
+      const { file_url } = response;
+      
+      // Open the PDF in a new tab for viewing
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(`
+          <html>
+            <head>
+              <title>Resume</title>
+              <style>
+                body { margin: 0; padding: 0; }
+                embed { width: 100%; height: 100vh; }
+              </style>
+            </head>
+            <body>
+              <embed src="${file_url}" type="application/pdf" />
+            </body>
+          </html>
+        `);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to view resume");
+      toast.error("Failed to view resume");
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="p-4 text-red-500 bg-red-50 rounded-md">
-        <p>{error}</p>
-        <Button onClick={() => window.location.reload()} className="mt-4">
-          Retry
-        </Button>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div>
-      <h1 className="text-2xl text-template font-bold mb-6">Resume</h1>
-      <Card>
-        <CardHeader></CardHeader>
-        <CardContent>
-          <div className="mb-6">
-            <p className="text-gray-600">
-              Upload your latest resume here. Make sure it's up to date with all
-              your experiences and achievements.
-            </p>
-          </div>
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">Current Resume</h2>
-            {resume && resume.fileName ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>File Name</Label>
-                  <Input value={resume.fileName} readOnly />
-                </div>
-                <div>
-                  <Label>Upload Date</Label>
-                  <Input value={resume.uploadDate} readOnly />
-                </div>
-                <div>
-                  <Label>File Size</Label>
-                  <Input value={resume.fileSize} readOnly />
-                </div>
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">My Resumes</h1>
+      
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
+      <Card className="p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">Upload New Resume</h2>
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Resume Name (optional)"
+            value={resumeName}
+            onChange={(e) => setResumeName(e.target.value)}
+            className="w-full p-2 border rounded"
+          />
+          <FileUploader
+            onFileUpload={handleFileUpload}
+            acceptedFileTypes={{
+              "application/pdf": [".pdf"]
+            }}
+            maxSize={5 * 1024 * 1024}
+          />
+        </div>
+      </Card>
+
+      <div className="grid gap-4">
+        {resumes.map((resume) => (
+          <Card key={resume._id} className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold">{resume.resume_name}</h3>
+                <p className="text-sm text-gray-500">
+                  Uploaded on {resume.upload_date} • {resume.file_size}
+                </p>
               </div>
-            ) : (
-              <div className="text-center p-4 bg-gray-50 rounded-md">
-                <p className="text-gray-500">No resume uploaded yet.</p>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col space-y-4">
-            <FileUploader
-              onFileUpload={handleFileUpload}
-              acceptedFileTypes={{
-                "application/pdf": [".pdf"],
-                "application/msword": [".doc"],
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-                  [".docx"],
-              }}
-            />
-            {isUpdating && (
-              <div className="flex items-center justify-center">
-                <Icons.spinner className="h-4 w-4 animate-spin mr-2" />
-                <span>Uploading resume...</span>
-              </div>
-            )}
-            {resume && resume.fileName && (
-              <div className="flex space-x-4">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() =>
-                    window.open(
-                      `/api/download-resume?fileName=${resume.fileName}`,
-                      "_blank"
-                    )
-                  }
-                  disabled={isUpdating}
+                  size="icon"
+                  onClick={() => handleViewResume(resume._id)}
+                  title="View Resume"
                 >
-                  Download Current Resume
+                  <Eye className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleDownloadResume(resume._id)}
+                  title="Download Resume"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => handleDeleteResume(resume._id)}
+                  title="Delete Resume"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

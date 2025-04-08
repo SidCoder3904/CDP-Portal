@@ -12,6 +12,7 @@ from bson.objectid import ObjectId
 from bson.json_util import dumps, loads
 import json
 from datetime import datetime
+from app.utils.cloudinary_config import upload_file, delete_file, generate_public_id, upload_profile_picture
 
 
 students_bp = Blueprint('students', __name__)
@@ -31,13 +32,18 @@ def get_my_profile():
     student_id = StudentService.get_student_id_by_user_id(user_id)
     
     student = StudentService.get_student_by_id(student_id)
-    # print("Student:", student)
     if not student:
         return jsonify({"message": "Student not found"}), 404
     
     # Get verification status
     verification_status = StudentService.get_verification_status(student_id)
     print("Verification status:", verification_status)
+    # Get the passport image URL from Cloudinary if it exists
+    passport_image = student.get("passport_image")
+    if passport_image and not passport_image.startswith("http"):
+        # If it's not a Cloudinary URL, use the placeholder
+        passport_image = "/placeholder.svg?height=200&width=200"
+    
     # Format the student data for the frontend
     formatted_student = {
         "_id": str(student.get("_id", "")),
@@ -51,7 +57,7 @@ def get_my_profile():
         "studentId": student.get("student_id", ""),
         "enrollmentYear": student.get("enrollment_year", ""),
         "expectedGraduationYear": student.get("expected_graduation_year", ""),
-        "passportImage": student.get("passport_image", "/placeholder.svg?height=200&width=200"),
+        "passportImage": passport_image,
         "verificationStatus": verification_status
     }
     
@@ -123,7 +129,7 @@ def update_my_profile():
 def upload_passport_image():
     """Upload a passport image for the currently logged-in student"""
     current_user = get_jwt_identity()
-    student_id = current_user.get('id')
+    user_id = current_user.get('id')
     
     if 'passportImage' not in request.files:
         return jsonify({"message": "No image file provided"}), 400
@@ -134,23 +140,30 @@ def upload_passport_image():
         return jsonify({"message": "No image file selected"}), 400
     
     if file:
-        # Secure the filename and save the file
-        filename = secure_filename(f"{student_id}_passport.jpg")
-        
-        # Ensure the upload directory exists
-        upload_dir = os.path.join(os.getcwd(), 'app', 'static', 'uploads', 'passport_images')
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        file_path = os.path.join(upload_dir, filename)
-        file.save(file_path)
-        
-        # Generate the URL for the image
-        image_url = f"/static/uploads/passport_images/{filename}"
-        
-        # Update the student's profile with the new image URL
-        StudentService.update_student_by_user_id(student_id, {"passport_image": image_url})
-        
-        return jsonify({"imageUrl": image_url}), 200
+        try:
+            # Get the current student to check for existing passport image
+            student = StudentService.get_student_by_id(user_id)
+            previous_public_id = student.get('passport_image_public_id') if student else None
+            
+            # Upload to Cloudinary
+            upload_result = upload_profile_picture(
+                file=file,
+                user_id=str(user_id),
+                delete_previous=True,
+                previous_public_id=previous_public_id
+            )
+            
+            # Update the student's profile with the new image URL and public ID
+            StudentService.update_student_by_user_id(user_id, {
+                "passport_image": upload_result['view_url'],
+                "passport_image_public_id": upload_result['public_id']
+            })
+            
+            return jsonify({"imageUrl": upload_result['view_url']}), 200
+            
+        except Exception as e:
+            print(f"Passport image upload error: {str(e)}")
+            return jsonify({"message": f"Failed to upload image: {str(e)}"}), 500
     
     return jsonify({"message": "Failed to upload image"}), 500
 
@@ -835,216 +848,185 @@ def delete_project(project_id):
     return jsonify({"message": "Project record deleted successfully"}), 200
 
 # Resume Routes
-@students_bp.route('/me/resumes', methods=['GET'])
+@students_bp.route('/me/resumes', methods=['GET', 'POST'])
 @jwt_required()
 @student_required
-def get_my_resumes():
-    """Get all resumes for the current student"""
-    current_user = get_jwt_identity()
-    user_id = current_user.get('id')
-    student_id = StudentService.get_student_id_by_user_id(user_id)
-    
-    resumes = StudentService.get_resumes_by_student_id(student_id)
-    
-    # Format for frontend
-    formatted_resumes = []
-    for resume in resumes:
-        formatted_resume = {
-            "id": str(resume.get("_id")),
-            "resumeName": resume.get("resume_name", ""),
-            "jobProfile": resume.get("job_profile", ""),
-            "fileName": resume.get("file_name", ""),
-            "uploadDate": resume.get("upload_date", ""),
-            "fileSize": resume.get("file_size", ""),
-            "fileUrl": resume.get("file_url", "")
-        }
-        formatted_resumes.append(formatted_resume)
-    
-    return jsonify(formatted_resumes), 200
+def handle_resumes():
+    if request.method == 'GET':
+        current_user = get_jwt_identity()
+        student_id = current_user.get('id')
+        resumes = StudentService.get_resumes_by_student_id(student_id)
+        
+        # Format resumes for frontend
+        formatted_resumes = []
+        for resume in resumes:
+            formatted_resume = {
+                "_id": str(resume.get("_id")),
+                "resume_name": resume.get("resume_name", ""),
+                "file_name": resume.get("file_name", ""),
+                "upload_date": resume.get("upload_date", ""),
+                "file_size": resume.get("file_size", ""),
+                "file_url": resume.get("file_url", ""),
+                "public_id": resume.get("public_id", ""),
+                "student_id": str(resume.get("student_id")),
+                "created_at": resume.get("created_at").strftime('%Y-%m-%d %H:%M:%S') if resume.get("created_at") else "",
+                "updated_at": resume.get("updated_at").strftime('%Y-%m-%d %H:%M:%S') if resume.get("updated_at") else ""
+            }
+            formatted_resumes.append(formatted_resume)
+            
+        return jsonify(formatted_resumes), 200
+        
+    elif request.method == 'POST':
+        try:
+            current_user = get_jwt_identity()
+            student_id = current_user.get('id')
+            
+            # Check resume limit
+            existing_resumes_count = StudentService.count_resumes_by_student_id(student_id)
+            if existing_resumes_count >= 3:
+                return jsonify({"message": "Maximum limit of 3 resumes reached"}), 400
+            
+            if 'resume' not in request.files:
+                return jsonify({"message": "No file provided"}), 400
+                
+            file = request.files['resume']
+            if file.filename == '':
+                return jsonify({"message": "No file selected"}), 400
 
-@students_bp.route('/me/resumes/<resume_id>', methods=['GET'])
+            # Validate file type
+            if not file.filename.lower().endswith('.pdf'):
+                return jsonify({"message": "Only PDF files are allowed"}), 400
+
+            # Get or generate resume name
+            resume_name = request.form.get('resumeName') or os.path.splitext(file.filename)[0]
+            
+            # Read and validate file
+            file_content = file.read()
+            file.seek(0)
+            
+            # Validate file size (5MB limit)
+            if len(file_content) > 5 * 1024 * 1024:
+                return jsonify({"message": "File size exceeds 5MB limit"}), 400
+
+            # Generate public ID and upload to Cloudinary
+            public_id = generate_public_id("resume", str(student_id))
+            upload_result = upload_file(
+                file=file,
+                folder="resumes",
+                resource_type="raw",
+                allowed_formats=[".pdf"],
+                public_id=public_id
+            )
+            
+            resume_data = {
+                "student_id": student_id,
+                "resume_name": resume_name,
+                "file_name": secure_filename(file.filename),
+                "upload_date": datetime.utcnow().strftime('%Y-%m-%d'),
+                "file_size": f"{len(file_content) / (1024 * 1024):.2f} MB",
+                "file_url": upload_result['secure_url'],
+                "public_id": public_id
+            }
+            
+            resume_id = StudentService.add_resume(resume_data)
+            resume = StudentService.get_resume_by_id(resume_id)
+            
+            # Format resume for frontend
+            formatted_resume = {
+                "_id": str(resume.get("_id")),
+                "resume_name": resume.get("resume_name", ""),
+                "file_name": resume.get("file_name", ""),
+                "upload_date": resume.get("upload_date", ""),
+                "file_size": resume.get("file_size", ""),
+                "file_url": resume.get("file_url", ""),
+                "public_id": resume.get("public_id", ""),
+                "student_id": str(resume.get("student_id")),
+                "created_at": resume.get("created_at").strftime('%Y-%m-%d %H:%M:%S') if resume.get("created_at") else "",
+                "updated_at": resume.get("updated_at").strftime('%Y-%m-%d %H:%M:%S') if resume.get("updated_at") else ""
+            }
+            
+            return jsonify(formatted_resume), 201
+            
+        except Exception as e:
+            print(f"Resume upload error: {str(e)}")
+            return jsonify({"message": f"Failed to upload resume: {str(e)}"}), 500
+
+@students_bp.route('/me/resumes/<resume_id>', methods=['PUT', 'DELETE'])
 @jwt_required()
 @student_required
-def get_resume_by_id(resume_id):
-    """Get a specific resume by ID"""
+def handle_resume(resume_id):
     current_user = get_jwt_identity()
     user_id = current_user.get('id')
-    student_id = StudentService.get_student_id_by_user_id(user_id)
     
+    # Verify resume belongs to student
     resume = StudentService.get_resume_by_id(resume_id)
-    
-    if not resume or str(resume.get("student_id")) != str(student_id):
-        return jsonify({"message": "Resume not found or access denied"}), 404
-    
-    # Format for frontend
-    formatted_resume = {
-        "id": str(resume.get("_id")),
-        "resumeName": resume.get("resume_name", ""),
-        "jobProfile": resume.get("job_profile", ""),
-        "fileName": resume.get("file_name", ""),
-        "uploadDate": resume.get("upload_date", ""),
-        "fileSize": resume.get("file_size", ""),
-        "fileUrl": resume.get("file_url", "")
-    }
-    
-    return jsonify(formatted_resume), 200
+    if not resume or str(resume['student_id']) != str(user_id):
+        return jsonify({"message": "Resume not found"}), 404
 
-@students_bp.route('/me/resumes', methods=['POST'])
-@jwt_required()
-@student_required
-def upload_resume():
-    """Upload a new resume for the current student"""
-    current_user = get_jwt_identity()
-    user_id = current_user.get('id')
-    student_id = StudentService.get_student_id_by_user_id(user_id)
-    
-    # Check if user already has 3 resumes
-    existing_resumes_count = StudentService.count_resumes_by_student_id(student_id)
-    if existing_resumes_count >= 3:
-        return jsonify({"message": "Maximum limit of 3 resumes reached. Please delete a resume before adding a new one."}), 400
-    
-    if 'resume' not in request.files:
-        return jsonify({"message": "No file part"}), 400
-    
-    resume_name = request.form.get('resumeName', 'Default Resume')
-    job_profile = request.form.get('jobProfile', 'General')
-    
-    # Check if a resume with this name already exists for the user
-    existing_resume = StudentService.get_resume_by_name(student_id, resume_name)
-    if existing_resume:
-        return jsonify({"message": f"A resume with the name '{resume_name}' already exists. Please choose a different name."}), 400
-    
-    file = request.files['resume']
-    
-    if file.filename == '':
-        return jsonify({"message": "No selected file"}), 400
-    
-    if file:
-        # Secure the filename and save the file
-        filename = secure_filename(f"{student_id}_{resume_name}_{file.filename}")
-        
-        # Ensure the upload directory exists
-        upload_dir = os.path.join(os.getcwd(), 'app', 'static', 'uploads', 'resumes')
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        file_path = os.path.join(upload_dir, filename)
-        file.save(file_path)
-        
-        # Get file size in MB
-        file_size = f"{os.path.getsize(file_path) / (1024 * 1024):.2f} MB"
-        
-        # Create new resume record
-        resume_data = {
-            "student_id": student_id,
-            "resume_name": resume_name,
-            "job_profile": job_profile,
-            "file_name": file.filename,
-            "upload_date": datetime.utcnow().strftime('%Y-%m-%d'),
-            "file_size": file_size,
-            "file_url": f"/static/uploads/resumes/{filename}"
-        }
-        
-        resume_id = StudentService.add_resume(resume_data)
-        if not resume_id:
-            return jsonify({"message": "Failed to upload resume"}), 500
-        
-        # Get the newly created resume
-        resume = StudentService.get_resume_by_id(resume_id)
-        
-        # Format for frontend
-        formatted_resume = {
-            "id": str(resume.get("_id")),
-            "resumeName": resume.get("resume_name", ""),
-            "jobProfile": resume.get("job_profile", ""),
-            "fileName": resume.get("file_name", ""),
-            "uploadDate": resume.get("upload_date", ""),
-            "fileSize": resume.get("file_size", ""),
-            "fileUrl": resume.get("file_url", "")
-        }
-        
-        return jsonify(formatted_resume), 201
-    
-    return jsonify({"message": "Failed to upload resume"}), 400
+    if request.method == 'PUT':
+        try:
+            data = {}
+            
+            # Handle name update
+            if 'resumeName' in request.form:
+                data['resume_name'] = request.form['resumeName']
+            
+            # Handle file update
+            if 'resume' in request.files:
+                file = request.files['resume']
+                if file.filename != '':
+                    # Validate file type
+                    if not file.filename.lower().endswith('.pdf'):
+                        return jsonify({"message": "Only PDF files are allowed"}), 400
+                        
+                    # Read and validate file
+                    file_content = file.read()
+                    file.seek(0)
+                    
+                    # Validate file size
+                    if len(file_content) > 5 * 1024 * 1024:
+                        return jsonify({"message": "File size exceeds 5MB limit"}), 400
 
-@students_bp.route('/me/resumes/<resume_id>', methods=['PUT'])
-@jwt_required()
-@student_required
-def update_resume(resume_id):
-    """Update resume details (name and job profile)"""
-    current_user = get_jwt_identity()
-    user_id = current_user.get('id')
-    student_id = StudentService.get_student_id_by_user_id(user_id)
-    
-    data = request.get_json()
-    
-    # Validate the incoming data
-    # errors = validate_resume(data)
-    # if errors:
-    #     return jsonify({"errors": errors}), 400
-    
-    resume = StudentService.get_resume_by_id(resume_id)
-    
-    if not resume or str(resume.get("student_id")) != str(student_id):
-        return jsonify({"message": "Resume not found or access denied"}), 404
-    
-    # Check if the new name already exists for another resume
-    if 'resumeName' in data and data['resumeName'] != resume.get("resume_name"):
-        existing_resume = StudentService.get_resume_by_name(student_id, data['resumeName'])
-        if existing_resume and str(existing_resume.get("_id")) != resume_id:
-            return jsonify({"message": f"A resume with the name '{data['resumeName']}' already exists. Please choose a different name."}), 400
-    
-    # Convert frontend field names to backend field names
-    backend_data = {}
-    if 'resumeName' in data:
-        backend_data["resume_name"] = data["resumeName"]
-    if 'jobProfile' in data:
-        backend_data["job_profile"] = data["jobProfile"]
-    
-    updated = StudentService.update_resume(resume_id, backend_data)
-    if not updated:
-        return jsonify({"message": "Failed to update resume"}), 500
-    
-    # Get the updated resume
-    updated_resume = StudentService.get_resume_by_id(resume_id)
-    
-    # Format for frontend
-    formatted_resume = {
-        "id": str(updated_resume.get("_id")),
-        "resumeName": updated_resume.get("resume_name", ""),
-        "jobProfile": updated_resume.get("job_profile", ""),
-        "fileName": updated_resume.get("file_name", ""),
-        "uploadDate": updated_resume.get("upload_date", ""),
-        "fileSize": updated_resume.get("file_size", ""),
-        "fileUrl": updated_resume.get("file_url", "")
-    }
-    
-    return jsonify(formatted_resume), 200
-
-@students_bp.route('/me/resumes/<resume_id>', methods=['DELETE'])
-@jwt_required()
-@student_required
-def delete_resume(resume_id):
-    """Delete a resume"""
-    current_user = get_jwt_identity()
-    user_id = current_user.get('id')
-    student_id = StudentService.get_student_id_by_user_id(user_id)
-    
-    resume = StudentService.get_resume_by_id(resume_id)
-    
-    if not resume or str(resume.get("student_id")) != str(student_id):
-        return jsonify({"message": "Resume not found or access denied"}), 404
-    
-    # Delete the file from the filesystem
-    if resume.get("file_url"):
-        file_path = os.path.join(os.getcwd(), 'app', 'static', resume.get("file_url").lstrip('/static/'))
-        if os.path.exists(file_path):
-            os.remove(file_path)
-    
-    deleted = StudentService.delete_resume(resume_id)
-    if not deleted:
-        return jsonify({"message": "Failed to delete resume"}), 500
-    
-    return jsonify({"message": "Resume deleted successfully"}), 200
+                    # Generate new public ID and upload to Cloudinary
+                    new_public_id = generate_public_id("resume", str(user_id))
+                    upload_result = upload_file(
+                        file=file,
+                        folder="resumes",
+                        resource_type="raw",
+                        allowed_formats=[".pdf"],
+                        public_id=new_public_id
+                    )
+                    
+                    # Delete old file if it exists
+                    if 'public_id' in resume:
+                        delete_file(resume['public_id'])
+                    
+                    data.update({
+                        "file_name": secure_filename(file.filename),
+                        "file_size": f"{len(file_content) / (1024 * 1024):.2f} MB",
+                        "file_url": upload_result['secure_url'],
+                        "public_id": new_public_id
+                    })
+            
+            if data:
+                StudentService.update_resume(resume_id, data)
+                updated_resume = StudentService.get_resume_by_id(resume_id)
+                return jsonify(updated_resume), 200
+            return jsonify({"message": "No updates provided"}), 400
+            
+        except Exception as e:
+            return jsonify({"message": f"Failed to update resume: {str(e)}"}), 500
+            
+    elif request.method == 'DELETE':
+        try:
+            # Delete from Cloudinary
+            if 'public_id' in resume:
+                delete_file(resume['public_id'])
+            
+            StudentService.delete_resume(resume_id)
+            return jsonify({"message": "Resume deleted successfully"}), 200
+        except Exception as e:
+            return jsonify({"message": f"Failed to delete resume: {str(e)}"}), 500
 
 @students_bp.route('/download-resume/<resume_id>', methods=['GET'])
 @jwt_required()
@@ -1052,7 +1034,6 @@ def download_resume(resume_id):
     """Download a resume"""
     current_user = get_jwt_identity()
     user_id = current_user.get('id')
-    student_id = StudentService.get_student_id_by_user_id(user_id)
     
     resume = StudentService.get_resume_by_id(resume_id)
     
@@ -1060,20 +1041,50 @@ def download_resume(resume_id):
         return jsonify({"message": "Resume not found"}), 404
     
     # Check if the resume belongs to the student or if the user is an admin
-    if str(resume.get("student_id")) != str(student_id) and current_user.get('role') != 'admin':
+    if str(resume.get("student_id")) != str(user_id) and current_user.get('role') != 'admin':
         return jsonify({"message": "Access denied"}), 403
     
-    # Extract the actual filename from the URL
+    # Get the file URL from the resume document
     file_url = resume.get("file_url", "")
     if not file_url:
         return jsonify({"message": "File not found"}), 404
     
-    file_path = os.path.join(os.getcwd(), 'app', 'static', file_url.lstrip('/static/'))
+    # Use the download URL with fl_attachment parameter
+    download_url = file_url.replace('/upload/', '/upload/fl_attachment/')
     
-    if not os.path.exists(file_path):
+    return jsonify({
+        "file_url": download_url,
+        "file_name": resume.get("file_name", "resume.pdf")
+    }), 200
+
+@students_bp.route('/view-resume/<resume_id>', methods=['GET'])
+@jwt_required()
+def view_resume(resume_id):
+    """View a resume in the browser"""
+    current_user = get_jwt_identity()
+    user_id = current_user.get('id')
+    
+    resume = StudentService.get_resume_by_id(resume_id)
+    
+    if not resume:
+        return jsonify({"message": "Resume not found"}), 404
+    
+    # Check if the resume belongs to the student or if the user is an admin
+    if str(resume.get("student_id")) != str(user_id) and current_user.get('role') != 'admin':
+        return jsonify({"message": "Access denied"}), 403
+    
+    # Get the file URL from the resume document
+    file_url = resume.get("file_url", "")
+    if not file_url:
         return jsonify({"message": "File not found"}), 404
     
-    return send_file(file_path, as_attachment=True, download_name=resume.get("file_name"))
+    # Use the view URL with fl_attachment:false parameter
+    view_url = file_url.replace('/upload/', '/upload/fl_attachment:false/')
+    
+    return jsonify({
+        "file_url": view_url,
+        "file_name": resume.get("file_name", "resume.pdf")
+    }), 200
 
 @students_bp.route('/me/applications', methods=['GET'])
 @jwt_required()
