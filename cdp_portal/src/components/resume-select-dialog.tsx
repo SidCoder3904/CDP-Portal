@@ -59,6 +59,7 @@ export default function ResumeSelectDialog({
       // Auto-select the first resume if available
       if (data.length > 0) {
         setSelectedResumeId(data[0]._id);
+        console.log('Selected resume ID:', data[0]._id);
       }
     } catch (error) {
       console.error('Error fetching resumes:', error);
@@ -69,10 +70,10 @@ export default function ResumeSelectDialog({
   };
   
   const handleSubmit = async () => {
-    // if (!selectedResumeId) {
-    //   setError('Please select a resume to continue');
-    //   return;
-    // }
+    if (!selectedResumeId) {
+      setError('Please select a resume to continue');
+      return;
+    }
     
     await onSubmit(selectedResumeId);
   };

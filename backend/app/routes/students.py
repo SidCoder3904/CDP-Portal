@@ -1,5 +1,5 @@
 # app/routes/students.py
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, current_app, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.student_service import StudentService
 from app.services.job_service import JobService
@@ -13,6 +13,7 @@ from bson.json_util import dumps, loads
 import json
 from datetime import datetime
 from app.utils.cloudinary_config import upload_file, delete_file, generate_public_id, upload_profile_picture
+from app.services.document_service import DocumentService
 
 
 students_bp = Blueprint('students', __name__)
@@ -1099,3 +1100,43 @@ def get_my_applications():
     
     # Convert ObjectId to string for JSON serialization
     return json_response(applications), 200
+
+@students_bp.route('/me/documents', methods=['GET'])
+@jwt_required()
+@student_required
+def get_my_documents():
+    """Get documents for the current student, with optional type filter"""
+    current_user = get_jwt_identity()
+    user_id = current_user.get('id')
+    document_type = request.args.get('type')
+    
+    # Handle resume type documents
+    if document_type == 'resume':
+        resumes = DocumentService.get_resumes_by_student_id(user_id)
+        logger = current_app.logger
+        logger.info(f"Resumes: {resumes}")
+        formatted_resumes = []
+        
+        for resume in resumes:
+            formatted_resume = DocumentService.format_resume_for_frontend(resume)
+            formatted_resumes.append(formatted_resume)
+        
+        return jsonify(formatted_resumes), 200
+    
+    # Handle other document types using the DocumentService
+    else:
+        documents = DocumentService.get_documents_by_student(user_id, document_type)
+        
+        # Format the documents for the frontend
+        formatted_documents = []
+        for doc in documents:
+            formatted_doc = {
+                "_id": doc.get("_id"),
+                "name": doc.get("name", ""),
+                "fileUrl": doc.get("fileUrl", ""),
+                "createdAt": doc.get("createdAt").isoformat() if doc.get("createdAt") else "",
+                "verified": doc.get("verified", False)
+            }
+            formatted_documents.append(formatted_doc)
+        
+        return jsonify(formatted_documents), 200

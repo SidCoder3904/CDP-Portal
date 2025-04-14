@@ -384,7 +384,7 @@ export function ReportGenerator() {
                   {isExporting ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
                   )}
                   Export Excel
                 </Button>
@@ -397,7 +397,7 @@ export function ReportGenerator() {
                   {isExporting ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <FileText className="mr-2 h-4 w-4" />
+                  <FileText className="mr-2 h-4 w-4" />
                   )}
                   Export PDF
                 </Button>
