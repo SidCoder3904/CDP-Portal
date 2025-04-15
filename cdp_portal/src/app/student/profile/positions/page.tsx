@@ -5,7 +5,7 @@ import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from "lucide-react";
 import { useStudentApi, Position } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
 
@@ -35,11 +35,42 @@ export default function PositionsPage() {
     fetchPositionsData();
   }, []);
 
-  const handleAdd = async (newData: Partial<Position>) => {
+  const handleAdd = async (newData: any) => {
     try {
       setIsUpdating(true);
       setError(null);
-      const addedPosition = await studentApi.addPosition(newData);
+
+      // Convert flat data to the nested structure
+      const transformedData = {
+        position_details: {
+          title: {
+            current_value: newData.title ?? "",
+            last_verified_value: null,
+          },
+          organization: {
+            current_value: newData.organization ?? "",
+            last_verified_value: null,
+          },
+          duration: {
+            current_value: newData.duration ?? "",
+            last_verified_value: null,
+          },
+          description: {
+            current_value: newData.description ?? "",
+            last_verified_value: null,
+          },
+          responsibilities: {
+            current_value: newData.responsibilities ?? "",
+            last_verified_value: null,
+          },
+          achievements: {
+            current_value: newData.achievements ?? "",
+            last_verified_value: null,
+          },
+        },
+      };
+
+      const addedPosition = await studentApi.addPosition(transformedData);
       setPositionsData([...positionsData, addedPosition]);
     } catch (error) {
       console.error("Failed to add position:", error);
@@ -49,11 +80,45 @@ export default function PositionsPage() {
     }
   };
 
-  const handleUpdate = async (id: string, newData: Partial<Position>) => {
+  const handleUpdate = async (id: string, newData: any) => {
     try {
       setIsUpdating(true);
       setError(null);
-      const updatedPosition = await studentApi.updatePosition(id, newData);
+
+      // Convert flat data to the nested structure
+      const transformedData = {
+        position_details: {
+          title: {
+            current_value: newData.title ?? "",
+            last_verified_value: null,
+          },
+          organization: {
+            current_value: newData.organization ?? "",
+            last_verified_value: null,
+          },
+          duration: {
+            current_value: newData.duration ?? "",
+            last_verified_value: null,
+          },
+          description: {
+            current_value: newData.description ?? "",
+            last_verified_value: null,
+          },
+          responsibilities: {
+            current_value: newData.responsibilities ?? "",
+            last_verified_value: null,
+          },
+          achievements: {
+            current_value: newData.achievements ?? "",
+            last_verified_value: null,
+          },
+        },
+      };
+
+      const updatedPosition = await studentApi.updatePosition(
+        id,
+        transformedData
+      );
       setPositionsData(
         positionsData.map((pos) => (pos.id === id ? updatedPosition : pos))
       );
@@ -92,10 +157,7 @@ export default function PositionsPage() {
     return (
       <div className="p-4 text-red-500 bg-red-50 rounded-md">
         <p>{error}</p>
-        <Button 
-          onClick={() => window.location.reload()} 
-          className="mt-4"
-        >
+        <Button onClick={() => window.location.reload()} className="mt-4">
           Retry
         </Button>
       </div>
@@ -109,56 +171,93 @@ export default function PositionsPage() {
       </h1>
       {positionsData.length === 0 ? (
         <div className="text-center p-8 bg-gray-50 rounded-md">
-          <p className="text-gray-500 mb-4">No positions found. Add your first position of responsibility.</p>
+          <p className="text-gray-500 mb-4">
+            No positions found. Add your first position of responsibility.
+          </p>
         </div>
       ) : (
         positionsData.map((position) => (
           <Card key={position.id} className="mb-6">
             <CardHeader>
-              <CardTitle>{position.title}</CardTitle>
+              <CardTitle>
+                {position.position_details.title.current_value}
+              </CardTitle>
+              {position.is_verified && (
+                <div className="text-sm text-green-600">
+                  Verified on:{" "}
+                  {new Date(position.last_verified || "").toLocaleDateString()}
+                </div>
+              )}
+              {position.remark && (
+                <div className="text-sm text-gray-600">
+                  Remark: {position.remark}
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <DetailItem
                   label="Organization"
-                  value={position.organization}
-                  isVerified={position.isVerified.organization}
+                  value={position.position_details.organization.current_value}
+                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Duration"
-                  value={position.duration}
-                  isVerified={position.isVerified.duration}
+                  value={position.position_details.duration.current_value}
+                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Description"
-                  value={position.description}
-                  isVerified={position.isVerified.description}
+                  value={position.position_details.description.current_value}
+                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Responsibilities"
-                  value={position.responsibilities}
-                  isVerified={position.isVerified.responsibilities}
+                  value={
+                    position.position_details.responsibilities.current_value
+                  }
+                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Achievements"
-                  value={position.achievements}
-                  isVerified={position.isVerified.achievements}
+                  value={position.position_details.achievements.current_value}
+                  status={position.is_verified ? "verified" : "pending"}
                 />
               </div>
               <div className="flex justify-end space-x-2 mt-4">
                 <EditDialog
                   title="Update Position"
                   fields={[
-                    { name: "title", label: "Title", type: "text" },
-                    { name: "organization", label: "Organization", type: "text" },
-                    { name: "duration", label: "Duration", type: "text" },
-                    { name: "description", label: "Description", type: "text" },
+                    {
+                      name: "title",
+                      label: "Title",
+                      type: "text",
+                    },
+                    {
+                      name: "organization",
+                      label: "Organization",
+                      type: "text",
+                    },
+                    {
+                      name: "duration",
+                      label: "Duration",
+                      type: "text",
+                    },
+                    {
+                      name: "description",
+                      label: "Description",
+                      type: "text",
+                    },
                     {
                       name: "responsibilities",
                       label: "Responsibilities",
                       type: "text",
                     },
-                    { name: "achievements", label: "Achievements", type: "text" },
+                    {
+                      name: "achievements",
+                      label: "Achievements",
+                      type: "text",
+                    },
                   ]}
                   onSave={(data) => handleUpdate(position.id, data)}
                   triggerButton={
@@ -198,12 +297,36 @@ export default function PositionsPage() {
       <EditDialog
         title="Add Position"
         fields={[
-          { name: "title", label: "Title", type: "text" },
-          { name: "organization", label: "Organization", type: "text" },
-          { name: "duration", label: "Duration", type: "text" },
-          { name: "description", label: "Description", type: "text" },
-          { name: "responsibilities", label: "Responsibilities", type: "text" },
-          { name: "achievements", label: "Achievements", type: "text" },
+          {
+            name: "title",
+            label: "Title",
+            type: "text",
+          },
+          {
+            name: "organization",
+            label: "Organization",
+            type: "text",
+          },
+          {
+            name: "duration",
+            label: "Duration",
+            type: "text",
+          },
+          {
+            name: "description",
+            label: "Description",
+            type: "text",
+          },
+          {
+            name: "responsibilities",
+            label: "Responsibilities",
+            type: "text",
+          },
+          {
+            name: "achievements",
+            label: "Achievements",
+            type: "text",
+          },
         ]}
         onSave={handleAdd}
         triggerButton={

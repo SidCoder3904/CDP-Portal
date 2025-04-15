@@ -35,11 +35,46 @@ export default function ExperiencePage() {
     fetchExperienceData();
   }, []);
 
-  const handleAdd = async (newData: Partial<Experience>) => {
+  const handleAdd = async (newData: any) => {
     try {
       setIsUpdating(true);
       setError(null);
-      const addedExperience = await studentApi.addExperience(newData);
+
+      // Convert flat data to the nested structure
+      const transformedData = {
+        experience_details: {
+          company: {
+            current_value: newData.company ?? "",
+            last_verified_value: null,
+          },
+          position: {
+            current_value: newData.position ?? "",
+            last_verified_value: null,
+          },
+          duration: {
+            current_value: newData.duration ?? "",
+            last_verified_value: null,
+          },
+          description: {
+            current_value: newData.description ?? "",
+            last_verified_value: null,
+          },
+          technologies: {
+            current_value: newData.technologies ?? "",
+            last_verified_value: null,
+          },
+          achievements: {
+            current_value: newData.achievements ?? "",
+            last_verified_value: null,
+          },
+          skills: {
+            current_value: newData.skills ?? "",
+            last_verified_value: null,
+          },
+        },
+      };
+
+      const addedExperience = await studentApi.addExperience(transformedData);
       setExperienceData([...experienceData, addedExperience]);
     } catch (error) {
       console.error("Failed to add experience:", error);
@@ -49,11 +84,49 @@ export default function ExperiencePage() {
     }
   };
 
-  const handleUpdate = async (id: string, newData: Partial<Experience>) => {
+  const handleUpdate = async (id: string, newData: any) => {
     try {
       setIsUpdating(true);
       setError(null);
-      const updatedExperience = await studentApi.updateExperience(id, newData);
+
+      // Convert flat data to the nested structure
+      const transformedData = {
+        experience_details: {
+          company: {
+            current_value: newData.company ?? "",
+            last_verified_value: null,
+          },
+          position: {
+            current_value: newData.position ?? "",
+            last_verified_value: null,
+          },
+          duration: {
+            current_value: newData.duration ?? "",
+            last_verified_value: null,
+          },
+          description: {
+            current_value: newData.description ?? "",
+            last_verified_value: null,
+          },
+          technologies: {
+            current_value: newData.technologies ?? "",
+            last_verified_value: null,
+          },
+          achievements: {
+            current_value: newData.achievements ?? "",
+            last_verified_value: null,
+          },
+          skills: {
+            current_value: newData.skills ?? "",
+            last_verified_value: null,
+          },
+        },
+      };
+
+      const updatedExperience = await studentApi.updateExperience(
+        id,
+        transformedData
+      );
       setExperienceData(
         experienceData.map((exp) => (exp.id === id ? updatedExperience : exp))
       );
@@ -113,55 +186,83 @@ export default function ExperiencePage() {
           <Card key={exp.id} className="mb-6">
             <CardHeader>
               <CardTitle>
-                {exp.position} at {exp.company}
+                {exp.experience_details.position.current_value} at{" "}
+                {exp.experience_details.company.current_value}
               </CardTitle>
+              {exp.is_verified && (
+                <div className="text-sm text-green-600">
+                  Verified on:{" "}
+                  {new Date(exp.last_verified || "").toLocaleDateString()}
+                </div>
+              )}
+              {exp.remark && (
+                <div className="text-sm text-gray-600">
+                  Remark: {exp.remark}
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <DetailItem
                   label="Company"
-                  value={exp.company}
-                  isVerified={exp.isVerified.company}
+                  value={exp.experience_details.company.current_value}
+                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Position"
-                  value={exp.position}
-                  isVerified={exp.isVerified.position}
+                  value={exp.experience_details.position.current_value}
+                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Duration"
-                  value={exp.duration}
-                  isVerified={exp.isVerified.duration}
+                  value={exp.experience_details.duration.current_value}
+                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Description"
-                  value={exp.description}
-                  isVerified={exp.isVerified.description}
+                  value={exp.experience_details.description.current_value}
+                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Technologies"
-                  value={exp.technologies}
-                  isVerified={exp.isVerified.technologies}
+                  value={exp.experience_details.technologies.current_value}
+                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Achievements"
-                  value={exp.achievements}
-                  isVerified={exp.isVerified.achievements}
+                  value={exp.experience_details.achievements.current_value}
+                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Skills"
-                  value={exp.skills}
-                  isVerified={exp.isVerified.skills}
+                  value={exp.experience_details.skills.current_value}
+                  status={exp.is_verified ? "verified" : "pending"}
                 />
               </div>
               <div className="flex justify-end space-x-2 mt-4">
                 <EditDialog
                   title="Update Experience"
                   fields={[
-                    { name: "company", label: "Company", type: "text" },
-                    { name: "position", label: "Position", type: "text" },
-                    { name: "duration", label: "Duration", type: "text" },
-                    { name: "description", label: "Description", type: "text" },
+                    {
+                      name: "company",
+                      label: "Company",
+                      type: "text",
+                    },
+                    {
+                      name: "position",
+                      label: "Position",
+                      type: "text",
+                    },
+                    {
+                      name: "duration",
+                      label: "Duration",
+                      type: "text",
+                    },
+                    {
+                      name: "description",
+                      label: "Description",
+                      type: "text",
+                    },
                     {
                       name: "technologies",
                       label: "Technologies",
@@ -172,7 +273,11 @@ export default function ExperiencePage() {
                       label: "Achievements",
                       type: "text",
                     },
-                    { name: "skills", label: "Skills", type: "text" },
+                    {
+                      name: "skills",
+                      label: "Skills",
+                      type: "text",
+                    },
                   ]}
                   onSave={(data) => handleUpdate(exp.id, data)}
                   triggerButton={
@@ -212,13 +317,41 @@ export default function ExperiencePage() {
       <EditDialog
         title="Add Experience"
         fields={[
-          { name: "company", label: "Company", type: "text" },
-          { name: "position", label: "Position", type: "text" },
-          { name: "duration", label: "Duration", type: "text" },
-          { name: "description", label: "Description", type: "text" },
-          { name: "technologies", label: "Technologies", type: "text" },
-          { name: "achievements", label: "Achievements", type: "text" },
-          { name: "skills", label: "Skills", type: "text" },
+          {
+            name: "company",
+            label: "Company",
+            type: "text",
+          },
+          {
+            name: "position",
+            label: "Position",
+            type: "text",
+          },
+          {
+            name: "duration",
+            label: "Duration",
+            type: "text",
+          },
+          {
+            name: "description",
+            label: "Description",
+            type: "text",
+          },
+          {
+            name: "technologies",
+            label: "Technologies",
+            type: "text",
+          },
+          {
+            name: "achievements",
+            label: "Achievements",
+            type: "text",
+          },
+          {
+            name: "skills",
+            label: "Skills",
+            type: "text",
+          },
         ]}
         onSave={handleAdd}
         triggerButton={

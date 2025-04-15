@@ -83,20 +83,50 @@ export default function ResumePage() {
           </div>
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-2">Current Resume</h2>
-            {resume && resume.fileName ? (
+            {resume && resume.resume_details?.fileName?.current_value ? (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>File Name</Label>
-                  <Input value={resume.fileName} readOnly />
+                  <Input
+                    value={resume.resume_details.fileName.current_value}
+                    readOnly
+                  />
                 </div>
                 <div>
                   <Label>Upload Date</Label>
-                  <Input value={resume.uploadDate} readOnly />
+                  <Input
+                    value={new Date(
+                      resume.resume_details.uploadDate.current_value
+                    ).toLocaleDateString()}
+                    readOnly
+                  />
                 </div>
                 <div>
                   <Label>File Size</Label>
-                  <Input value={resume.fileSize} readOnly />
+                  <Input
+                    value={resume.resume_details.fileSize.current_value}
+                    readOnly
+                  />
                 </div>
+                {resume.is_verified && (
+                  <div>
+                    <Label>Verification Status</Label>
+                    <div className="text-sm text-green-600 mt-2">
+                      Verified on:{" "}
+                      {new Date(
+                        resume.last_verified || ""
+                      ).toLocaleDateString()}
+                    </div>
+                  </div>
+                )}
+                {resume.remark && (
+                  <div className="col-span-2">
+                    <Label>Remarks</Label>
+                    <div className="text-sm text-gray-600 mt-2">
+                      {resume.remark}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center p-4 bg-gray-50 rounded-md">
@@ -120,13 +150,13 @@ export default function ResumePage() {
                 <span>Uploading resume...</span>
               </div>
             )}
-            {resume && resume.fileName && (
+            {resume && resume.resume_details?.fileName?.current_value && (
               <div className="flex space-x-4">
                 <Button
                   variant="outline"
                   onClick={() =>
                     window.open(
-                      `/api/download-resume?fileName=${resume.fileName}`,
+                      `/api/download-resume?fileName=${resume.resume_details.fileName.current_value}`,
                       "_blank"
                     )
                   }

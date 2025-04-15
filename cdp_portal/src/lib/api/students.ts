@@ -30,90 +30,87 @@ export interface StudentProfile {
   verificationStatus: VerificationStatus;
 }
 
+export interface VerifiableField<T> {
+  current_value: T;
+  last_verified_value: T | null;
+}
+
 export interface Education {
   id: string;
-  degree: string;
-  institution: string;
-  year: string;
-  gpa: string;
-  major: string;
-  minor: string;
-  relevantCourses: string;
-  honors: string;
-  isVerified: {
-    institution: boolean;
-    year: boolean;
-    gpa: boolean;
-    major: boolean;
-    minor: boolean;
-    relevantCourses: boolean;
-    honors: boolean;
+  education_details: {
+    degree: VerifiableField<string>;
+    institution: VerifiableField<string>;
+    year: VerifiableField<string>;
+    gpa: VerifiableField<string>;
+    major: VerifiableField<string>;
+    minor: VerifiableField<string>;
+    relevant_courses: VerifiableField<string>;
+    honors: VerifiableField<string>;
   };
+  is_verified: boolean;
+  last_verified: string | null;
+  remark: string | null;
 }
 
 export interface Experience {
   id: string;
-  company: string;
-  position: string;
-  duration: string;
-  description: string;
-  technologies: string;
-  achievements: string;
-  skills: string;
-  isVerified: {
-    company: boolean;
-    position: boolean;
-    duration: boolean;
-    description: boolean;
-    technologies: boolean;
-    achievements: boolean;
-    skills: boolean;
+  experience_details: {
+    company: VerifiableField<string>;
+    position: VerifiableField<string>;
+    duration: VerifiableField<string>;
+    description: VerifiableField<string>;
+    technologies: VerifiableField<string>;
+    achievements: VerifiableField<string>;
+    skills: VerifiableField<string>;
   };
+  is_verified: boolean;
+  last_verified: string | null;
+  remark: string | null;
 }
 
 export interface Position {
   id: string;
-  title: string;
-  organization: string;
-  duration: string;
-  description: string;
-  responsibilities: string;
-  achievements: string;
-  isVerified: {
-    organization: boolean;
-    duration: boolean;
-    description: boolean;
-    responsibilities: boolean;
-    achievements: boolean;
+  position_details: {
+    title: VerifiableField<string>;
+    organization: VerifiableField<string>;
+    duration: VerifiableField<string>;
+    description: VerifiableField<string>;
+    responsibilities: VerifiableField<string>;
+    achievements: VerifiableField<string>;
   };
+  is_verified: boolean;
+  last_verified: string | null;
+  remark: string | null;
 }
 
 export interface Project {
   id: string;
-  name: string;
-  description: string;
-  technologies: string;
-  duration: string;
-  role: string;
-  teamSize: string;
-  githubLink: string;
-  demoLink: string;
-  isVerified: {
-    description: boolean;
-    technologies: boolean;
-    duration: boolean;
-    role: boolean;
-    teamSize: boolean;
-    githubLink: boolean;
-    demoLink: boolean;
+  project_details: {
+    name: VerifiableField<string>;
+    description: VerifiableField<string>;
+    technologies: VerifiableField<string>;
+    duration: VerifiableField<string>;
+    role: VerifiableField<string>;
+    teamSize: VerifiableField<string>;
+    githubLink: VerifiableField<string>;
+    demoLink: VerifiableField<string>;
   };
+  is_verified: boolean;
+  last_verified: string | null;
+  remark: string | null;
 }
 
 export interface Resume {
-  fileName: string;
-  uploadDate: string;
-  fileSize: string;
-  fileUrl: string;
+  id: string;
+  resume_details: {
+    fileName: VerifiableField<string>;
+    uploadDate: VerifiableField<string>;
+    fileSize: VerifiableField<string>;
+    fileUrl: VerifiableField<string>;
+  };
+  is_verified: boolean;
+  last_verified: string | null;
+  remark: string | null;
 }
 
 export function useStudentApi() {

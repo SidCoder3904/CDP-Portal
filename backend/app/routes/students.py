@@ -171,15 +171,43 @@ def get_my_education():
     for record in education_records:
         formatted_record = {
             "id": str(record.get("_id")),
-            "degree": record.get("degree", ""),
-            "institution": record.get("institution", ""),
-            "year": record.get("year", ""),
-            "gpa": record.get("gpa", ""),
-            "major": record.get("major", ""),
-            "minor": record.get("minor", ""),
-            "relevantCourses": record.get("relevant_courses", ""),
-            "honors": record.get("honors", ""),
-            "isVerified": record.get("is_verified", {})
+            "education_details": {
+                "degree": {
+                    "current_value": record.get("education_details", {}).get("degree", {}).get("current_value", ""),
+                    "last_verified_value": record.get("education_details", {}).get("degree", {}).get("last_verified_value", "")
+                },
+                "institution": {
+                    "current_value": record.get("education_details", {}).get("institution", {}).get("current_value", ""),
+                    "last_verified_value": record.get("education_details", {}).get("institution", {}).get("last_verified_value", "")
+                },
+                "year": {
+                    "current_value": record.get("education_details", {}).get("year", {}).get("current_value", ""),
+                    "last_verified_value": record.get("education_details", {}).get("year", {}).get("last_verified_value", "")
+                },
+                "gpa": {
+                    "current_value": record.get("education_details", {}).get("gpa", {}).get("current_value", ""),
+                    "last_verified_value": record.get("education_details", {}).get("gpa", {}).get("last_verified_value", "")
+                },
+                "major": {
+                    "current_value": record.get("education_details", {}).get("major", {}).get("current_value", ""),
+                    "last_verified_value": record.get("education_details", {}).get("major", {}).get("last_verified_value", "")
+                },
+                "minor": {
+                    "current_value": record.get("education_details", {}).get("minor", {}).get("current_value", ""),
+                    "last_verified_value": record.get("education_details", {}).get("minor", {}).get("last_verified_value", "")
+                },
+                "relevant_courses": {
+                    "current_value": record.get("education_details", {}).get("relevant_courses", {}).get("current_value", ""),
+                    "last_verified_value": record.get("education_details", {}).get("relevant_courses", {}).get("last_verified_value", "")
+                },
+                "honors": {
+                    "current_value": record.get("education_details", {}).get("honors", {}).get("current_value", ""),
+                    "last_verified_value": record.get("education_details", {}).get("honors", {}).get("last_verified_value", "")
+                }
+            },
+            "is_verified": record.get("is_verified", False),
+            "last_verified": record.get("last_verified", None),
+            "remark": record.get("remark", None)
         }
         formatted_records.append(formatted_record)
     
@@ -195,7 +223,7 @@ def add_education():
     student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
-    
+    # print("Received data:", data)
     # Validate the incoming data
     # errors = validate_education(data)
     # if errors:
@@ -204,26 +232,47 @@ def add_education():
     # Convert frontend field names to backend field names
     backend_data = {
         "student_id": student_id,
-        "degree": data.get("degree"),
-        "institution": data.get("institution"),
-        "year": data.get("year"),
-        "gpa": data.get("gpa"),
-        "major": data.get("major"),
-        "minor": data.get("minor"),
-        "relevant_courses": data.get("relevantCourses"),
-        "honors": data.get("honors"),
-        "is_verified": {
-            "degree": False,
-            "institution": False,
-            "year": False,
-            "gpa": False,
-            "major": False,
-            "minor": False,
-            "relevant_courses": False,
-            "honors": False
-        }
+        "education_details": {
+            "degree": {
+                "current_value": data.get("education_details").get("degree").get("current_value"),
+                "last_verified_value": None
+            },
+            "institution": {
+                "current_value": data.get("education_details").get("institution").get("current_value"),
+                "last_verified_value": None
+            },
+            "year": {
+                "current_value": data.get("education_details").get("year").get("current_value"),
+                "last_verified_value": None
+            },
+            "gpa": {
+                "current_value": data.get("education_details").get("gpa").get("current_value"),
+                "last_verified_value": None
+            },
+            "major": {
+                "current_value": data.get("education_details").get("major").get("current_value"),
+                "last_verified_value": None
+            },
+            "minor": {
+                "current_value": data.get("education_details").get("minor").get("current_value"),
+                "last_verified_value": None
+            },
+            "relevant_courses": {
+                "current_value": data.get("education_details").get("relevant_courses").get("current_value"),
+                "last_verified_value": None
+            },
+            "honors": {
+                "current_value": data.get("education_details").get("honors").get("current_value"),
+                "last_verified_value": None
+            }
+        },
+        "is_verified": False,
+        "last_verified": None,
+        "remark": None,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
     }
-    
+    print("Backend data:", backend_data)
     # Remove None values
     backend_data = {k: v for k, v in backend_data.items() if v is not None}
     
@@ -237,15 +286,43 @@ def add_education():
     # Format for frontend
     formatted_education = {
         "id": str(education.get("_id")),
-        "degree": education.get("degree", ""),
-        "institution": education.get("institution", ""),
-        "year": education.get("year", ""),
-        "gpa": education.get("gpa", ""),
-        "major": education.get("major", ""),
-        "minor": education.get("minor", ""),
-        "relevantCourses": education.get("relevant_courses", ""),
-        "honors": education.get("honors", ""),
-        "isVerified": education.get("is_verified", {})
+        "education_details": {
+            "degree": {
+                "current_value": education.get("education_details", {}).get("degree", {}).get("current_value", ""),
+                "last_verified_value": education.get("education_details", {}).get("degree", {}).get("last_verified_value", "")
+            },
+            "institution": {
+                "current_value": education.get("education_details", {}).get("institution", {}).get("current_value", ""),
+                "last_verified_value": education.get("education_details", {}).get("institution", {}).get("last_verified_value", "")
+            },
+            "year": {
+                "current_value": education.get("education_details", {}).get("year", {}).get("current_value", ""),
+                "last_verified_value": education.get("education_details", {}).get("year", {}).get("last_verified_value", "")
+            },
+            "gpa": {
+                "current_value": education.get("education_details", {}).get("gpa", {}).get("current_value", ""),
+                "last_verified_value": education.get("education_details", {}).get("gpa", {}).get("last_verified_value", "")
+            },
+            "major": {
+                "current_value": education.get("education_details", {}).get("major", {}).get("current_value", ""),
+                "last_verified_value": education.get("education_details", {}).get("major", {}).get("last_verified_value", "")
+            },
+            "minor": {
+                "current_value": education.get("education_details", {}).get("minor", {}).get("current_value", ""),
+                "last_verified_value": education.get("education_details", {}).get("minor", {}).get("last_verified_value", "")
+            },
+            "relevant_courses": {
+                "current_value": education.get("education_details", {}).get("relevant_courses", {}).get("current_value", ""),
+                "last_verified_value": education.get("education_details", {}).get("relevant_courses", {}).get("last_verified_value", "")
+            },
+            "honors": {
+                "current_value": education.get("education_details", {}).get("honors", {}).get("current_value", ""),
+                "last_verified_value": education.get("education_details", {}).get("honors", {}).get("last_verified_value", "")
+            }
+        },
+        "is_verified": education.get("is_verified", False),
+        "last_verified": education.get("last_verified", None),
+        "remark": education.get("remark", None)
     }
     
     return jsonify(formatted_education), 201
@@ -272,14 +349,41 @@ def update_education(education_id):
         return jsonify({"message": "Education record not found or access denied"}), 404
     # Convert frontend field names to backend field names
     backend_data = {
-        "degree": data.get("degree"),
-        "institution": data.get("institution"),
-        "year": data.get("year"),
-        "gpa": data.get("gpa"),
-        "major": data.get("major"),
-        "minor": data.get("minor"),
-        "relevant_courses": data.get("relevantCourses"),
-        "honors": data.get("honors")
+        "education_details": {
+            "degree": {
+                "current_value": data.get("education_details").get("degree").get("current_value"),
+                "last_verified_value": education.get("education_details", {}).get("degree", {}).get("last_verified_value", None)
+            },
+            "institution": {
+                "current_value": data.get("education_details").get("institution").get("current_value"),
+                "last_verified_value": education.get("education_details", {}).get("institution", {}).get("last_verified_value", None)
+            },
+            "year": {
+                "current_value": data.get("education_details").get("year").get("current_value"),
+                "last_verified_value": education.get("education_details", {}).get("year", {}).get("last_verified_value", None)
+            },
+            "gpa": {
+                "current_value": data.get("education_details").get("gpa").get("current_value"),
+                "last_verified_value": education.get("education_details", {}).get("gpa", {}).get("last_verified_value", None)
+            },
+            "major": {
+                "current_value": data.get("major"),
+                "last_verified_value": education.get("education_details", {}).get("major", {}).get("last_verified_value", None)
+            },
+            "minor": {
+                "current_value": data.get("minor"),
+                "last_verified_value": education.get("education_details", {}).get("minor", {}).get("last_verified_value", None)
+            },
+            "relevant_courses": {
+                "current_value": data.get("relevantCourses"),
+                "last_verified_value": education.get("education_details", {}).get("relevant_courses", {}).get("last_verified_value", None)
+            },
+            "honors": {
+                "current_value": data.get("honors"),
+                "last_verified_value": education.get("education_details", {}).get("honors", {}).get("last_verified_value", None)
+            }
+        },
+        "updated_at": datetime.utcnow()
     }
     
     # Remove None values
@@ -295,15 +399,43 @@ def update_education(education_id):
     # Format for frontend
     formatted_education = {
         "id": str(updated_education.get("_id")),
-        "degree": updated_education.get("degree", ""),
-        "institution": updated_education.get("institution", ""),
-        "year": updated_education.get("year", ""),
-        "gpa": updated_education.get("gpa", ""),
-        "major": updated_education.get("major", ""),
-        "minor": updated_education.get("minor", ""),
-        "relevantCourses": updated_education.get("relevant_courses", ""),
-        "honors": updated_education.get("honors", ""),
-        "isVerified": updated_education.get("is_verified", {})
+        "education_details": {
+            "degree": {
+                "current_value": updated_education.get("education_details", {}).get("degree", {}).get("current_value", ""),
+                "last_verified_value": updated_education.get("education_details", {}).get("degree", {}).get("last_verified_value", "")
+            },
+            "institution": {
+                "current_value": updated_education.get("education_details", {}).get("institution", {}).get("current_value", ""),
+                "last_verified_value": updated_education.get("education_details", {}).get("institution", {}).get("last_verified_value", "")
+            },
+            "year": {
+                "current_value": updated_education.get("education_details", {}).get("year", {}).get("current_value", ""),
+                "last_verified_value": updated_education.get("education_details", {}).get("year", {}).get("last_verified_value", "")
+            },
+            "gpa": {
+                "current_value": updated_education.get("education_details", {}).get("gpa", {}).get("current_value", ""),
+                "last_verified_value": updated_education.get("education_details", {}).get("gpa", {}).get("last_verified_value", "")
+            },
+            "major": {
+                "current_value": updated_education.get("education_details", {}).get("major", {}).get("current_value", ""),
+                "last_verified_value": updated_education.get("education_details", {}).get("major", {}).get("last_verified_value", "")
+            },
+            "minor": {
+                "current_value": updated_education.get("education_details", {}).get("minor", {}).get("current_value", ""),
+                "last_verified_value": updated_education.get("education_details", {}).get("minor", {}).get("last_verified_value", "")
+            },
+            "relevant_courses": {
+                "current_value": updated_education.get("education_details", {}).get("relevant_courses", {}).get("current_value", ""),
+                "last_verified_value": updated_education.get("education_details", {}).get("relevant_courses", {}).get("last_verified_value", "")
+            },
+            "honors": {
+                "current_value": updated_education.get("education_details", {}).get("honors", {}).get("current_value", ""),
+                "last_verified_value": updated_education.get("education_details", {}).get("honors", {}).get("last_verified_value", "")
+            }
+        },
+        "is_verified": updated_education.get("is_verified", False),
+        "last_verified": updated_education.get("last_verified", None),
+        "remark": updated_education.get("remark", None)
     }
     
     return jsonify(formatted_education), 200
@@ -344,14 +476,39 @@ def get_my_experience():
     for record in experience_records:
         formatted_record = {
             "id": str(record.get("_id")),
-            "company": record.get("company", ""),
-            "position": record.get("position", ""),
-            "duration": record.get("duration", ""),
-            "description": record.get("description", ""),
-            "technologies": record.get("technologies", ""),
-            "achievements": record.get("achievements", ""),
-            "skills": record.get("skills", ""),
-            "isVerified": record.get("is_verified", {})
+            "experience_details": {
+                "company": {
+                    "current_value": record.get("experience_details", {}).get("company", {}).get("current_value", ""),
+                    "last_verified_value": record.get("experience_details", {}).get("company", {}).get("last_verified_value", "")
+                },
+                "position": {
+                    "current_value": record.get("experience_details", {}).get("position", {}).get("current_value", ""),
+                    "last_verified_value": record.get("experience_details", {}).get("position", {}).get("last_verified_value", "")
+                },
+                "duration": {
+                    "current_value": record.get("experience_details", {}).get("duration", {}).get("current_value", ""),
+                    "last_verified_value": record.get("experience_details", {}).get("duration", {}).get("last_verified_value", "")
+                },
+                "description": {
+                    "current_value": record.get("experience_details", {}).get("description", {}).get("current_value", ""),
+                    "last_verified_value": record.get("experience_details", {}).get("description", {}).get("last_verified_value", "")
+                },
+                "technologies": {
+                    "current_value": record.get("experience_details", {}).get("technologies", {}).get("current_value", ""),
+                    "last_verified_value": record.get("experience_details", {}).get("technologies", {}).get("last_verified_value", "")
+                },
+                "achievements": {
+                    "current_value": record.get("experience_details", {}).get("achievements", {}).get("current_value", ""),
+                    "last_verified_value": record.get("experience_details", {}).get("achievements", {}).get("last_verified_value", "")
+                },
+                "skills": {
+                    "current_value": record.get("experience_details", {}).get("skills", {}).get("current_value", ""),
+                    "last_verified_value": record.get("experience_details", {}).get("skills", {}).get("last_verified_value", "")
+                }
+            },
+            "is_verified": record.get("is_verified", False),
+            "last_verified": record.get("last_verified", None),
+            "remark": record.get("remark", None)
         }
         formatted_records.append(formatted_record)
     
@@ -376,22 +533,41 @@ def add_experience():
     # Convert frontend field names to backend field names
     backend_data = {
         "student_id": student_id,
-        "company": data.get("company"),
-        "position": data.get("position"),
-        "duration": data.get("duration"),
-        "description": data.get("description"),
-        "technologies": data.get("technologies"),
-        "achievements": data.get("achievements"),
-        "skills": data.get("skills"),
-        "is_verified": {
-            "company": False,
-            "position": False,
-            "duration": False,
-            "description": False,
-            "technologies": False,
-            "achievements": False,
-            "skills": False
-        }
+        "experience_details": {
+            "company": {
+                "current_value": data.get("experience_details").get("company").get("current_value"),
+                "last_verified_value": None
+            },
+            "position": {
+                "current_value": data.get("experience_details").get("position").get("current_value"),
+                "last_verified_value": None
+            },
+            "duration": {
+                "current_value": data.get("experience_details").get("duration").get("current_value"),
+                "last_verified_value": None
+            },
+            "description": {
+                "current_value": data.get("experience_details").get("description").get("current_value"),
+                "last_verified_value": None
+            },
+            "technologies": {
+                "current_value": data.get("experience_details").get("technologies").get("current_value"),
+                "last_verified_value": None
+            },
+            "achievements": {
+                "current_value": data.get("experience_details").get("achievements").get("current_value"),
+                "last_verified_value": None
+            },
+            "skills": {
+                "current_value": data.get("experience_details").get("skills").get("current_value"),
+                "last_verified_value": None
+            }
+        },
+        "is_verified": False,
+        "last_verified": None,
+        "remark": None,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
     }
     
     # Remove None values
@@ -407,14 +583,39 @@ def add_experience():
     # Format for frontend
     formatted_experience = {
         "id": str(experience.get("_id")),
-        "company": experience.get("company", ""),
-        "position": experience.get("position", ""),
-        "duration": experience.get("duration", ""),
-        "description": experience.get("description", ""),
-        "technologies": experience.get("technologies", ""),
-        "achievements": experience.get("achievements", ""),
-        "skills": experience.get("skills", ""),
-        "isVerified": experience.get("is_verified", {})
+        "experience_details": {
+            "company": {
+                "current_value": experience.get("experience_details", {}).get("company", {}).get("current_value", ""),
+                "last_verified_value": experience.get("experience_details", {}).get("company", {}).get("last_verified_value", "")
+            },
+            "position": {
+                "current_value": experience.get("experience_details", {}).get("position", {}).get("current_value", ""),
+                "last_verified_value": experience.get("experience_details", {}).get("position", {}).get("last_verified_value", "")
+            },
+            "duration": {
+                "current_value": experience.get("experience_details", {}).get("duration", {}).get("current_value", ""),
+                "last_verified_value": experience.get("experience_details", {}).get("duration", {}).get("last_verified_value", "")
+            },
+            "description": {
+                "current_value": experience.get("experience_details", {}).get("description", {}).get("current_value", ""),
+                "last_verified_value": experience.get("experience_details", {}).get("description", {}).get("last_verified_value", "")
+            },
+            "technologies": {
+                "current_value": experience.get("experience_details", {}).get("technologies", {}).get("current_value", ""),
+                "last_verified_value": experience.get("experience_details", {}).get("technologies", {}).get("last_verified_value", "")
+            },
+            "achievements": {
+                "current_value": experience.get("experience_details", {}).get("achievements", {}).get("current_value", ""),
+                "last_verified_value": experience.get("experience_details", {}).get("achievements", {}).get("last_verified_value", "")
+            },
+            "skills": {
+                "current_value": experience.get("experience_details", {}).get("skills", {}).get("current_value", ""),
+                "last_verified_value": experience.get("experience_details", {}).get("skills", {}).get("last_verified_value", "")
+            }
+        },
+        "is_verified": experience.get("is_verified", False),
+        "last_verified": experience.get("last_verified", None),
+        "remark": experience.get("remark", None)
     }
     
     return jsonify(formatted_experience), 201
@@ -442,13 +643,37 @@ def update_experience(experience_id):
     
     # Convert frontend field names to backend field names
     backend_data = {
-        "company": data.get("company"),
-        "position": data.get("position"),
-        "duration": data.get("duration"),
-        "description": data.get("description"),
-        "technologies": data.get("technologies"),
-        "achievements": data.get("achievements"),
-        "skills": data.get("skills")
+        "experience_details": {
+            "company": {
+                "current_value": data.get("experience_details").get("company").get("current_value"),
+                "last_verified_value": experience.get("experience_details", {}).get("company", {}).get("last_verified_value", None)
+            },
+            "position": {
+                "current_value": data.get("experience_details").get("position").get("current_value"),
+                "last_verified_value": experience.get("experience_details", {}).get("position", {}).get("last_verified_value", None)
+            },
+            "duration": {
+                "current_value": data.get("experience_details").get("duration").get("current_value"),
+                "last_verified_value": experience.get("experience_details", {}).get("duration", {}).get("last_verified_value", None)
+            },
+            "description": {
+                "current_value": data.get("experience_details").get("description").get("current_value"),
+                "last_verified_value": experience.get("experience_details", {}).get("description", {}).get("last_verified_value", None)
+            },
+            "technologies": {
+                "current_value": data.get("experience_details").get("technologies").get("current_value"),
+                "last_verified_value": experience.get("experience_details", {}).get("technologies", {}).get("last_verified_value", None)
+            },
+            "achievements": {
+                "current_value": data.get("experience_details").get("achievements").get("current_value"),
+                "last_verified_value": experience.get("experience_details", {}).get("achievements", {}).get("last_verified_value", None)
+            },
+            "skills": {
+                "current_value": data.get("experience_details").get("skills").get("current_value"),
+                "last_verified_value": experience.get("experience_details", {}).get("skills", {}).get("last_verified_value", None)
+            }
+        },
+        "updated_at": datetime.utcnow()
     }
     
     # Remove None values
@@ -464,14 +689,39 @@ def update_experience(experience_id):
     # Format for frontend
     formatted_experience = {
         "id": str(updated_experience.get("_id")),
-        "company": updated_experience.get("company", ""),
-        "position": updated_experience.get("position", ""),
-        "duration": updated_experience.get("duration", ""),
-        "description": updated_experience.get("description", ""),
-        "technologies": updated_experience.get("technologies", ""),
-        "achievements": updated_experience.get("achievements", ""),
-        "skills": updated_experience.get("skills", ""),
-        "isVerified": updated_experience.get("is_verified", {})
+        "experience_details": {
+            "company": {
+                "current_value": updated_experience.get("experience_details", {}).get("company", {}).get("current_value", ""),
+                "last_verified_value": updated_experience.get("experience_details", {}).get("company", {}).get("last_verified_value", "")
+            },
+            "position": {
+                "current_value": updated_experience.get("experience_details", {}).get("position", {}).get("current_value", ""),
+                "last_verified_value": updated_experience.get("experience_details", {}).get("position", {}).get("last_verified_value", "")
+            },
+            "duration": {
+                "current_value": updated_experience.get("experience_details", {}).get("duration", {}).get("current_value", ""),
+                "last_verified_value": updated_experience.get("experience_details", {}).get("duration", {}).get("last_verified_value", "")
+            },
+            "description": {
+                "current_value": updated_experience.get("experience_details", {}).get("description", {}).get("current_value", ""),
+                "last_verified_value": updated_experience.get("experience_details", {}).get("description", {}).get("last_verified_value", "")
+            },
+            "technologies": {
+                "current_value": updated_experience.get("experience_details", {}).get("technologies", {}).get("current_value", ""),
+                "last_verified_value": updated_experience.get("experience_details", {}).get("technologies", {}).get("last_verified_value", "")
+            },
+            "achievements": {
+                "current_value": updated_experience.get("experience_details", {}).get("achievements", {}).get("current_value", ""),
+                "last_verified_value": updated_experience.get("experience_details", {}).get("achievements", {}).get("last_verified_value", "")
+            },
+            "skills": {
+                "current_value": updated_experience.get("experience_details", {}).get("skills", {}).get("current_value", ""),
+                "last_verified_value": updated_experience.get("experience_details", {}).get("skills", {}).get("last_verified_value", "")
+            }
+        },
+        "is_verified": updated_experience.get("is_verified", False),
+        "last_verified": updated_experience.get("last_verified", None),
+        "remark": updated_experience.get("remark", None)
     }
     
     return jsonify(formatted_experience), 200
@@ -513,13 +763,35 @@ def get_my_positions():
     for record in position_records:
         formatted_record = {
             "id": str(record.get("_id")),
-            "title": record.get("title", ""),
-            "organization": record.get("organization", ""),
-            "duration": record.get("duration", ""),
-            "description": record.get("description", ""),
-            "responsibilities": record.get("responsibilities", ""),
-            "achievements": record.get("achievements", ""),
-            "isVerified": record.get("is_verified", {})
+            "position_details": {
+                "title": {
+                    "current_value": record.get("position_details", {}).get("title", {}).get("current_value", ""),
+                    "last_verified_value": record.get("position_details", {}).get("title", {}).get("last_verified_value", "")
+                },
+                "organization": {
+                    "current_value": record.get("position_details", {}).get("organization", {}).get("current_value", ""),
+                    "last_verified_value": record.get("position_details", {}).get("organization", {}).get("last_verified_value", "")
+                },
+                "duration": {
+                    "current_value": record.get("position_details", {}).get("duration", {}).get("current_value", ""),
+                    "last_verified_value": record.get("position_details", {}).get("duration", {}).get("last_verified_value", "")
+                },
+                "description": {
+                    "current_value": record.get("position_details", {}).get("description", {}).get("current_value", ""),
+                    "last_verified_value": record.get("position_details", {}).get("description", {}).get("last_verified_value", "")
+                },
+                "responsibilities": {
+                    "current_value": record.get("position_details", {}).get("responsibilities", {}).get("current_value", ""),
+                    "last_verified_value": record.get("position_details", {}).get("responsibilities", {}).get("last_verified_value", "")
+                },
+                "achievements": {
+                    "current_value": record.get("position_details", {}).get("achievements", {}).get("current_value", ""),
+                    "last_verified_value": record.get("position_details", {}).get("achievements", {}).get("last_verified_value", "")
+                }
+            },
+            "is_verified": record.get("is_verified", False),
+            "last_verified": record.get("last_verified", None),
+            "remark": record.get("remark", None)
         }
         formatted_records.append(formatted_record)
     
@@ -544,20 +816,37 @@ def add_position():
     # Convert frontend field names to backend field names
     backend_data = {
         "student_id": student_id,
-        "title": data.get("title"),
-        "organization": data.get("organization"),
-        "duration": data.get("duration"),
-        "description": data.get("description"),
-        "responsibilities": data.get("responsibilities"),
-        "achievements": data.get("achievements"),
-        "is_verified": {
-            "title": False,
-            "organization": False,
-            "duration": False,
-            "description": False,
-            "responsibilities": False,
-            "achievements": False
-        }
+        "position_details": {
+            "title": {
+                "current_value": data.get("position_details").get("title").get("current_value"),
+                "last_verified_value": None
+            },
+            "organization": {
+                "current_value": data.get("position_details").get("organization").get("current_value"),
+                "last_verified_value": None
+            },
+            "duration": {
+                "current_value": data.get("position_details").get("duration").get("current_value"),
+                "last_verified_value": None
+            },
+            "description": {
+                "current_value": data.get("position_details").get("description").get("current_value"),
+                "last_verified_value": None
+            },
+            "responsibilities": {
+                "current_value": data.get("position_details").get("responsibilities").get("current_value"),
+                "last_verified_value": None
+            },
+            "achievements": {
+                "current_value": data.get("position_details").get("achievements").get("current_value"),
+                "last_verified_value": None
+            }
+        },
+        "is_verified": False,
+        "last_verified": None,
+        "remark": None,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
     }
     
     # Remove None values
@@ -573,13 +862,35 @@ def add_position():
     # Format for frontend
     formatted_position = {
         "id": str(position.get("_id")),
-        "title": position.get("title", ""),
-        "organization": position.get("organization", ""),
-        "duration": position.get("duration", ""),
-        "description": position.get("description", ""),
-        "responsibilities": position.get("responsibilities", ""),
-        "achievements": position.get("achievements", ""),
-        "isVerified": position.get("is_verified", {})
+        "position_details": {
+            "title": {
+                "current_value": position.get("position_details", {}).get("title", {}).get("current_value", ""),
+                "last_verified_value": position.get("position_details", {}).get("title", {}).get("last_verified_value", "")
+            },
+            "organization": {
+                "current_value": position.get("position_details", {}).get("organization", {}).get("current_value", ""),
+                "last_verified_value": position.get("position_details", {}).get("organization", {}).get("last_verified_value", "")
+            },
+            "duration": {
+                "current_value": position.get("position_details", {}).get("duration", {}).get("current_value", ""),
+                "last_verified_value": position.get("position_details", {}).get("duration", {}).get("last_verified_value", "")
+            },
+            "description": {
+                "current_value": position.get("position_details", {}).get("description", {}).get("current_value", ""),
+                "last_verified_value": position.get("position_details", {}).get("description", {}).get("last_verified_value", "")
+            },
+            "responsibilities": {
+                "current_value": position.get("position_details", {}).get("responsibilities", {}).get("current_value", ""),
+                "last_verified_value": position.get("position_details", {}).get("responsibilities", {}).get("last_verified_value", "")
+            },
+            "achievements": {
+                "current_value": position.get("position_details", {}).get("achievements", {}).get("current_value", ""),
+                "last_verified_value": position.get("position_details", {}).get("achievements", {}).get("last_verified_value", "")
+            }
+        },
+        "is_verified": position.get("is_verified", False),
+        "last_verified": position.get("last_verified", None),
+        "remark": position.get("remark", None)
     }
     
     return jsonify(formatted_position), 201
@@ -607,12 +918,33 @@ def update_position(position_id):
     
     # Convert frontend field names to backend field names
     backend_data = {
-        "title": data.get("title"),
-        "organization": data.get("organization"),
-        "duration": data.get("duration"),
-        "description": data.get("description"),
-        "responsibilities": data.get("responsibilities"),
-        "achievements": data.get("achievements")
+        "position_details": {
+            "title": {
+                "current_value": data.get("position_details").get("title").get("current_value"),
+                "last_verified_value": position.get("position_details", {}).get("title", {}).get("last_verified_value", None)
+            },
+            "organization": {
+                "current_value": data.get("position_details").get("organization").get("current_value"),
+                "last_verified_value": position.get("position_details", {}).get("organization", {}).get("last_verified_value", None)
+            },
+            "duration": {
+                "current_value": data.get("position_details").get("duration").get("current_value"),
+                "last_verified_value": position.get("position_details", {}).get("duration", {}).get("last_verified_value", None)
+            },
+            "description": {
+                "current_value": data.get("position_details").get("description").get("current_value"),
+                "last_verified_value": position.get("position_details", {}).get("description", {}).get("last_verified_value", None)
+            },
+            "responsibilities": {
+                "current_value": data.get("position_details").get("responsibilities").get("current_value"),
+                "last_verified_value": position.get("position_details", {}).get("responsibilities", {}).get("last_verified_value", None)
+            },
+            "achievements": {
+                "current_value": data.get("position_details").get("achievements").get("current_value"),
+                "last_verified_value": position.get("position_details", {}).get("achievements", {}).get("last_verified_value", None)
+            }
+        },
+        "updated_at": datetime.utcnow()
     }
     
     # Remove None values
@@ -628,13 +960,35 @@ def update_position(position_id):
     # Format for frontend
     formatted_position = {
         "id": str(updated_position.get("_id")),
-        "title": updated_position.get("title", ""),
-        "organization": updated_position.get("organization", ""),
-        "duration": updated_position.get("duration", ""),
-        "description": updated_position.get("description", ""),
-        "responsibilities": updated_position.get("responsibilities", ""),
-        "achievements": updated_position.get("achievements", ""),
-        "isVerified": updated_position.get("is_verified", {})
+        "position_details": {
+            "title": {
+                "current_value": updated_position.get("position_details", {}).get("title", {}).get("current_value", ""),
+                "last_verified_value": updated_position.get("position_details", {}).get("title", {}).get("last_verified_value", "")
+            },
+            "organization": {
+                "current_value": updated_position.get("position_details", {}).get("organization", {}).get("current_value", ""),
+                "last_verified_value": updated_position.get("position_details", {}).get("organization", {}).get("last_verified_value", "")
+            },
+            "duration": {
+                "current_value": updated_position.get("position_details", {}).get("duration", {}).get("current_value", ""),
+                "last_verified_value": updated_position.get("position_details", {}).get("duration", {}).get("last_verified_value", "")
+            },
+            "description": {
+                "current_value": updated_position.get("position_details", {}).get("description", {}).get("current_value", ""),
+                "last_verified_value": updated_position.get("position_details", {}).get("description", {}).get("last_verified_value", "")
+            },
+            "responsibilities": {
+                "current_value": updated_position.get("position_details", {}).get("responsibilities", {}).get("current_value", ""),
+                "last_verified_value": updated_position.get("position_details", {}).get("responsibilities", {}).get("last_verified_value", "")
+            },
+            "achievements": {
+                "current_value": updated_position.get("position_details", {}).get("achievements", {}).get("current_value", ""),
+                "last_verified_value": updated_position.get("position_details", {}).get("achievements", {}).get("last_verified_value", "")
+            }
+        },
+        "is_verified": updated_position.get("is_verified", False),
+        "last_verified": updated_position.get("last_verified", None),
+        "remark": updated_position.get("remark", None)
     }
     
     return jsonify(formatted_position), 200
@@ -676,15 +1030,43 @@ def get_my_projects():
     for record in project_records:
         formatted_record = {
             "id": str(record.get("_id")),
-            "name": record.get("name", ""),
-            "description": record.get("description", ""),
-            "technologies": record.get("technologies", ""),
-            "duration": record.get("duration", ""),
-            "role": record.get("role", ""),
-            "teamSize": record.get("team_size", ""),
-            "githubLink": record.get("github_link", ""),
-            "demoLink": record.get("demo_link", ""),
-            "isVerified": record.get("is_verified", {})
+            "project_details": {
+                "name": {
+                    "current_value": record.get("project_details", {}).get("name", {}).get("current_value", ""),
+                    "last_verified_value": record.get("project_details", {}).get("name", {}).get("last_verified_value", "")
+                },
+                "description": {
+                    "current_value": record.get("project_details", {}).get("description", {}).get("current_value", ""),
+                    "last_verified_value": record.get("project_details", {}).get("description", {}).get("last_verified_value", "")
+                },
+                "technologies": {
+                    "current_value": record.get("project_details", {}).get("technologies", {}).get("current_value", ""),
+                    "last_verified_value": record.get("project_details", {}).get("technologies", {}).get("last_verified_value", "")
+                },
+                "duration": {
+                    "current_value": record.get("project_details", {}).get("duration", {}).get("current_value", ""),
+                    "last_verified_value": record.get("project_details", {}).get("duration", {}).get("last_verified_value", "")
+                },
+                "role": {
+                    "current_value": record.get("project_details", {}).get("role", {}).get("current_value", ""),
+                    "last_verified_value": record.get("project_details", {}).get("role", {}).get("last_verified_value", "")
+                },
+                "teamSize": {
+                    "current_value": record.get("project_details", {}).get("team_size", {}).get("current_value", ""),
+                    "last_verified_value": record.get("project_details", {}).get("team_size", {}).get("last_verified_value", "")
+                },
+                "githubLink": {
+                    "current_value": record.get("project_details", {}).get("github_link", {}).get("current_value", ""),
+                    "last_verified_value": record.get("project_details", {}).get("github_link", {}).get("last_verified_value", "")
+                },
+                "demoLink": {
+                    "current_value": record.get("project_details", {}).get("demo_link", {}).get("current_value", ""),
+                    "last_verified_value": record.get("project_details", {}).get("demo_link", {}).get("last_verified_value", "")
+                }
+            },
+            "is_verified": record.get("is_verified", False),
+            "last_verified": record.get("last_verified", None),
+            "remark": record.get("remark", None)
         }
         formatted_records.append(formatted_record)
     
@@ -700,7 +1082,7 @@ def add_project():
     student_id = StudentService.get_student_id_by_user_id(user_id)
     
     data = request.get_json()
-    
+    print(data)
     # Validate the incoming data
     # errors = validate_project(data)
     # if errors:
@@ -709,24 +1091,45 @@ def add_project():
     # Convert frontend field names to backend field names
     backend_data = {
         "student_id": student_id,
-        "name": data.get("name"),
-        "description": data.get("description"),
-        "technologies": data.get("technologies"),
-        "duration": data.get("duration"),
-        "role": data.get("role"),
-        "team_size": data.get("teamSize"),
-        "github_link": data.get("githubLink"),
-        "demo_link": data.get("demoLink"),
-        "is_verified": {
-            "name": False,
-            "description": False,
-            "technologies": False,
-            "duration": False,
-            "role": False,
-            "team_size": False,
-            "github_link": False,
-            "demo_link": False
-        }
+        "project_details": {
+            "name": {
+                "current_value": data.get("project_details").get("name").get("current_value"),
+                "last_verified_value": None
+            },
+            "description": {
+                "current_value": data.get("project_details").get("description").get("current_value"),
+                "last_verified_value": None
+            },
+            "technologies": {
+                "current_value": data.get("project_details").get("technologies").get("current_value"),
+                "last_verified_value": None
+            },
+            "duration": {
+                "current_value": data.get("project_details").get("duration").get("current_value"),
+                "last_verified_value": None
+            },
+            "role": {
+                "current_value": data.get("project_details").get("role").get("current_value"),
+                "last_verified_value": None
+            },
+            "team_size": {
+                "current_value": data.get("project_details").get("teamSize").get("current_value"),
+                "last_verified_value": None
+            },
+            "github_link": {
+                "current_value": data.get("project_details").get("githubLink").get("current_value"),
+                "last_verified_value": None
+            },
+            "demo_link": {
+                "current_value": data.get("project_details").get("demoLink").get("current_value"),
+                "last_verified_value": None
+            }
+        },
+        "is_verified": False,
+        "last_verified": None,
+        "remark": None,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
     }
     
     # Remove None values
@@ -742,15 +1145,43 @@ def add_project():
     # Format for frontend
     formatted_project = {
         "id": str(project.get("_id")),
-        "name": project.get("name", ""),
-        "description": project.get("description", ""),
-        "technologies": project.get("technologies", ""),
-        "duration": project.get("duration", ""),
-        "role": project.get("role", ""),
-        "teamSize": project.get("team_size", ""),
-        "githubLink": project.get("github_link", ""),
-        "demoLink": project.get("demo_link", ""),
-        "isVerified": project.get("is_verified", {})
+        "project_details": {
+            "name": {
+                "current_value": project.get("project_details", {}).get("name", {}).get("current_value", ""),
+                "last_verified_value": project.get("project_details", {}).get("name", {}).get("last_verified_value", "")
+            },
+            "description": {
+                "current_value": project.get("project_details", {}).get("description", {}).get("current_value", ""),
+                "last_verified_value": project.get("project_details", {}).get("description", {}).get("last_verified_value", "")
+            },
+            "technologies": {
+                "current_value": project.get("project_details", {}).get("technologies", {}).get("current_value", ""),
+                "last_verified_value": project.get("project_details", {}).get("technologies", {}).get("last_verified_value", "")
+            },
+            "duration": {
+                "current_value": project.get("project_details", {}).get("duration", {}).get("current_value", ""),
+                "last_verified_value": project.get("project_details", {}).get("duration", {}).get("last_verified_value", "")
+            },
+            "role": {
+                "current_value": project.get("project_details", {}).get("role", {}).get("current_value", ""),
+                "last_verified_value": project.get("project_details", {}).get("role", {}).get("last_verified_value", "")
+            },
+            "teamSize": {
+                "current_value": project.get("project_details", {}).get("team_size", {}).get("current_value", ""),
+                "last_verified_value": project.get("project_details", {}).get("team_size", {}).get("last_verified_value", "")
+            },
+            "githubLink": {
+                "current_value": project.get("project_details", {}).get("github_link", {}).get("current_value", ""),
+                "last_verified_value": project.get("project_details", {}).get("github_link", {}).get("last_verified_value", "")
+            },
+            "demoLink": {
+                "current_value": project.get("project_details", {}).get("demo_link", {}).get("current_value", ""),
+                "last_verified_value": project.get("project_details", {}).get("demo_link", {}).get("last_verified_value", "")
+            }
+        },
+        "is_verified": project.get("is_verified", False),
+        "last_verified": project.get("last_verified", None),
+        "remark": project.get("remark", None)
     }
     
     return jsonify(formatted_project), 201
@@ -766,11 +1197,6 @@ def update_project(project_id):
     
     data = request.get_json()
     
-    # Validate the incoming data
-    # errors = validate_project(data)
-    # if errors:
-    #     return jsonify({"errors": errors}), 400
-    
     # Check if the project record belongs to the student
     project = StudentService.get_project_by_id(project_id)
     if not project or str(project.get("student_id")) != str(student_id):
@@ -778,14 +1204,41 @@ def update_project(project_id):
     
     # Convert frontend field names to backend field names
     backend_data = {
-        "name": data.get("name"),
-        "description": data.get("description"),
-        "technologies": data.get("technologies"),
-        "duration": data.get("duration"),
-        "role": data.get("role"),
-        "team_size": data.get("teamSize"),
-        "github_link": data.get("githubLink"),
-        "demo_link": data.get("demoLink")
+        "project_details": {
+            "name": {
+                "current_value": data.get("project_details").get("name").get("current_value"),
+                "last_verified_value": project.get("project_details", {}).get("name", {}).get("last_verified_value", None)
+            },
+            "description": {
+                "current_value": data.get("project_details").get("description").get("current_value"),
+                "last_verified_value": project.get("project_details", {}).get("description", {}).get("last_verified_value", None)
+            },
+            "technologies": {
+                "current_value": data.get("project_details").get("technologies").get("current_value"),
+                "last_verified_value": project.get("project_details", {}).get("technologies", {}).get("last_verified_value", None)
+            },
+            "duration": {
+                "current_value": data.get("project_details").get("duration").get("current_value"),
+                "last_verified_value": project.get("project_details", {}).get("duration", {}).get("last_verified_value", None)
+            },
+            "role": {
+                "current_value": data.get("project_details").get("role").get("current_value"),
+                "last_verified_value": project.get("project_details", {}).get("role", {}).get("last_verified_value", None)
+            },
+            "team_size": {
+                "current_value": data.get("project_details").get("teamSize").get("current_value"),
+                "last_verified_value": project.get("project_details", {}).get("team_size", {}).get("last_verified_value", None)
+            },
+            "github_link": {
+                "current_value": data.get("project_details").get("githubLink").get("current_value"),
+                "last_verified_value": project.get("project_details", {}).get("github_link", {}).get("last_verified_value", None)
+            },
+            "demo_link": {
+                "current_value": data.get("project_details").get("demoLink").get("current_value"),
+                "last_verified_value": project.get("project_details", {}).get("demo_link", {}).get("last_verified_value", None)
+            }
+        },
+        "updated_at": datetime.utcnow()
     }
     
     # Remove None values
@@ -801,15 +1254,43 @@ def update_project(project_id):
     # Format for frontend
     formatted_project = {
         "id": str(updated_project.get("_id")),
-        "name": updated_project.get("name", ""),
-        "description": updated_project.get("description", ""),
-        "technologies": updated_project.get("technologies", ""),
-        "duration": updated_project.get("duration", ""),
-        "role": updated_project.get("role", ""),
-        "teamSize": updated_project.get("team_size", ""),
-        "githubLink": updated_project.get("github_link", ""),
-        "demoLink": updated_project.get("demo_link", ""),
-        "isVerified": updated_project.get("is_verified", {})
+        "project_details": {
+            "name": {
+                "current_value": updated_project.get("project_details", {}).get("name", {}).get("current_value", ""),
+                "last_verified_value": updated_project.get("project_details", {}).get("name", {}).get("last_verified_value", "")
+            },
+            "description": {
+                "current_value": updated_project.get("project_details", {}).get("description", {}).get("current_value", ""),
+                "last_verified_value": updated_project.get("project_details", {}).get("description", {}).get("last_verified_value", "")
+            },
+            "technologies": {
+                "current_value": updated_project.get("project_details", {}).get("technologies", {}).get("current_value", ""),
+                "last_verified_value": updated_project.get("project_details", {}).get("technologies", {}).get("last_verified_value", "")
+            },
+            "duration": {
+                "current_value": updated_project.get("project_details", {}).get("duration", {}).get("current_value", ""),
+                "last_verified_value": updated_project.get("project_details", {}).get("duration", {}).get("last_verified_value", "")
+            },
+            "role": {
+                "current_value": updated_project.get("project_details", {}).get("role", {}).get("current_value", ""),
+                "last_verified_value": updated_project.get("project_details", {}).get("role", {}).get("last_verified_value", "")
+            },
+            "teamSize": {
+                "current_value": updated_project.get("project_details", {}).get("team_size", {}).get("current_value", ""),
+                "last_verified_value": updated_project.get("project_details", {}).get("team_size", {}).get("last_verified_value", "")
+            },
+            "githubLink": {
+                "current_value": updated_project.get("project_details", {}).get("github_link", {}).get("current_value", ""),
+                "last_verified_value": updated_project.get("project_details", {}).get("github_link", {}).get("last_verified_value", "")
+            },
+            "demoLink": {
+                "current_value": updated_project.get("project_details", {}).get("demo_link", {}).get("current_value", ""),
+                "last_verified_value": updated_project.get("project_details", {}).get("demo_link", {}).get("last_verified_value", "")
+            }
+        },
+        "is_verified": updated_project.get("is_verified", False),
+        "last_verified": updated_project.get("last_verified", None),
+        "remark": updated_project.get("remark", None)
     }
     
     return jsonify(formatted_project), 200
@@ -851,12 +1332,31 @@ def get_my_resumes():
     for resume in resumes:
         formatted_resume = {
             "id": str(resume.get("_id")),
-            "resumeName": resume.get("resume_name", ""),
-            "jobProfile": resume.get("job_profile", ""),
-            "fileName": resume.get("file_name", ""),
-            "uploadDate": resume.get("upload_date", ""),
-            "fileSize": resume.get("file_size", ""),
-            "fileUrl": resume.get("file_url", "")
+            "resume_details": {
+                "resume_name": {
+                    "current_value": resume.get("resume_details", {}).get("resume_name", {}).get("current_value", ""),
+                    "last_verified_value": resume.get("resume_details", {}).get("resume_name", {}).get("last_verified_value", "")
+                },
+                "job_profile": {
+                    "current_value": resume.get("resume_details", {}).get("job_profile", {}).get("current_value", ""),
+                    "last_verified_value": resume.get("resume_details", {}).get("job_profile", {}).get("last_verified_value", "")
+                },
+                "file_name": {
+                    "current_value": resume.get("resume_details", {}).get("file_name", {}).get("current_value", ""),
+                    "last_verified_value": resume.get("resume_details", {}).get("file_name", {}).get("last_verified_value", "")
+                },
+                "file_url": {
+                    "current_value": resume.get("resume_details", {}).get("file_url", {}).get("current_value", ""),
+                    "last_verified_value": resume.get("resume_details", {}).get("file_url", {}).get("last_verified_value", "")
+                },
+                "file_size": {
+                    "current_value": resume.get("resume_details", {}).get("file_size", {}).get("current_value", ""),
+                    "last_verified_value": resume.get("resume_details", {}).get("file_size", {}).get("last_verified_value", "")
+                }
+            },
+            "is_verified": resume.get("is_verified", False),
+            "last_verified": resume.get("last_verified", None),
+            "remark": resume.get("remark", None)
         }
         formatted_resumes.append(formatted_resume)
     
@@ -879,12 +1379,31 @@ def get_resume_by_id(resume_id):
     # Format for frontend
     formatted_resume = {
         "id": str(resume.get("_id")),
-        "resumeName": resume.get("resume_name", ""),
-        "jobProfile": resume.get("job_profile", ""),
-        "fileName": resume.get("file_name", ""),
-        "uploadDate": resume.get("upload_date", ""),
-        "fileSize": resume.get("file_size", ""),
-        "fileUrl": resume.get("file_url", "")
+        "resume_details": {
+            "resume_name": {
+                "current_value": resume.get("resume_details", {}).get("resume_name", {}).get("current_value", ""),
+                "last_verified_value": resume.get("resume_details", {}).get("resume_name", {}).get("last_verified_value", "")
+            },
+            "job_profile": {
+                "current_value": resume.get("resume_details", {}).get("job_profile", {}).get("current_value", ""),
+                "last_verified_value": resume.get("resume_details", {}).get("job_profile", {}).get("last_verified_value", "")
+            },
+            "file_name": {
+                "current_value": resume.get("resume_details", {}).get("file_name", {}).get("current_value", ""),
+                "last_verified_value": resume.get("resume_details", {}).get("file_name", {}).get("last_verified_value", "")
+            },
+            "file_url": {
+                "current_value": resume.get("resume_details", {}).get("file_url", {}).get("current_value", ""),
+                "last_verified_value": resume.get("resume_details", {}).get("file_url", {}).get("last_verified_value", "")
+            },
+            "file_size": {
+                "current_value": resume.get("resume_details", {}).get("file_size", {}).get("current_value", ""),
+                "last_verified_value": resume.get("resume_details", {}).get("file_size", {}).get("last_verified_value", "")
+            }
+        },
+        "is_verified": resume.get("is_verified", False),
+        "last_verified": resume.get("last_verified", None),
+        "remark": resume.get("remark", None)
     }
     
     return jsonify(formatted_resume), 200
@@ -936,12 +1455,33 @@ def upload_resume():
         # Create new resume record
         resume_data = {
             "student_id": student_id,
-            "resume_name": resume_name,
-            "job_profile": job_profile,
-            "file_name": file.filename,
-            "upload_date": datetime.utcnow().strftime('%Y-%m-%d'),
-            "file_size": file_size,
-            "file_url": f"/static/uploads/resumes/{filename}"
+            "resume_details": {
+                "resume_name": {
+                    "current_value": resume_name,
+                    "last_verified_value": None
+                },
+                "job_profile": {
+                    "current_value": job_profile,
+                    "last_verified_value": None
+                },
+                "file_name": {
+                    "current_value": file.filename,
+                    "last_verified_value": None
+                },
+                "file_url": {
+                    "current_value": f"/static/uploads/resumes/{filename}",
+                    "last_verified_value": None
+                },
+                "file_size": {
+                    "current_value": file_size,
+                    "last_verified_value": None
+                }
+            },
+            "is_verified": False,
+            "last_verified": None,
+            "remark": None,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
         }
         
         resume_id = StudentService.add_resume(resume_data)
@@ -954,12 +1494,31 @@ def upload_resume():
         # Format for frontend
         formatted_resume = {
             "id": str(resume.get("_id")),
-            "resumeName": resume.get("resume_name", ""),
-            "jobProfile": resume.get("job_profile", ""),
-            "fileName": resume.get("file_name", ""),
-            "uploadDate": resume.get("upload_date", ""),
-            "fileSize": resume.get("file_size", ""),
-            "fileUrl": resume.get("file_url", "")
+            "resume_details": {
+                "resume_name": {
+                    "current_value": resume.get("resume_details", {}).get("resume_name", {}).get("current_value", ""),
+                    "last_verified_value": resume.get("resume_details", {}).get("resume_name", {}).get("last_verified_value", "")
+                },
+                "job_profile": {
+                    "current_value": resume.get("resume_details", {}).get("job_profile", {}).get("current_value", ""),
+                    "last_verified_value": resume.get("resume_details", {}).get("job_profile", {}).get("last_verified_value", "")
+                },
+                "file_name": {
+                    "current_value": resume.get("resume_details", {}).get("file_name", {}).get("current_value", ""),
+                    "last_verified_value": resume.get("resume_details", {}).get("file_name", {}).get("last_verified_value", "")
+                },
+                "file_url": {
+                    "current_value": resume.get("resume_details", {}).get("file_url", {}).get("current_value", ""),
+                    "last_verified_value": resume.get("resume_details", {}).get("file_url", {}).get("last_verified_value", "")
+                },
+                "file_size": {
+                    "current_value": resume.get("resume_details", {}).get("file_size", {}).get("current_value", ""),
+                    "last_verified_value": resume.get("resume_details", {}).get("file_size", {}).get("last_verified_value", "")
+                }
+            },
+            "is_verified": resume.get("is_verified", False),
+            "last_verified": resume.get("last_verified", None),
+            "remark": resume.get("remark", None)
         }
         
         return jsonify(formatted_resume), 201
@@ -977,28 +1536,31 @@ def update_resume(resume_id):
     
     data = request.get_json()
     
-    # Validate the incoming data
-    # errors = validate_resume(data)
-    # if errors:
-    #     return jsonify({"errors": errors}), 400
-    
     resume = StudentService.get_resume_by_id(resume_id)
     
     if not resume or str(resume.get("student_id")) != str(student_id):
         return jsonify({"message": "Resume not found or access denied"}), 404
     
     # Check if the new name already exists for another resume
-    if 'resumeName' in data and data['resumeName'] != resume.get("resume_name"):
+    if 'resumeName' in data and data['resumeName'] != resume.get("resume_details", {}).get("resume_name", {}).get("current_value"):
         existing_resume = StudentService.get_resume_by_name(student_id, data['resumeName'])
         if existing_resume and str(existing_resume.get("_id")) != resume_id:
             return jsonify({"message": f"A resume with the name '{data['resumeName']}' already exists. Please choose a different name."}), 400
     
     # Convert frontend field names to backend field names
-    backend_data = {}
-    if 'resumeName' in data:
-        backend_data["resume_name"] = data["resumeName"]
-    if 'jobProfile' in data:
-        backend_data["job_profile"] = data["jobProfile"]
+    backend_data = {
+        "resume_details": {
+            "resume_name": {
+                "current_value": data.get("resumeName"),
+                "last_verified_value": resume.get("resume_details", {}).get("resume_name", {}).get("last_verified_value", None)
+            },
+            "job_profile": {
+                "current_value": data.get("jobProfile"),
+                "last_verified_value": resume.get("resume_details", {}).get("job_profile", {}).get("last_verified_value", None)
+            }
+        },
+        "updated_at": datetime.utcnow()
+    }
     
     updated = StudentService.update_resume(resume_id, backend_data)
     if not updated:
@@ -1010,12 +1572,31 @@ def update_resume(resume_id):
     # Format for frontend
     formatted_resume = {
         "id": str(updated_resume.get("_id")),
-        "resumeName": updated_resume.get("resume_name", ""),
-        "jobProfile": updated_resume.get("job_profile", ""),
-        "fileName": updated_resume.get("file_name", ""),
-        "uploadDate": updated_resume.get("upload_date", ""),
-        "fileSize": updated_resume.get("file_size", ""),
-        "fileUrl": updated_resume.get("file_url", "")
+        "resume_details": {
+            "resume_name": {
+                "current_value": updated_resume.get("resume_details", {}).get("resume_name", {}).get("current_value", ""),
+                "last_verified_value": updated_resume.get("resume_details", {}).get("resume_name", {}).get("last_verified_value", "")
+            },
+            "job_profile": {
+                "current_value": updated_resume.get("resume_details", {}).get("job_profile", {}).get("current_value", ""),
+                "last_verified_value": updated_resume.get("resume_details", {}).get("job_profile", {}).get("last_verified_value", "")
+            },
+            "file_name": {
+                "current_value": updated_resume.get("resume_details", {}).get("file_name", {}).get("current_value", ""),
+                "last_verified_value": updated_resume.get("resume_details", {}).get("file_name", {}).get("last_verified_value", "")
+            },
+            "file_url": {
+                "current_value": updated_resume.get("resume_details", {}).get("file_url", {}).get("current_value", ""),
+                "last_verified_value": updated_resume.get("resume_details", {}).get("file_url", {}).get("last_verified_value", "")
+            },
+            "file_size": {
+                "current_value": updated_resume.get("resume_details", {}).get("file_size", {}).get("current_value", ""),
+                "last_verified_value": updated_resume.get("resume_details", {}).get("file_size", {}).get("last_verified_value", "")
+            }
+        },
+        "is_verified": updated_resume.get("is_verified", False),
+        "last_verified": updated_resume.get("last_verified", None),
+        "remark": updated_resume.get("remark", None)
     }
     
     return jsonify(formatted_resume), 200
@@ -1035,8 +1616,8 @@ def delete_resume(resume_id):
         return jsonify({"message": "Resume not found or access denied"}), 404
     
     # Delete the file from the filesystem
-    if resume.get("file_url"):
-        file_path = os.path.join(os.getcwd(), 'app', 'static', resume.get("file_url").lstrip('/static/'))
+    if resume.get("resume_details", {}).get("file_url", {}).get("current_value"):
+        file_path = os.path.join(os.getcwd(), 'app', 'static', resume.get("resume_details", {}).get("file_url", {}).get("current_value").lstrip('/static/'))
         if os.path.exists(file_path):
             os.remove(file_path)
     
@@ -1064,7 +1645,7 @@ def download_resume(resume_id):
         return jsonify({"message": "Access denied"}), 403
     
     # Extract the actual filename from the URL
-    file_url = resume.get("file_url", "")
+    file_url = resume.get("resume_details", {}).get("file_url", {}).get("current_value", "")
     if not file_url:
         return jsonify({"message": "File not found"}), 404
     
@@ -1073,7 +1654,7 @@ def download_resume(resume_id):
     if not os.path.exists(file_path):
         return jsonify({"message": "File not found"}), 404
     
-    return send_file(file_path, as_attachment=True, download_name=resume.get("file_name"))
+    return send_file(file_path, as_attachment=True, download_name=resume.get("resume_details", {}).get("file_name", {}).get("current_value"))
 
 @students_bp.route('/me/applications', methods=['GET'])
 @jwt_required()

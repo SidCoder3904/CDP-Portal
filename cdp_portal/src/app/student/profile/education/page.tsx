@@ -38,11 +38,50 @@ export default function EducationPage() {
     fetchEducationData();
   }, []);
 
-  const handleAdd = async (newData: Partial<Education>) => {
+  const handleAdd = async (newData: any) => {
     try {
       setIsUpdating(true);
       setError(null);
-      const addedEducation = await studentApi.addEducation(newData);
+
+      // The backend API expects these fields directly
+      const transformedData = {
+        education_details: {
+          degree: {
+            current_value: newData.degree ?? "",
+            last_verified_value: null,
+          },
+          institution: {
+            current_value: newData.institution ?? "",
+            last_verified_value: null,
+          },
+          year: {
+            current_value: newData.year ?? "",
+            last_verified_value: null,
+          },
+          gpa: {
+            current_value: newData.gpa ?? "",
+            last_verified_value: null,
+          },
+          major: {
+            current_value: newData.major ?? "",
+            last_verified_value: null,
+          },
+          minor: {
+            current_value: newData.minor ?? "",
+            last_verified_value: null,
+          },
+          relevant_courses: {
+            current_value: newData.relevantCourses ?? "",
+            last_verified_value: null,
+          },
+          honors: {
+            current_value: newData.honors ?? "",
+            last_verified_value: null,
+          },
+        },
+      };
+
+      const addedEducation = await studentApi.addEducation(transformedData);
       setEducationData([...educationData, addedEducation]);
     } catch (error) {
       console.error("Failed to add education:", error);
@@ -52,11 +91,53 @@ export default function EducationPage() {
     }
   };
 
-  const handleUpdate = async (id: string, newData: Partial<Education>) => {
+  const handleUpdate = async (id: string, newData: any) => {
     try {
       setIsUpdating(true);
       setError(null);
-      const updatedEducation = await studentApi.updateEducation(id, newData);
+
+      // The backend API expects these fields directly
+      const transformedData = {
+        education_details: {
+          degree: {
+            current_value: newData.degree ?? "",
+            last_verified_value: null,
+          },
+          institution: {
+            current_value: newData.institution ?? "",
+            last_verified_value: null,
+          },
+          year: {
+            current_value: newData.year ?? "",
+            last_verified_value: null,
+          },
+          gpa: {
+            current_value: newData.gpa ?? "",
+            last_verified_value: null,
+          },
+          major: {
+            current_value: newData.major ?? "",
+            last_verified_value: null,
+          },
+          minor: {
+            current_value: newData.minor ?? "",
+            last_verified_value: null,
+          },
+          relevant_courses: {
+            current_value: newData.relevantCourses ?? "",
+            last_verified_value: null,
+          },
+          honors: {
+            current_value: newData.honors ?? "",
+            last_verified_value: null,
+          },
+        },
+      };
+
+      const updatedEducation = await studentApi.updateEducation(
+        id,
+        transformedData
+      );
       setEducationData(
         educationData.map((edu) => (edu.id === id ? updatedEducation : edu))
       );
@@ -117,44 +198,57 @@ export default function EducationPage() {
         educationData.map((edu) => (
           <Card key={edu.id} className="mb-6">
             <CardHeader>
-              <CardTitle>{edu.degree}</CardTitle>
+              <CardTitle>
+                {edu.education_details.degree.current_value}
+              </CardTitle>
+              {edu.is_verified && (
+                <div className="text-sm text-green-600">
+                  Verified on:{" "}
+                  {new Date(edu.last_verified || "").toLocaleDateString()}
+                </div>
+              )}
+              {edu.remark && (
+                <div className="text-sm text-gray-600">
+                  Remark: {edu.remark}
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <DetailItem
                   label="Institution"
-                  value={edu.institution}
-                  isVerified={edu.isVerified.institution}
+                  value={edu.education_details.institution.current_value}
+                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Year"
-                  value={edu.year}
-                  isVerified={edu.isVerified.year}
+                  value={edu.education_details.year.current_value}
+                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="GPA"
-                  value={edu.gpa}
-                  isVerified={edu.isVerified.gpa}
+                  value={edu.education_details.gpa.current_value}
+                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Major"
-                  value={edu.major}
-                  isVerified={edu.isVerified.major}
+                  value={edu.education_details.major.current_value}
+                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Minor"
-                  value={edu.minor}
-                  isVerified={edu.isVerified.minor}
+                  value={edu.education_details.minor.current_value}
+                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Relevant Courses"
-                  value={edu.relevantCourses}
-                  isVerified={edu.isVerified.relevantCourses}
+                  value={edu.education_details.relevant_courses.current_value}
+                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Honors"
-                  value={edu.honors}
-                  isVerified={edu.isVerified.honors}
+                  value={edu.education_details.honors.current_value}
+                  status={edu.is_verified ? "verified" : "pending"}
                 />
               </div>
               <div className="flex justify-end space-x-2 mt-4">
@@ -167,22 +261,42 @@ export default function EducationPage() {
                       type: "select",
                       options: degreeOptions,
                     },
-                    { name: "institution", label: "Institution", type: "text" },
-                    { name: "year", label: "Year", type: "text" },
-                    { name: "gpa", label: "GPA", type: "text" },
+                    {
+                      name: "institution",
+                      label: "Institution",
+                      type: "text",
+                    },
+                    {
+                      name: "year",
+                      label: "Year",
+                      type: "text",
+                    },
+                    {
+                      name: "gpa",
+                      label: "GPA",
+                      type: "text",
+                    },
                     {
                       name: "major",
                       label: "Major",
                       type: "select",
                       options: majorOptions,
                     },
-                    { name: "minor", label: "Minor", type: "text" },
+                    {
+                      name: "minor",
+                      label: "Minor",
+                      type: "text",
+                    },
                     {
                       name: "relevantCourses",
                       label: "Relevant Courses",
                       type: "text",
                     },
-                    { name: "honors", label: "Honors", type: "text" },
+                    {
+                      name: "honors",
+                      label: "Honors",
+                      type: "text",
+                    },
                   ]}
                   onSave={(data) => handleUpdate(edu.id, data)}
                   triggerButton={

@@ -5,7 +5,7 @@ import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from "lucide-react";
 import { useStudentApi, Project } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
 
@@ -35,11 +35,50 @@ export default function ProjectsPage() {
     fetchProjectsData();
   }, []);
 
-  const handleAdd = async (newData: Partial<Project>) => {
+  const handleAdd = async (newData: any) => {
     try {
       setIsUpdating(true);
       setError(null);
-      const addedProject = await studentApi.addProject(newData);
+
+      // Convert flat data to the nested structure
+      const transformedData = {
+        project_details: {
+          name: {
+            current_value: newData.name ?? "",
+            last_verified_value: null,
+          },
+          description: {
+            current_value: newData.description ?? "",
+            last_verified_value: null,
+          },
+          technologies: {
+            current_value: newData.technologies ?? "",
+            last_verified_value: null,
+          },
+          duration: {
+            current_value: newData.duration ?? "",
+            last_verified_value: null,
+          },
+          role: {
+            current_value: newData.role ?? "",
+            last_verified_value: null,
+          },
+          teamSize: {
+            current_value: newData.teamSize ?? "",
+            last_verified_value: null,
+          },
+          githubLink: {
+            current_value: newData.githubLink ?? "",
+            last_verified_value: null,
+          },
+          demoLink: {
+            current_value: newData.demoLink ?? "",
+            last_verified_value: null,
+          },
+        },
+      };
+
+      const addedProject = await studentApi.addProject(transformedData);
       setProjectsData([...projectsData, addedProject]);
     } catch (error) {
       console.error("Failed to add project:", error);
@@ -49,13 +88,57 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleUpdate = async (id: string, newData: Partial<Project>) => {
+  const handleUpdate = async (id: string, newData: any) => {
     try {
       setIsUpdating(true);
       setError(null);
-      const updatedProject = await studentApi.updateProject(id, newData);
+
+      // Convert flat data to the nested structure
+      const transformedData = {
+        project_details: {
+          name: {
+            current_value: newData.name ?? "",
+            last_verified_value: null,
+          },
+          description: {
+            current_value: newData.description ?? "",
+            last_verified_value: null,
+          },
+          technologies: {
+            current_value: newData.technologies ?? "",
+            last_verified_value: null,
+          },
+          duration: {
+            current_value: newData.duration ?? "",
+            last_verified_value: null,
+          },
+          role: {
+            current_value: newData.role ?? "",
+            last_verified_value: null,
+          },
+          teamSize: {
+            current_value: newData.teamSize ?? "",
+            last_verified_value: null,
+          },
+          githubLink: {
+            current_value: newData.githubLink ?? "",
+            last_verified_value: null,
+          },
+          demoLink: {
+            current_value: newData.demoLink ?? "",
+            last_verified_value: null,
+          },
+        },
+      };
+
+      const updatedProject = await studentApi.updateProject(
+        id,
+        transformedData
+      );
       setProjectsData(
-        projectsData.map((proj) => (proj.id === id ? updatedProject : proj))
+        projectsData.map((project) =>
+          project.id === id ? updatedProject : project
+        )
       );
     } catch (error) {
       console.error("Failed to update project:", error);
@@ -92,10 +175,7 @@ export default function ProjectsPage() {
     return (
       <div className="p-4 text-red-500 bg-red-50 rounded-md">
         <p>{error}</p>
-        <Button 
-          onClick={() => window.location.reload()} 
-          className="mt-4"
-        >
+        <Button onClick={() => window.location.reload()} className="mt-4">
           Retry
         </Button>
       </div>
@@ -107,82 +187,111 @@ export default function ProjectsPage() {
       <h1 className="text-2xl text-template font-bold mb-6">Projects</h1>
       {projectsData.length === 0 ? (
         <div className="text-center p-8 bg-gray-50 rounded-md">
-          <p className="text-gray-500 mb-4">No projects found. Add your first project.</p>
+          <p className="text-gray-500 mb-4">
+            No projects found. Add your first project.
+          </p>
         </div>
       ) : (
         projectsData.map((project) => (
           <Card key={project.id} className="mb-6">
             <CardHeader>
-              <CardTitle>{project.name}</CardTitle>
+              <CardTitle>
+                {project.project_details.name.current_value}
+              </CardTitle>
+              {project.is_verified && (
+                <div className="text-sm text-green-600">
+                  Verified on:{" "}
+                  {new Date(project.last_verified || "").toLocaleDateString()}
+                </div>
+              )}
+              {project.remark && (
+                <div className="text-sm text-gray-600">
+                  Remark: {project.remark}
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <DetailItem
                   label="Description"
-                  value={project.description}
-                  isVerified={project.isVerified.description}
+                  value={project.project_details.description.current_value}
+                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Technologies"
-                  value={project.technologies}
-                  isVerified={project.isVerified.technologies}
+                  value={project.project_details.technologies.current_value}
+                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Duration"
-                  value={project.duration}
-                  isVerified={project.isVerified.duration}
+                  value={project.project_details.duration.current_value}
+                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Role"
-                  value={project.role}
-                  isVerified={project.isVerified.role}
+                  value={project.project_details.role.current_value}
+                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Team Size"
-                  value={project.teamSize}
-                  isVerified={project.isVerified.teamSize}
+                  value={project.project_details.teamSize.current_value}
+                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="GitHub"
-                  value={
-                    <a
-                      href={project.githubLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline"
-                    >
-                      {project.githubLink}
-                    </a>
-                  }
-                  isVerified={project.isVerified.githubLink}
+                  value={project.project_details.githubLink.current_value}
+                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Demo"
-                  value={
-                    <a
-                      href={project.demoLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline"
-                    >
-                      {project.demoLink}
-                    </a>
-                  }
-                  isVerified={project.isVerified.demoLink}
+                  value={project.project_details.demoLink.current_value}
+                  status={project.is_verified ? "verified" : "pending"}
                 />
               </div>
               <div className="flex justify-end space-x-2 mt-4">
                 <EditDialog
                   title="Update Project"
                   fields={[
-                    { name: "name", label: "Name", type: "text" },
-                    { name: "description", label: "Description", type: "text" },
-                    { name: "technologies", label: "Technologies", type: "text" },
-                    { name: "duration", label: "Duration", type: "text" },
-                    { name: "role", label: "Role", type: "text" },
-                    { name: "teamSize", label: "Team Size", type: "number" },
-                    { name: "githubLink", label: "GitHub Link", type: "url" },
-                    { name: "demoLink", label: "Demo Link", type: "url" },
+                    {
+                      name: "name",
+                      label: "Name",
+                      type: "text",
+                    },
+                    {
+                      name: "description",
+                      label: "Description",
+                      type: "text",
+                    },
+                    {
+                      name: "technologies",
+                      label: "Technologies",
+                      type: "text",
+                    },
+                    {
+                      name: "duration",
+                      label: "Duration",
+                      type: "text",
+                    },
+                    {
+                      name: "role",
+                      label: "Role",
+                      type: "text",
+                    },
+                    {
+                      name: "teamSize",
+                      label: "Team Size",
+                      type: "number",
+                    },
+                    {
+                      name: "githubLink",
+                      label: "GitHub Link",
+                      type: "url",
+                    },
+                    {
+                      name: "demoLink",
+                      label: "Demo Link",
+                      type: "url",
+                    },
                   ]}
                   onSave={(data) => handleUpdate(project.id, data)}
                   triggerButton={
@@ -222,14 +331,46 @@ export default function ProjectsPage() {
       <EditDialog
         title="Add Project"
         fields={[
-          { name: "name", label: "Name", type: "text" },
-          { name: "description", label: "Description", type: "text" },
-          { name: "technologies", label: "Technologies", type: "text" },
-          { name: "duration", label: "Duration", type: "text" },
-          { name: "role", label: "Role", type: "text" },
-          { name: "teamSize", label: "Team Size", type: "number" },
-          { name: "githubLink", label: "GitHub Link", type: "url" },
-          { name: "demoLink", label: "Demo Link", type: "url" },
+          {
+            name: "name",
+            label: "Name",
+            type: "text",
+          },
+          {
+            name: "description",
+            label: "Description",
+            type: "text",
+          },
+          {
+            name: "technologies",
+            label: "Technologies",
+            type: "text",
+          },
+          {
+            name: "duration",
+            label: "Duration",
+            type: "text",
+          },
+          {
+            name: "role",
+            label: "Role",
+            type: "text",
+          },
+          {
+            name: "teamSize",
+            label: "Team Size",
+            type: "number",
+          },
+          {
+            name: "githubLink",
+            label: "GitHub Link",
+            type: "url",
+          },
+          {
+            name: "demoLink",
+            label: "Demo Link",
+            type: "url",
+          },
         ]}
         onSave={handleAdd}
         triggerButton={
