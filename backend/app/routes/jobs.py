@@ -1,11 +1,12 @@
 # app/routes/jobs.py
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, current_app, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.job_service import JobService
 from app.utils.auth import admin_required, student_required
 from app.utils.validators import validate_job
 from bson.objectid import ObjectId
 from bson.json_util import dumps
+from flask import Response
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -61,6 +62,8 @@ def apply_for_job(job_id):
 
     # Get resume ID from request
     resume_id = data.get('resumeId')
+    logger = current_app.logger
+    logger.info(f"Resume ID: {resume_id}")
 
     if not resume_id:
         return jsonify({"message": "Resume ID is required"}), 400
@@ -95,7 +98,7 @@ def apply_for_job(job_id):
     application_id = JobService.create_application(job_id, current_user['id'], application_data)
     application = JobService.get_application_by_id(application_id)
     
-    return jsonify(application), 201
+    return Response(dumps(application), mimetype='application/json'), 201
 
 @jobs_bp.route('/<job_id>/applications', methods=['GET'])
 @jwt_required()

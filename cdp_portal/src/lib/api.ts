@@ -7,11 +7,15 @@ export function useApi() {
   
   const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
     try {
-      const headers = {
-        "Content-Type": "application/json",
+      const headers: Record<string, string> = {
         ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-        ...options.headers,
+        ...(options.headers as Record<string, string> || {}),
       };
+
+      // Only set Content-Type if it's not FormData
+      if (!(options.body instanceof FormData)) {
+        headers["Content-Type"] = "application/json";
+      }
       
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,

@@ -13,7 +13,7 @@ interface JobDetailsProps {
   job: JobListing
   activeTab: "description" | "eligibility"
   handleTabClick: (tab: "description" | "eligibility") => void
-  onApply: (jobId: string) => Promise<void>
+  onApply: (jobId: string, resumeId: string) => Promise<void>; 
   isApplied: boolean
   isApplying: boolean
 }
@@ -53,7 +53,7 @@ export default function JobDetails({
   }
 
   const handleResumeSubmit = async (resumeId: string) => {
-    await onApply(job._id)
+    await onApply(job._id,resumeId);
     setIsResumeDialogOpen(false)
   }
 

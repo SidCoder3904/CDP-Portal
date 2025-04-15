@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Filter, Download } from "lucide-react";
+import { Search, Filter, Download, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useJobsApi } from "@/lib/api/jobs";
+import { useApi } from "@/lib/api";
 
 interface JobApplicantsProps {
   jobId: string;
@@ -40,11 +41,13 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const [isExporting, setIsExporting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [students, setApplications] = useState<any>([]);
 
-
   const jobsApi = useJobsApi();
+  const { fetchWithAuth } = useApi();
 
   useEffect(() => {
     async function fetchData() {
@@ -55,78 +58,20 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
         setApplications(applicationData);
       } catch (error) {
         console.error("Failed to fetch data:", error);
+
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchData();
-  }, []);
-
-  // Mock data - in a real app, this would be fetched based on the jobId
-  // const students = [
-  //   {
-  //     id: "S001",
-  //     name: "Rahul Sharma",
-  //     studentId: "CS19001",
-  //     branch: "Computer Science",
-  //     program: "B.Tech",
-  //     cgpa: 9.2,
-  //     status: "Shortlisted",
-  //     currentStage: "Technical Interview",
-  //     appliedOn: "Sep 28, 2023",
-  //   },
-  //   {
-  //     id: "S002",
-  //     name: "Priya Patel",
-  //     studentId: "CS19045",
-  //     branch: "Computer Science",
-  //     program: "B.Tech",
-  //     cgpa: 8.7,
-  //     status: "In Progress",
-  //     currentStage: "Online Assessment",
-  //     appliedOn: "Sep 29, 2023",
-  //   },
-  //   {
-  //     id: "S003",
-  //     name: "Amit Kumar",
-  //     studentId: "EC19023",
-  //     branch: "Electronics",
-  //     program: "B.Tech",
-  //     cgpa: 8.9,
-  //     status: "Rejected",
-  //     currentStage: "Resume Shortlisting",
-  //     appliedOn: "Sep 27, 2023",
-  //   },
-  //   {
-  //     id: "S004",
-  //     name: "Sneha Gupta",
-  //     studentId: "ME19056",
-  //     branch: "Mechanical",
-  //     program: "B.Tech",
-  //     cgpa: 8.5,
-  //     status: "In Progress",
-  //     currentStage: "Resume Shortlisting",
-  //     appliedOn: "Sep 30, 2023",
-  //   },
-  //   {
-  //     id: "S005",
-  //     name: "Vikram Singh",
-  //     studentId: "CS19078",
-  //     branch: "Computer Science",
-  //     program: "B.Tech",
-  //     cgpa: 9.5,
-  //     status: "Shortlisted",
-  //     currentStage: "HR Interview",
-  //     appliedOn: "Sep 26, 2023",
-  //   },
-  // ];
+  }, [jobId]);
 
   const toggleSelectAll = () => {
     if (selectedStudents.length === students.length) {
       setSelectedStudents([]);
     } else {
-      setSelectedStudents(students.map((student) => student.id));
+      setSelectedStudents(students.map((student:any) => student.id));
     }
   };
 
@@ -144,6 +89,89 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
     // In a real app, this would update the status in the database
     console.log(`Updating status to ${status} for students:`, selectedStudents);
     setSelectedStatus(null);
+  };
+
+  // Filter students based on search term and status
+  const filteredStudents = students.filter((student:any) => {
+    const matchesSearch = 
+      student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = 
+      statusFilter === "all" || 
+      student.status?.toLowerCase() === statusFilter.toLowerCase();
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Function to handle exporting applicant data
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Prepare filters for the export
+      const filters = {
+        jobId: jobId,
+        // If students are selected, include only those
+        studentIds: selectedStudents.length > 0 ? selectedStudents : undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined
+      };
+      
+      // Call the backend report generation API
+      const response = await fetchWithAuth('/api/reports/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'job_applicants',
+          filters: filters,
+          includeResumeLinks: true  // Tell the backend to include resume links
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to generate report: ${response.status}`);
+      }
+      
+      const report = await response.json();
+      
+      // Now download the generated report
+      const downloadResponse = await fetchWithAuth(`/api/reports/download/${report.id}?format=excel`, {
+        method: 'GET'
+      });
+      
+      if (!downloadResponse.ok) {
+        throw new Error(`Failed to download report: ${downloadResponse.status}`);
+      }
+      
+      // Convert the response to a blob
+      const blob = await downloadResponse.blob();
+      
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary anchor element
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `job_applicants_${jobId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      // Add to the DOM and trigger the download
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+    } catch (error) {
+      console.error("Failed to export data:", error);
+
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -254,11 +282,13 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
               type="search"
               placeholder="Search students..."
               className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
         <div className="flex gap-2">
-          <Select defaultValue="all">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -269,23 +299,19 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
               <SelectItem value="rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
-          <Select defaultValue="all">
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Stage" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Stages</SelectItem>
-              <SelectItem value="resume">Resume Shortlisting</SelectItem>
-              <SelectItem value="online">Online Assessment</SelectItem>
-              <SelectItem value="technical">Technical Interview</SelectItem>
-              <SelectItem value="hr">HR Interview</SelectItem>
-            </SelectContent>
-          </Select>
           <Button variant="outline" size="icon">
             <Filter className="h-4 w-4" />
           </Button>
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
+          <Button 
+            variant="outline" 
+            onClick={handleExport} 
+            disabled={isExporting || isLoading}
+          >
+            {isExporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
             Export
           </Button>
         </div>
@@ -315,36 +341,50 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {students.map((student) => (
-              <TableRow key={student.id}>
-                <TableCell>
-                  <Checkbox
-                    checked={selectedStudents.includes(student.id)}
-                    onCheckedChange={() => toggleSelectStudent(student.id)}
-                  />
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto" />
                 </TableCell>
-                <TableCell className="font-medium">{student.name}</TableCell>
-                <TableCell>{student.studentId}</TableCell>
-                <TableCell>{student.major}</TableCell>
-                <TableCell>{student.program}</TableCell>
-                <TableCell>{student.cgpa}</TableCell>
-                <TableCell>{student.currentStage}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      student.status === "Shortlisted"
-                        ? "default"
-                        : student.status === "Rejected"
-                        ? "destructive"
-                        : "outline"
-                    }
-                  >
-                    {student.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>{student.appliedOn}</TableCell>
               </TableRow>
-            ))}
+            ) : filteredStudents.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center py-8">
+                  No applicants found
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredStudents.map((student:any) => (
+                <TableRow key={student.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedStudents.includes(student.id)}
+                      onCheckedChange={() => toggleSelectStudent(student.id)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{student.name}</TableCell>
+                  <TableCell>{student.studentId}</TableCell>
+                  <TableCell>{student.major}</TableCell>
+                  <TableCell>{student.program}</TableCell>
+                  <TableCell>{student.cgpa}</TableCell>
+                  <TableCell>{student.currentStage}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        student.status === "Shortlisted"
+                          ? "default"
+                          : student.status === "Rejected"
+                          ? "destructive"
+                          : "outline"
+                      }
+                    >
+                      {student.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{student.appliedOn}</TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
