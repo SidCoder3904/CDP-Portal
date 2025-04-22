@@ -18,11 +18,15 @@ import { JobWorkflow } from "@/components/job-workflow";
 import { useEffect, useState } from "react";
 import { useJobsApi } from "@/lib/api/jobs";
 
-export default function JobPage({
-  params,
-}: {
-  params: { id: string; jobId: string };
-}) {
+// Define proper types for the page props in App Router
+type JobPageProps = {
+  params: {
+    id: string;
+    jobId: string;
+  };
+};
+
+export default function JobPage({ params }: JobPageProps) {
   const [job, setJob] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,7 +46,7 @@ export default function JobPage({
     }
 
     fetchData();
-  }, []);
+  }, [params.jobId]); // Add missing dependencies
 
   if (!job) {
     return (

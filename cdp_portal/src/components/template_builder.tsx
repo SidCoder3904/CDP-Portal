@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,19 +27,32 @@ interface Template {
 }
 
 const availableFields = [
-  { id: "name", label: "Student Name", type: "text" },
-  { id: "roll", label: "Roll Number", type: "text" },
-  { id: "branch", label: "Branch", type: "select" },
+  { id: "studentId", label: "Student ID", type: "text" },
+  { id: "studentName", label: "Student Name", type: "text" },
+  { id: "email", label: "Email", type: "text" },
+  { id: "major", label: "Branch/Major", type: "text" },
   { id: "cgpa", label: "CGPA", type: "number" },
   { id: "company", label: "Company", type: "text" },
   { id: "role", label: "Role", type: "text" },
   { id: "package", label: "Package", type: "number" },
   { id: "status", label: "Status", type: "select" },
+  { id: "placementStatus", label: "Placement Status", type: "text" },
+  { id: "totalApplications", label: "Total Applications", type: "number" },
+  { id: "pendingApplications", label: "Pending Applications", type: "number" },
+  { id: "selectedApplications", label: "Selected Applications", type: "number" },
+  { id: "bestOfferCompany", label: "Best Offer Company", type: "text" },
+  { id: "bestOfferRole", label: "Best Offer Role", type: "text" },
+  { id: "bestOfferPackage", label: "Best Offer Package", type: "text" },
   { id: "joining_date", label: "Joining Date", type: "date" },
   { id: "offer_date", label: "Offer Date", type: "date" },
 ]
 
-export function TemplateBuilder({ onSave }: { onSave: (template: Template) => void }) {
+interface TemplateBuilderProps {
+  initialTemplate?: Template | null;
+  onSave: (template: Template) => void;
+}
+
+export function TemplateBuilder({ initialTemplate, onSave }: TemplateBuilderProps) {
   const [template, setTemplate] = useState<Template>({
     id: "",
     name: "",
@@ -48,6 +61,13 @@ export function TemplateBuilder({ onSave }: { onSave: (template: Template) => vo
   })
 
   const [showFormulaField, setShowFormulaField] = useState<string | null>(null)
+
+  // Load initial template data if provided
+  useEffect(() => {
+    if (initialTemplate) {
+      setTemplate(initialTemplate)
+    }
+  }, [initialTemplate])
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return
@@ -60,6 +80,11 @@ export function TemplateBuilder({ onSave }: { onSave: (template: Template) => vo
   }
 
   const addColumn = (field: (typeof availableFields)[0]) => {
+    // Check if field already exists
+    if (template.columns.some(col => col.id === field.id)) {
+      return
+    }
+    
     const newColumn: Column = {
       id: field.id,
       header: field.label,
@@ -88,7 +113,13 @@ export function TemplateBuilder({ onSave }: { onSave: (template: Template) => vo
 
   const handleSave = () => {
     if (!template.name) return
-    onSave({ ...template, id: crypto.randomUUID() })
+    
+    const templateToSave: Template = {
+      ...template,
+      id: template.id || crypto.randomUUID(),
+    }
+    
+    onSave(templateToSave)
   }
 
   return (
