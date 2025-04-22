@@ -1,41 +1,38 @@
+import logging
+import cloudinary
 import cloudinary.uploader
-import cloudinary.api
-import cloudinary.utils
+from dotenv import load_dotenv
 import os
+from werkzeug.utils import secure_filename
 from datetime import datetime
 from typing import Optional, Dict, Any
-from werkzeug.utils import secure_filename
-import logging
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Configure Cloudinary
+# Load environment variables
+load_dotenv()
+
+# Cloudinary configuration
 cloudinary.config(
-    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
-    api_key=os.getenv('CLOUDINARY_API_KEY'),
-    api_secret=os.getenv('CLOUDINARY_API_SECRET')
+    cloud_name="dszmntl6x",
+    api_key="232819685446349",
+    api_secret="4H7wqHwFXwJrqgxtQkp5JbxPTG0",
 )
 
-def upload_file(
-    file: Any,
-    folder: str,
-    resource_type: str = "raw",
-    allowed_formats: Optional[list] = None,
-    public_id: Optional[str] = None
-) -> Dict[str, Any]:
+def upload_file(file: Any, folder: str = 'resumes', resource_type: str = 'raw', allowed_formats: list = None, public_id: str = None) -> Dict[str, Any]:
     """
-    Upload a file to Cloudinary
+    Upload a resume file to Cloudinary
     
     Args:
         file: The file to upload
-        folder: The folder name in Cloudinary
-        resource_type: Type of resource (auto, image, video, raw)
-        allowed_formats: List of allowed file formats (with dots, e.g., [".pdf", ".doc"])
-        public_id: Custom public ID for the file
+        folder: The folder to upload to (default: 'resumes')
+        resource_type: The type of resource (default: 'raw')
+        allowed_formats: List of allowed file formats (default: None)
+        public_id: Custom public ID for the file (default: None)
     
     Returns:
-        Dict containing upload result
+        Dict containing the upload result with URLs and metadata
     """
     try:
         # Validate file
@@ -46,20 +43,23 @@ def upload_file(
         filename = secure_filename(file.filename)
         file_ext = os.path.splitext(filename)[1].lower()
 
-        # Validate file format if allowed_formats is specified
+        # Validate file format
         if allowed_formats and file_ext not in allowed_formats:
             raise ValueError(f"File format not allowed. Allowed formats: {', '.join(allowed_formats)}")
+        elif not allowed_formats and file_ext != '.pdf':
+            raise ValueError("Only PDF files are allowed")
 
         upload_params = {
             "folder": folder,
-            "resource_type": "raw",  # Always use raw for PDF files
+            "resource_type": resource_type,
             "format": "pdf",  # Force PDF format
             "resource_options": {
                 "content_type": "application/pdf",
                 "delivery_type": "upload"
             }
         }
-        
+
+        # Add public_id if provided
         if public_id:
             upload_params["public_id"] = public_id
             
@@ -67,20 +67,60 @@ def upload_file(
         
         # Get the secure URL with proper content type
         file_url = result.get('secure_url')
-        if file_url:
-            # For viewing, use the original URL with inline content disposition
-            view_url = file_url.replace('/upload/', '/upload/fl_attachment:false/')
-            # For downloading, use the fl_attachment parameter
-            download_url = file_url.replace('/upload/', '/upload/fl_attachment/')
+        if not file_url:
+            raise ValueError("Failed to get file URL from Cloudinary")
             
-            result['view_url'] = view_url
-            result['download_url'] = download_url
-            logger.info(f"File uploaded successfully. View URL: {view_url}")
+        # For downloading, use the fl_attachment parameter
+        download_url = file_url.replace('/upload/', '/upload/fl_attachment/')
+        logger.info(f"Resume uploaded successfully. URL: {download_url}")
+        
+        # Add the download URL to the result
+        result['download_url'] = download_url
             
         return result
     except Exception as e:
         logger.error(f"Cloudinary upload error: {str(e)}")
-        raise Exception(f"Failed to upload file to Cloudinary: {str(e)}")
+        raise Exception(f"Failed to upload resume to Cloudinary: {str(e)}")
+
+def upload_notice(file: Any) -> str:
+    """
+    Upload a notice PDF to Cloudinary
+    
+    Args:
+        file: The PDF file to upload
+    
+    Returns:
+        str: The URL of the uploaded notice
+    """
+    try:
+        # Secure the filename
+        filename = secure_filename(file.filename)
+        
+        # Upload the file as raw
+        result = cloudinary.uploader.upload(
+            file,
+            resource_type="raw",  # Set resource type to raw for PDF files
+            folder="notices",     # Optional: organize files in a folder
+            public_id=filename,   # Use the original filename as public_id
+            format="pdf",         # Explicitly set format to PDF
+            resource_options={
+                "content_type": "application/pdf",
+                "delivery_type": "upload"
+            }
+        )
+        
+        # Get the secure URL with proper content type
+        file_url = result.get('secure_url')
+        if file_url:
+            # Ensure the URL has the correct content type
+            file_url = file_url.replace('/upload/', '/upload/fl_attachment/')
+            logger.info(f"File uploaded successfully. URL: {file_url}")
+        
+        return file_url
+        
+    except Exception as e:
+        logger.error(f"Error uploading file to Cloudinary: {str(e)}", exc_info=True)
+        return None
 
 def delete_file(public_id: str) -> bool:
     """

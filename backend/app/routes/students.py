@@ -1561,7 +1561,7 @@ def view_resume(resume_id):
         return jsonify({"message": "File not found"}), 404
     
     # Use the view URL with fl_attachment:false parameter
-    view_url = file_url.replace('/upload/', '/upload/fl_attachment:false/')
+    view_url = file_url.replace('/upload/', '/upload/')
     
     return jsonify({
         "file_url": view_url,
