@@ -98,6 +98,18 @@ def get_student_details(student_id):
             # If it's not a Cloudinary URL, use the placeholder
             passport_image = "/placeholder.svg?height=200&width=200"
 
+        # Get education, positions, projects, and experience data
+        education = StudentService.get_education_by_student_id(student_id)
+        positions = StudentService.get_positions_by_student_id(student_id)
+        projects = StudentService.get_projects_by_student_id(student_id)
+        experience = StudentService.get_experience_by_student_id(student_id)
+
+        # Get the passport image URL from Cloudinary if it exists
+        passport_image = student.get("passport_image")
+        if passport_image and not passport_image.startswith("http"):
+            # If it's not a Cloudinary URL, use the placeholder
+            passport_image = "/placeholder.svg?height=200&width=200"
+
         # Format student data for frontend
         formatted_student = {
             "_id": str(student.get("_id", "")),
@@ -112,9 +124,14 @@ def get_student_details(student_id):
             "enrollmentYear": student.get("enrollment_year", ""),
             "expectedGraduationYear": student.get("expected_graduation_year", ""),
             "passportImage": passport_image,
+            "passportImage": passport_image,
             "cgpa": float(student.get("cgpa", 0.0)),
             "branch": student.get("branch", ""),
-            "verification": verification_status
+            "verification": verification_status,
+            "education": education,
+            "positions": positions,
+            "projects": projects,
+            "experience": experience
         }
 
         return jsonify(formatted_student), 200
@@ -130,84 +147,139 @@ def get_student_details(student_id):
 @jwt_required()
 @admin_required
 def update_verification_status(student_id):
-    """
-    Update the verification status of a specific field for a student
-    """
     try:
-        print(f"Received verification update request for student {student_id}")
         data = request.get_json()
-        print(f"Request data: {data}")
+        print(f"[Backend] Received verification request for student {student_id}")
+        print(f"[Backend] Request data: {data}")
         
         field = data.get('field')
         status = data.get('status')
         comments = data.get('comments')
-
+        
         if not field or not status:
-            print("Missing required fields")
+            print("[Backend] Missing required fields in request")
             return jsonify({
-                "error": "Missing required fields",
-                "message": "Field and status are required"
+                "error": "Field and status are required"
             }), 400
-
+            
         if status not in ['verified', 'rejected']:
-            print(f"Invalid status: {status}")
+            print("[Backend] Invalid status value")
             return jsonify({
-                "error": "Invalid status",
-                "message": "Status must be either 'verified' or 'rejected'"
+                "error": "Status must be either verified or rejected"
             }), 400
+            
+        current_user_id = get_jwt_identity()
+        print(f"[Backend] Current admin user ID: {current_user_id}")
 
-        # Get current user (admin) ID
-        current_user = get_jwt_identity()
-        admin_id = current_user.get('id')
-        print(f"Admin ID: {admin_id}")
+        # Handle verification of education, experience, projects, and positions
+        if field.startswith('education.'):
+            try:
+                index = int(field.split('.')[1])
+                education = StudentService.get_education_by_student_id(student_id)
+                if 0 <= index < len(education):
+                    education_id = education[index]['_id']
+                    success = StudentService.update_education_verification(education_id, status, current_user_id)
+                    if not success:
+                        return jsonify({"error": "Failed to update education verification"}), 500
+            except (ValueError, IndexError) as e:
+                return jsonify({"error": f"Invalid education index: {str(e)}"}), 400
 
-        # Update verification status
-        updated_student = StudentService.update_verification_status(
-            student_id=student_id,
-            field=field,
-            status=status,
-            verified_by=admin_id,
-            comments=comments
-        )
+        elif field.startswith('experience.'):
+            try:
+                index = int(field.split('.')[1])
+                experience = StudentService.get_experience_by_student_id(student_id)
+                if 0 <= index < len(experience):
+                    experience_id = experience[index]['_id']
+                    success = StudentService.update_experience_verification(experience_id, status, current_user_id)
+                    if not success:
+                        return jsonify({"error": "Failed to update experience verification"}), 500
+            except (ValueError, IndexError) as e:
+                return jsonify({"error": f"Invalid experience index: {str(e)}"}), 400
 
-        if not updated_student:
-            print("Failed to update verification status")
-            return jsonify({
-                "error": "Failed to update verification status",
-                "message": "Could not update the verification status"
-            }), 500
+        elif field.startswith('projects.'):
+            try:
+                index = int(field.split('.')[1])
+                projects = StudentService.get_projects_by_student_id(student_id)
+                if 0 <= index < len(projects):
+                    project_id = projects[index]['_id']
+                    success = StudentService.update_project_verification(project_id, status, current_user_id)
+                    if not success:
+                        return jsonify({"error": "Failed to update project verification"}), 500
+            except (ValueError, IndexError) as e:
+                return jsonify({"error": f"Invalid project index: {str(e)}"}), 400
 
-        print("Successfully updated verification status")
+        elif field.startswith('positions.'):
+            try:
+                index = int(field.split('.')[1])
+                positions = StudentService.get_positions_by_student_id(student_id)
+                if 0 <= index < len(positions):
+                    position_id = positions[index]['_id']
+                    success = StudentService.update_position_verification(position_id, status, current_user_id)
+                    if not success:
+                        return jsonify({"error": "Failed to update position verification"}), 500
+            except (ValueError, IndexError) as e:
+                return jsonify({"error": f"Invalid position index: {str(e)}"}), 400
+
+        else:
+            # Handle basic student fields verification
+            result = StudentService.update_verification_status(
+                student_id=student_id,
+                field=field,
+                status=status,
+                verified_by=current_user_id,
+                comments=comments
+            )
+            
+            if not result:
+                print("[Backend] Failed to update verification status")
+                return jsonify({
+                    "error": "Failed to update verification status"
+                }), 500
+
+        # Get updated student details
+        student = StudentService.get_student_by_id(student_id)
+        if not student:
+            return jsonify({"error": "Student not found"}), 404
+
         # Get verification status
         verification_status = StudentService.get_verification_status(student_id)
-        print(f"New verification status: {verification_status}")
+
+        # Get education, positions, projects, and experience data
+        education = StudentService.get_education_by_student_id(student_id)
+        positions = StudentService.get_positions_by_student_id(student_id)
+        projects = StudentService.get_projects_by_student_id(student_id)
+        experience = StudentService.get_experience_by_student_id(student_id)
 
         # Format student data for frontend
         formatted_student = {
-            "_id": str(updated_student.get("_id", "")),
-            "name": updated_student.get("name", ""),
-            "email": updated_student.get("email", ""),
-            "phone": updated_student.get("phone", ""),
-            "dateOfBirth": updated_student.get("date_of_birth", ""),
-            "gender": updated_student.get("gender", ""),
-            "address": updated_student.get("address", ""),
-            "major": updated_student.get("major", ""),
-            "studentId": updated_student.get("student_id", ""),
-            "enrollmentYear": updated_student.get("enrollment_year", ""),
-            "expectedGraduationYear": updated_student.get("expected_graduation_year", ""),
-            "passportImage": updated_student.get("passport_image", "/placeholder.svg?height=200&width=200"),
-            "cgpa": float(updated_student.get("cgpa", 0.0)),
-            "branch": updated_student.get("branch", ""),
-            "verification": verification_status
+            "_id": str(student.get("_id", "")),
+            "name": student.get("name", ""),
+            "email": student.get("email", ""),
+            "phone": student.get("phone", ""),
+            "dateOfBirth": student.get("date_of_birth", ""),
+            "gender": student.get("gender", ""),
+            "address": student.get("address", ""),
+            "major": student.get("major", ""),
+            "studentId": student.get("student_id", ""),
+            "enrollmentYear": student.get("enrollment_year", ""),
+            "expectedGraduationYear": student.get("expected_graduation_year", ""),
+            "passportImage": student.get("passport_image", "/placeholder.svg?height=200&width=200"),
+            "cgpa": float(student.get("cgpa", 0.0)),
+            "branch": student.get("branch", ""),
+            "verification": verification_status,
+            "education": education,
+            "positions": positions,
+            "projects": projects,
+            "experience": experience
         }
-
-        return jsonify(formatted_student), 200
-
+            
+        print(f"[Backend] Successfully updated verification status for field {field}")
+        return jsonify(formatted_student)
+        
     except Exception as e:
-        print(f"Error updating verification status: {str(e)}")
+        print(f"[Backend] Error in update_verification_status: {str(e)}")
         return jsonify({
-            "error": "Failed to update verification status",
-            "message": str(e)
+            "error": str(e)
         }), 500
 
 @admin_bp.route('/verification/<student_id>/verify-all', methods=['POST'])
