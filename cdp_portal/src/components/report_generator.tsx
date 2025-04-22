@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { DataTable } from "./data_table"
-import { FileSpreadsheet, FileText, Filter, Loader2 } from "lucide-react"
+import { FileSpreadsheet, FileText, Filter, Loader2, AlertTriangle } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useApi } from "@/lib/api"
@@ -25,6 +25,7 @@ interface PlacementCycle {
 }
 
 export function ReportGenerator() {
+  const { fetchWithAuth } = useApi();
   const { fetchWithAuth } = useApi();
   const [selectedReport, setSelectedReport] = useState("")
   const [selectedCycle, setSelectedCycle] = useState("")
@@ -339,7 +340,7 @@ export function ReportGenerator() {
                         <div className="space-y-2">
                           <Label>Status</Label>
                           <div className="grid grid-cols-2 gap-2">
-                            {["Placed", "Unplaced", "In Process", "Offer Received"].map((status) => (
+                            {["Placed", "Unplaced", "In Process", "Offer Received", "selected", "rejected", "applied"].map((status) => (
                               <div key={status} className="flex items-center space-x-2">
                                 <Checkbox
                                   id={status}
