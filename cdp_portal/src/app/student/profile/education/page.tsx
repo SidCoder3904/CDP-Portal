@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { z } from "zod";
 import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
@@ -11,6 +12,19 @@ import { Icons } from "@/components/icons";
 
 const degreeOptions = ["BTech", "MTech", "MSc", "High School Diploma"];
 const majorOptions = ["CSE", "CE", "EE", "CBSE", "ICSE"];
+
+const educationSchema = z.object({
+  degree: z.string().min(1, "Degree is required"),
+  institution: z.string().min(1, "Institution is required"),
+  year: z.string().min(1, "Year is required"),
+  gpa: z.string().optional(),
+  major: z.string().optional(),
+  minor: z.string().optional(),
+  relevantCourses: z.string().optional(),
+  honors: z.string().optional(),
+});
+
+type EducationFormData = z.infer<typeof educationSchema>;
 
 export default function EducationPage() {
   const [educationData, setEducationData] = useState<Education[]>([]);
@@ -38,7 +52,7 @@ export default function EducationPage() {
     fetchEducationData();
   }, []);
 
-  const handleAdd = async (newData: any) => {
+  const handleAdd = async (newData: EducationFormData) => {
     try {
       setIsUpdating(true);
       setError(null);
@@ -47,15 +61,15 @@ export default function EducationPage() {
       const transformedData = {
         education_details: {
           degree: {
-            current_value: newData.degree ?? "",
+            current_value: newData.degree,
             last_verified_value: null,
           },
           institution: {
-            current_value: newData.institution ?? "",
+            current_value: newData.institution,
             last_verified_value: null,
           },
           year: {
-            current_value: newData.year ?? "",
+            current_value: newData.year,
             last_verified_value: null,
           },
           gpa: {
@@ -91,7 +105,7 @@ export default function EducationPage() {
     }
   };
 
-  const handleUpdate = async (id: string, newData: any) => {
+  const handleUpdate = async (id: string, newData: EducationFormData) => {
     try {
       setIsUpdating(true);
       setError(null);
@@ -100,15 +114,15 @@ export default function EducationPage() {
       const transformedData = {
         education_details: {
           degree: {
-            current_value: newData.degree ?? "",
+            current_value: newData.degree,
             last_verified_value: null,
           },
           institution: {
-            current_value: newData.institution ?? "",
+            current_value: newData.institution,
             last_verified_value: null,
           },
           year: {
-            current_value: newData.year ?? "",
+            current_value: newData.year,
             last_verified_value: null,
           },
           gpa: {
@@ -298,7 +312,18 @@ export default function EducationPage() {
                       type: "text",
                     },
                   ]}
-                  onSave={(data) => handleUpdate(edu.id, data)}
+                  initialData={{
+                    degree: edu.education_details.degree.current_value,
+                    institution: edu.education_details.institution.current_value,
+                    year: edu.education_details.year.current_value,
+                    gpa: edu.education_details.gpa.current_value,
+                    major: edu.education_details.major.current_value,
+                    minor: edu.education_details.minor.current_value,
+                    relevantCourses: edu.education_details.relevant_courses.current_value,
+                    honors: edu.education_details.honors.current_value,
+                  }}
+                  zodSchema={educationSchema}
+                  onSaveValidated={(data) => handleUpdate(edu.id, data)}
                   triggerButton={
                     <Button variant="outline" disabled={isUpdating}>
                       {isUpdating ? (
@@ -355,7 +380,8 @@ export default function EducationPage() {
           { name: "relevantCourses", label: "Relevant Courses", type: "text" },
           { name: "honors", label: "Honors", type: "text" },
         ]}
-        onSave={handleAdd}
+        zodSchema={educationSchema}
+        onSaveValidated={handleAdd}
         triggerButton={
           <Button className="bg-template" disabled={isUpdating}>
             {isUpdating ? (

@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { z } from "zod";
 import { useStudentApi } from "@/lib/api/students";
 import { FileUploader } from "@/components/file-uploader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Trash2, Download, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const resumeSchema = z.object({
+  resumeName: z.string().min(1, "Resume name cannot be empty"),
+});
 
 interface Resume {
   _id: string;
@@ -28,6 +34,7 @@ export default function ResumePage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resumeNameError, setResumeNameError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchResumes();
@@ -47,6 +54,13 @@ export default function ResumePage() {
 
   const handleFileUpload = async (file: File) => {
     try {
+      const validationResult = resumeSchema.safeParse({ resumeName });
+      if (!validationResult.success) {
+        setResumeNameError(validationResult.error.errors[0]?.message || "Invalid name");
+        return;
+      }
+      setResumeNameError(null);
+
       setUpdating(true);
       setError(null);
       
@@ -59,6 +73,13 @@ export default function ResumePage() {
       toast.error("Failed to upload resume");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleResumeNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setResumeName(e.target.value);
+    if (resumeNameError) {
+      setResumeNameError(null);
     }
   };
 
@@ -147,9 +168,12 @@ export default function ResumePage() {
             type="text"
             placeholder="Resume Name (optional)"
             value={resumeName}
-            onChange={(e) => setResumeName(e.target.value)}
+            onChange={handleResumeNameChange}
             className="w-full p-2 border rounded"
           />
+          {resumeNameError && (
+            <p className="text-xs text-red-500 mt-1">{resumeNameError}</p>
+          )}
           <FileUploader
             onFileUpload={handleFileUpload}
             acceptedFileTypes={{

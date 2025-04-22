@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { z } from "zod";
 import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
@@ -8,6 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import { useStudentApi, Experience } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
+
+const experienceSchema = z.object({
+  company: z.string().min(1, "Company is required"),
+  position: z.string().min(1, "Position is required"),
+  duration: z.string().min(1, "Duration is required"),
+  description: z.string().optional(),
+  technologies: z.string().optional(),
+  achievements: z.string().optional(),
+  skills: z.string().optional(),
+});
+
+type ExperienceFormData = z.infer<typeof experienceSchema>;
 
 export default function ExperiencePage() {
   const [experienceData, setExperienceData] = useState<Experience[]>([]);
@@ -35,24 +48,23 @@ export default function ExperiencePage() {
     fetchExperienceData();
   }, []);
 
-  const handleAdd = async (newData: any) => {
+  const handleAdd = async (newData: ExperienceFormData) => {
     try {
       setIsUpdating(true);
       setError(null);
 
-      // Convert flat data to the nested structure
       const transformedData = {
         experience_details: {
           company: {
-            current_value: newData.company ?? "",
+            current_value: newData.company,
             last_verified_value: null,
           },
           position: {
-            current_value: newData.position ?? "",
+            current_value: newData.position,
             last_verified_value: null,
           },
           duration: {
-            current_value: newData.duration ?? "",
+            current_value: newData.duration,
             last_verified_value: null,
           },
           description: {
@@ -84,24 +96,23 @@ export default function ExperiencePage() {
     }
   };
 
-  const handleUpdate = async (id: string, newData: any) => {
+  const handleUpdate = async (id: string, newData: ExperienceFormData) => {
     try {
       setIsUpdating(true);
       setError(null);
 
-      // Convert flat data to the nested structure
       const transformedData = {
         experience_details: {
           company: {
-            current_value: newData.company ?? "",
+            current_value: newData.company,
             last_verified_value: null,
           },
           position: {
-            current_value: newData.position ?? "",
+            current_value: newData.position,
             last_verified_value: null,
           },
           duration: {
-            current_value: newData.duration ?? "",
+            current_value: newData.duration,
             last_verified_value: null,
           },
           description: {
@@ -279,7 +290,17 @@ export default function ExperiencePage() {
                       type: "text",
                     },
                   ]}
-                  onSave={(data) => handleUpdate(exp.id, data)}
+                  initialData={{
+                    company: exp.experience_details.company.current_value,
+                    position: exp.experience_details.position.current_value,
+                    duration: exp.experience_details.duration.current_value,
+                    description: exp.experience_details.description.current_value,
+                    technologies: exp.experience_details.technologies.current_value,
+                    achievements: exp.experience_details.achievements.current_value,
+                    skills: exp.experience_details.skills.current_value,
+                  }}
+                  zodSchema={experienceSchema}
+                  onSaveValidated={(data) => handleUpdate(exp.id, data)}
                   triggerButton={
                     <Button variant="outline" disabled={isUpdating}>
                       {isUpdating ? (
@@ -353,7 +374,8 @@ export default function ExperiencePage() {
             type: "text",
           },
         ]}
-        onSave={handleAdd}
+        zodSchema={experienceSchema}
+        onSaveValidated={handleAdd}
         triggerButton={
           <Button className="bg-template" disabled={isUpdating}>
             {isUpdating ? (
