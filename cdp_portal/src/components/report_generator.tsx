@@ -8,11 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { DataTable } from "./data_table"
-import { FileSpreadsheet, FileText, Filter, Loader2, AlertTriangle } from "lucide-react"
+import { FileSpreadsheet, FileText, Filter, Loader2 } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useApi } from "@/lib/api"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface ReportType {
   id: string;
@@ -35,7 +34,6 @@ export function ReportGenerator() {
   const [reportData, setReportData] = useState<any[]>([])
   const [reportId, setReportId] = useState<string | null>(null)
   const [reportSummary, setReportSummary] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState({
     branches: [] as string[],
     companies: [] as string[],
@@ -58,7 +56,6 @@ export function ReportGenerator() {
         setReportTypes(data);
       } catch (error) {
         console.error("Error fetching report types:", error);
-        setError("Failed to load report types. Please try again later.");
       }
     }
 
@@ -71,12 +68,11 @@ export function ReportGenerator() {
         }
         const data = await response.json();
         setPlacementCycles(data.map((cycle: any) => ({
-          id: cycle.id || cycle._id,
+          id: cycle.id,
           name: cycle.name
         })));
       } catch (error) {
         console.error("Error fetching placement cycles:", error);
-        setError("Failed to load placement cycles. Please try again later.");
       }
     }
 
@@ -91,7 +87,6 @@ export function ReportGenerator() {
     }
 
     setIsLoading(true);
-    setError(null);
     
     try {
       const response = await fetchWithAuth('/api/reports/generate', {
@@ -113,24 +108,13 @@ export function ReportGenerator() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate report');
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to generate report');
       }
       
       const data = await response.json();
-      console.log("Report data:", data);
-      
-      if (!data || data.status === 'error') {
-        throw new Error(data?.errorMessage || 'Error generating report');
-      }
-      
-      setReportId(data.id || data._id);
-      
-      // Check if data is present and has the expected format
-      if (!data.data || !Array.isArray(data.data)) {
-        throw new Error('The report did not return any data');
-      }
-      
+      console.log(data);
+      setReportId(data.id);
       setReportData(data.data || []);
       
       // Extract summary data if available
@@ -140,22 +124,13 @@ export function ReportGenerator() {
         // If no summary is provided, create a basic one based on the data
         setReportSummary({
           totalStudents: data.data?.length || 0,
-          placedStudents: data.data?.filter((item: any) => 
-            item.status === "Placed" || 
-            item.placementStatus === "Placed" || 
-            item.status === "selected").length || 0,
-          averagePackage: data.data?.reduce((sum: number, item: any) => 
-            sum + (parseFloat(String(item.package).replace(/[^0-9.]/g, '')) || 0), 0) / 
-            (data.data?.length || 1),
-          highestPackage: Math.max(...(data.data?.map((item: any) => 
-            parseFloat(String(item.package).replace(/[^0-9.]/g, '')) || 0) || [0]))
+          placedStudents: data.data?.filter((item: any) => item.status === "Placed").length || 0,
+          averagePackage: data.data?.reduce((sum: number, item: any) => sum + (parseFloat(item.package) || 0), 0) / (data.data?.length || 1),
+          highestPackage: Math.max(...(data.data?.map((item: any) => parseFloat(item.package) || 0) || [0]))
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error generating report:", error);
-      setError(error.message || "Failed to generate report");
-      setReportData([]);
-      setReportSummary(null);
     } finally {
       setIsLoading(false);
     }
@@ -165,15 +140,15 @@ export function ReportGenerator() {
   const handleExport = async (format: "excel" | "pdf") => {
     if (!reportId) {
       console.error("Export failed: reportId is null.");
-      setError("Cannot export: Report ID is missing. Please generate the report again.");
+      alert("Cannot export: Report ID is missing. Please generate the report again.");
       return;
     }
 
     console.log(`Attempting to export report ${reportId} as ${format}`);
     setIsExporting(true);
-    setError(null);
 
     try {
+      // Corrected path - removed /api prefix to match backend routes
       const response = await fetchWithAuth(`/api/reports/download/${reportId}?format=${format}`, {
         method: 'GET',
       });
@@ -225,7 +200,7 @@ export function ReportGenerator() {
     } catch (error: any) {
       console.error(`Error exporting report as ${format}:`, error);
       // Display error to the user
-      setError(`Failed to export report: ${error.message}`);
+      alert(`Failed to export report: ${error.message}`);
     } finally {
       setIsExporting(false); // Reset loading state
     }
@@ -275,14 +250,6 @@ export function ReportGenerator() {
           </Select>
         </div>
       </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
 
       <div className="flex justify-end">
         <Button 
@@ -372,7 +339,7 @@ export function ReportGenerator() {
                         <div className="space-y-2">
                           <Label>Status</Label>
                           <div className="grid grid-cols-2 gap-2">
-                            {["Placed", "Unplaced", "In Process", "Offer Received", "selected", "rejected", "applied"].map((status) => (
+                            {["Placed", "Unplaced", "In Process", "Offer Received"].map((status) => (
                               <div key={status} className="flex items-center space-x-2">
                                 <Checkbox
                                   id={status}

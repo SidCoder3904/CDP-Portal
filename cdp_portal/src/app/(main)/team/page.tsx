@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import Image from "next/image"
 
 interface TeamMember {
   id: number
@@ -52,11 +53,14 @@ const TeamPage: React.FC = () => {
               >
                 <div className="bg-template-600 h-3"></div>
                 <div className="p-6">
-                  <img
-                    src={member.image || "/placeholder.svg"}
-                    alt={member.name}
-                    className="w-28 h-28 mx-auto rounded-full border-4 border-template-100 mb-4 object-cover"
-                  />
+                  <div className="w-28 h-28 mx-auto relative rounded-full border-4 border-template-100 mb-4 overflow-hidden">
+                    <Image
+                      src={member.image || "/placeholder.svg"}
+                      alt={member.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
                   <h3 className="text-xl font-bold text-gray-800">{member.name}</h3>
                   <p className="text-template-600 font-medium mb-2">{member.position}</p>
                   <p className="text-gray-500 text-sm">{member.email}</p>
@@ -82,11 +86,14 @@ const TeamPage: React.FC = () => {
               >
                 <div className="bg-template-500 h-3"></div>
                 <div className="p-6">
-                  <img
-                    src={member.image || "/placeholder.svg"}
-                    alt={member.name}
-                    className="w-24 h-24 mx-auto rounded-full border-4 border-template-50 mb-4 object-cover"
-                  />
+                  <div className="w-24 h-24 mx-auto relative rounded-full border-4 border-template-50 mb-4 overflow-hidden">
+                    <Image
+                      src={member.image || "/placeholder.svg"}
+                      alt={member.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
                   <h3 className="text-lg font-bold text-gray-800">{member.name}</h3>
                   <p className="text-template-600 font-medium mb-2">{member.position}</p>
                   <p className="text-gray-500 text-sm">{member.email}</p>
@@ -112,11 +119,14 @@ const TeamPage: React.FC = () => {
               >
                 <div className="bg-template-600 h-3"></div>
                 <div className="p-6">
-                  <img
-                    src={member.image || "/placeholder.svg"}
-                    alt={member.name}
-                    className="w-24 h-24 mx-auto rounded-full border-4 border-template-50 mb-4 object-cover"
-                  />
+                  <div className="w-24 h-24 mx-auto relative rounded-full border-4 border-template-50 mb-4 overflow-hidden">
+                    <Image
+                      src={member.image || "/placeholder.svg"}
+                      alt={member.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
                   <h3 className="text-lg font-bold text-gray-800">{member.name}</h3>
                   <p className="text-template-600 font-medium mb-2">{member.position}</p>
                   <p className="text-gray-500 text-sm">{member.email}</p>

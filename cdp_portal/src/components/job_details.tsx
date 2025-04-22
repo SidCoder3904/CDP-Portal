@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { JobListing } from "@/lib/api/jobs"
 import { Icons } from "@/components/icons"
 import ResumeSelectDialog from "@/components/resume-select-dialog"
+import Image from "next/image"
 
 interface JobDetailsProps {
   job: JobListing
@@ -75,11 +76,12 @@ export default function JobDetails({
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center">
               {job.logo && (
-                <div className="w-16 h-16 mr-4 overflow-hidden rounded-md">
-                  <img
+                <div className="w-16 h-16 mr-4 overflow-hidden rounded-md relative">
+                  <Image
                     src={job.logo || "/placeholder.svg"}
                     alt={`${job.company} logo`}
-                    className="w-full h-full object-contain"
+                    fill
+                    className="object-contain"
                   />
                 </div>
               )}

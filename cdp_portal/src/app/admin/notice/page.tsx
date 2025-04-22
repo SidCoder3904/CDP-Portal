@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Toaster, toast } from "sonner"
+
 
 interface Notice {
   id: string
@@ -114,21 +114,12 @@ export default function AdminNotices() {
   // Save notice (add or edit)
   const handleSaveNotice = () => {
     if (!formData.title.trim()) {
-      toast({
-        title: "Error",
-        description: "Title is required",
-        variant: "destructive",
-      })
       return
     }
 
     if (isEditing && currentNotice) {
       // Update existing notice
       setNotices(notices.map((notice) => (notice.id === currentNotice.id ? { ...notice, ...formData } : notice)))
-      toast({
-        title: "Notice updated",
-        description: "The notice has been updated successfully",
-      })
     } else {
       // Add new notice
       const newNotice: Notice = {
@@ -136,10 +127,6 @@ export default function AdminNotices() {
         ...formData,
       }
       setNotices([newNotice, ...notices])
-      toast({
-        title: "Notice added",
-        description: "The notice has been added successfully",
-      })
     }
 
     setIsDialogOpen(false)
@@ -149,10 +136,6 @@ export default function AdminNotices() {
   const handleDeleteNotice = () => {
     if (currentNotice) {
       setNotices(notices.filter((notice) => notice.id !== currentNotice.id))
-      toast({
-        title: "Notice deleted",
-        description: "The notice has been deleted successfully",
-      })
       setIsDeleteDialogOpen(false)
     }
   }
@@ -307,7 +290,7 @@ export default function AdminNotices() {
         </DialogContent>
       </Dialog>
 
-      <Toaster />
+  
     </div>
   )
 }
