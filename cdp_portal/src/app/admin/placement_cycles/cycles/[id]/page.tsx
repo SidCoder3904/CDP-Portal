@@ -168,7 +168,7 @@ function CycleDetail({ id }: { id: string }) {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {cycle.eligibleBranches?.length > 0 ? (
+              {(cycle.eligibleBranches ?? []).length > 0 ? (
                 cycle.eligibleBranches?.map((branch) => (
                   <Badge key={branch} variant="outline">
                     {branch}

@@ -18,6 +18,58 @@ export interface StudentDetail extends StudentProfile {
   cgpa: number
   branch: string
   verification: StudentVerification
+  education: Array<{
+    _id: string
+    student_id: string
+    education_details: {
+      [key: string]: {
+        current_value: string | null
+        last_verified_value: string | null
+      }
+    }
+    is_verified: boolean
+    created_at: string
+    updated_at: string
+  }>
+  positions: Array<{
+    _id: string
+    student_id: string
+    position_details: {
+      [key: string]: {
+        current_value: string | null
+        last_verified_value: string | null
+      }
+    }
+    is_verified: boolean
+    created_at: string
+    updated_at: string
+  }>
+  projects: Array<{
+    _id: string
+    student_id: string
+    project_details: {
+      [key: string]: {
+        current_value: string | null
+        last_verified_value: string | null
+      }
+    }
+    is_verified: boolean
+    created_at: string
+    updated_at: string
+  }>
+  experience: Array<{
+    _id: string
+    student_id: string
+    experience_details: {
+      [key: string]: {
+        current_value: string | null
+        last_verified_value: string | null
+      }
+    }
+    is_verified: boolean
+    created_at: string
+    updated_at: string
+  }>
 }
 
 export interface StudentFilters {

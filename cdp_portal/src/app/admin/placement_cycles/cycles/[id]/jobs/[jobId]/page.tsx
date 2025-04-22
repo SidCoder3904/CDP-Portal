@@ -18,11 +18,10 @@ import { JobWorkflow } from "@/components/job-workflow";
 import { useEffect, useState } from "react";
 import { useJobsApi } from "@/lib/api/jobs";
 
-export default function JobPage({
-  params,
-}: {
-  params: { id: string; jobId: string };
-}) {
+export default function JobPage(props: any) {
+  const { params } = props;
+  const { id, jobId } = params;
+  
   const [job, setJob] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,7 +31,7 @@ export default function JobPage({
     async function fetchData() {
       try {
         setIsLoading(true);
-        const jobData = await jobsApi.getJobById(params.jobId);
+        const jobData = await jobsApi.getJobById(jobId);
         setJob(jobData);
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -42,7 +41,7 @@ export default function JobPage({
     }
 
     fetchData();
-  }, []);
+  }, [jobsApi, jobId]);
 
   if (!job) {
     return (
@@ -51,7 +50,7 @@ export default function JobPage({
         <p className="text-muted-foreground">
           The requested job does not exist.
         </p>
-        <Link href={`/admin/placement_cycles/cycles/${params.id}`}>
+        <Link href={`/admin/placement_cycles/cycles/${id}`}>
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Cycle
@@ -64,7 +63,7 @@ export default function JobPage({
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <Link href={`/admin/placement_cycles/cycles/${params.id}`}>
+        <Link href={`/admin/placement_cycles/cycles/${id}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -126,7 +125,7 @@ export default function JobPage({
           <JobWorkflow steps={job.hiringFlow} />
         </TabsContent>
         <TabsContent value="applicants" className="mt-0">
-          <JobApplicants jobId={params.jobId} />
+          <JobApplicants jobId={jobId} />
         </TabsContent>
       </Tabs>
     </div>

@@ -46,7 +46,6 @@ export default function ResumePage() {
       setResumes(data);
     } catch (err) {
       setError("Failed to fetch resumes");
-      toast.error("Failed to fetch resumes");
     } finally {
       setLoading(false);
     }
@@ -67,10 +66,8 @@ export default function ResumePage() {
       const newResume = await studentApi.uploadResume(resumeName, file);
       setResumes((prev) => [...prev, newResume]);
       setResumeName("");
-      toast.success("Resume uploaded successfully");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload resume");
-      toast.error("Failed to upload resume");
     } finally {
       setUpdating(false);
     }
@@ -87,10 +84,8 @@ export default function ResumePage() {
     try {
       await studentApi.deleteResume(resumeId);
       setResumes((prev) => prev.filter((resume) => resume._id !== resumeId));
-      toast.success("Resume deleted successfully");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete resume");
-      toast.error("Failed to delete resume");
     }
   };
 
@@ -110,7 +105,7 @@ export default function ResumePage() {
       document.body.removeChild(link);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to download resume");
-      toast.error("Failed to download resume");
+
     }
   };
 
@@ -139,7 +134,6 @@ export default function ResumePage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to view resume");
-      toast.error("Failed to view resume");
     }
   };
 
