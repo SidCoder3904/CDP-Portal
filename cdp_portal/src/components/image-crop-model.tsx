@@ -24,11 +24,10 @@ export function ImageCropModal({
   imageSrc,
   onCropComplete,
 }: ImageCropModalProps) {
-  // Remove 'aspect' from Crop state as it's a component prop
   const [crop, setCrop] = useState<Crop>({
-    unit: "%",
-    width: 100,
-    height: 100,
+    unit: "px",
+    width: 200,
+    height: 200,
     x: 0,
     y: 0,
   });
@@ -38,27 +37,35 @@ export function ImageCropModal({
     const canvas = document.createElement("canvas");
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-    canvas.width = crop.width || 0;
-    canvas.height = crop.height || 0;
+    
+    // Convert percentage values to pixels if needed
+    const cropWidth = crop.unit === "%" ? (crop.width * image.width) / 100 : crop.width;
+    const cropHeight = crop.unit === "%" ? (crop.height * image.height) / 100 : crop.height;
+    const cropX = crop.unit === "%" ? (crop.x * image.width) / 100 : crop.x;
+    const cropY = crop.unit === "%" ? (crop.y * image.height) / 100 : crop.y;
+
+    // Set canvas dimensions to match the crop dimensions
+    canvas.width = cropWidth * scaleX;
+    canvas.height = cropHeight * scaleY;
     const ctx = canvas.getContext("2d");
 
     if (
       ctx &&
-      crop.width &&
-      crop.height &&
-      crop.x !== undefined &&
-      crop.y !== undefined
+      cropWidth &&
+      cropHeight &&
+      cropX !== undefined &&
+      cropY !== undefined
     ) {
       ctx.drawImage(
         image,
-        crop.x * scaleX,
-        crop.y * scaleY,
-        crop.width * scaleX,
-        crop.height * scaleY,
+        cropX * scaleX,
+        cropY * scaleY,
+        cropWidth * scaleX,
+        cropHeight * scaleY,
         0,
         0,
-        crop.width,
-        crop.height
+        cropWidth * scaleX,
+        cropHeight * scaleY
       );
     }
 
@@ -86,7 +93,6 @@ export function ImageCropModal({
           <DialogTitle>Crop Image</DialogTitle>
         </DialogHeader>
         <div className="mt-4">
-          {/* Move aspect prop to ReactCrop component */}
           <ReactCrop
             crop={crop}
             onChange={(c) => setCrop(c)}

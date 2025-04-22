@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,24 +19,64 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, Filter } from "lucide-react";
+import { PlusCircle, Search, Filter, Loader2, AlertCircle } from "lucide-react";
+import { useApi } from "@/lib/api";
+import { useEffect, useState } from "react";
 
-export default async function CyclesPage() {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
-  
-  console.log(backendUrl);
+interface Cycle {
+  id: string;
+  name: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  jobs: number;
+  students: number;
+}
 
-  // Fetch cycles data from the backend API
-  const response = await fetch(`${backendUrl}/api/placement-cycles`, {
-    cache: 'no-store', // Ensures fresh data on each request
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch cycles: ${response.status}`);
-  }
-  
-  const cycles = await response.json();
-  console.log(cycles);
+export default function CyclesPage() {
+  const { fetchWithAuth } = useApi();
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  useEffect(() => {
+    const fetchCycles = async () => {
+      setIsLoading(true);
+      try {
+        // Build query parameters
+        const queryParams = new URLSearchParams();
+        if (statusFilter !== "all") queryParams.append("status", statusFilter);
+        if (typeFilter !== "all") queryParams.append("type", typeFilter);
+        
+        // Use useApi hook's fetchWithAuth method
+        // Remove the /api prefix from the URL
+        const response = await fetchWithAuth(`/api/placement-cycles?${queryParams.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch cycles: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setCycles(data);
+      } catch (err) {
+        console.error("Error fetching cycles:", err);
+        setError(err instanceof Error ? err : new Error("An unknown error occurred"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCycles();
+  }, [ statusFilter, typeFilter]);
+
+  // Filter cycles based on search term
+  const filteredCycles = cycles.filter(cycle => 
+    cycle.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -63,11 +105,13 @@ export default async function CyclesPage() {
               type="search"
               placeholder="Search cycles..."
               className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
         <div className="flex gap-2">
-          <Select defaultValue="all">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -78,7 +122,7 @@ export default async function CyclesPage() {
               <SelectItem value="completed">Completed</SelectItem>
             </SelectContent>
           </Select>
-          <Select defaultValue="all">
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
@@ -94,62 +138,72 @@ export default async function CyclesPage() {
         </div>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Jobs</TableHead>
-              <TableHead>Students</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cycles.map((cycle: {
-              id: string;
-              name: string;
-              type: string;
-              startDate: string;
-              endDate: string;
-              status: string;
-              jobs: number;
-              students: number;
-            }) => (
-              <TableRow key={cycle.id}>
-                <TableCell className="font-medium">
-                  <Link
-                    href={`/admin/placement_cycles/cycles/${cycle.id}`}
-                    className="hover:underline"
-                  >
-                    {cycle.name}
-                  </Link>
-                </TableCell>
-                <TableCell>{cycle.type}</TableCell>
-                <TableCell>
-                  {cycle.startDate} - {cycle.endDate}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      cycle.status === "Active"
-                        ? "default"
-                        : cycle.status === "Completed"
-                        ? "secondary"
-                        : "outline"
-                    }
-                  >
-                    {cycle.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>{cycle.jobs}</TableCell>
-                <TableCell>{cycle.students}</TableCell>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-40">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center p-8 border rounded-lg">
+          <AlertCircle className="h-10 w-10 text-red-500 mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Error Loading Cycles</h3>
+          <p className="text-muted-foreground text-center mb-4">{error.message}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      ) : filteredCycles.length === 0 ? (
+        <div className="text-center p-8 border rounded-lg">
+          <p className="text-muted-foreground">No cycles found</p>
+        </div>
+      ) : (
+        <div className="border rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Jobs</TableHead>
+                <TableHead>Students</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {filteredCycles.map((cycle) => (
+                <TableRow key={cycle.id}>
+                  <TableCell className="font-medium">
+                    <Link
+                      href={`/admin/placement_cycles/cycles/${cycle.id}`}
+                      className="hover:underline"
+                    >
+                      {cycle.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{cycle.type}</TableCell>
+                  <TableCell>
+                    {cycle.startDate} - {cycle.endDate}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        cycle.status.toLowerCase() === "active"
+                          ? "default"
+                          : cycle.status.toLowerCase() === "completed"
+                          ? "secondary"
+                          : "outline"
+                      }
+                    >
+                      {cycle.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{cycle.jobs}</TableCell>
+                  <TableCell>{cycle.students}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }

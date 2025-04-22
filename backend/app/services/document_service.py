@@ -1,10 +1,12 @@
-from app.services.database import mongo, to_object_id, serialize_id
+from venv import logger
+from app.services.database import to_object_id, serialize_id
 from bson.objectid import ObjectId
 from datetime import datetime
 import os
 import uuid
 from werkzeug.utils import secure_filename
 from flask import current_app
+from app import mongo
 
 class DocumentService:
     @staticmethod
@@ -226,3 +228,101 @@ class DocumentService:
         except Exception as e:
             print(f"Error updating document metadata: {str(e)}")
             return False
+
+    # Resume-specific methods
+    @staticmethod
+    def get_resumes_by_student_id(student_id):
+        """
+        Get all resumes for a student.
+        
+        Args:
+            student_id: The ID of the student
+            
+        Returns:
+            List of resume objects
+        """
+        try:
+            # Try to find resumes using ObjectId
+            object_id = to_object_id(student_id)
+            logger = current_app.logger
+            logger.info(f"Searching for resumes with student_id: {object_id}")
+            resumes = list(mongo.db.resumes.find({'student_id': object_id}).sort('created_at', -1))
+
+            logger.info(f"Found resumes: {resumes}")
+            
+            return [serialize_id(resume) for resume in resumes]
+        except Exception as e:
+            print(f"Error retrieving resumes: {str(e)}")
+            return []
+    
+    @staticmethod
+    def get_resume_by_id(resume_id):
+        """
+        Get a resume by ID.
+        
+        Args:
+            resume_id: The ID of the resume
+            
+        Returns:
+            The resume object or None if not found
+        """
+        try:
+            resume = mongo.db.resumes.find_one({'_id': to_object_id(resume_id)})
+            return serialize_id(resume) if resume else None
+        except Exception as e:
+            print(f"Error retrieving resume: {str(e)}")
+            return None
+    
+    @staticmethod
+    def format_resume_for_frontend(resume):
+        """
+        Format a resume document for the frontend.
+        
+        Args:
+            resume: The resume document from the database
+            
+        Returns:
+            Formatted resume object
+        """
+        if not resume:
+            return None
+            
+        # Make sure we properly convert ObjectId to string
+        resume_id = resume.get("id")
+        id_str = str(resume_id) if resume_id else None
+        return {
+            "_id": id_str,  # Fix to ensure proper ID conversion
+            "name": resume.get("resume_name", ""),
+            "fileUrl": resume.get("file_url", ""),
+            "fileName": resume.get("file_name", ""),
+            "fileSize": resume.get("file_size", ""),
+            "uploadDate": resume.get("upload_date", ""),
+            "createdAt": resume.get("created_at").isoformat() if isinstance(resume.get("created_at"), datetime) else "",
+            "updatedAt": resume.get("updated_at").isoformat() if isinstance(resume.get("updated_at"), datetime) else "",
+            "verified": True  # Assuming resumes are verified by default
+        }
+    
+    @staticmethod
+    def get_resume_for_application(student_id, resume_id=None):
+        """
+        Get a resume for job application. Returns the specified resume or the most recent one.
+        
+        Args:
+            student_id: The ID of the student
+            resume_id: Optional specific resume ID
+            
+        Returns:
+            The resume object or None if not found
+        """
+        try:
+            if resume_id:
+                resume = mongo.db.resumes.find_one({'_id': to_object_id(resume_id)})
+                if resume and str(resume.get('student_id')) == str(student_id):
+                    return serialize_id(resume)
+            
+            # If no resume_id or resume not found, get the most recent one
+            resumes = DocumentService.get_resumes_by_student_id(student_id)
+            return resumes[0] if resumes else None
+        except Exception as e:
+            print(f"Error retrieving resume for application: {str(e)}")
+            return None

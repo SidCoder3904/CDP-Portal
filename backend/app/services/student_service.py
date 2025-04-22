@@ -185,6 +185,15 @@ class StudentService:
             # Add updated timestamp
             update_data['updated_at'] = datetime.utcnow()
             
+            # If updating passport image, ensure we keep the public ID
+            if 'passport_image' in update_data:
+                # Get current student data
+                current_student = mongo.db.student.find_one({'user_id': user_id})
+                if current_student and 'passport_image_public_id' in current_student:
+                    # Keep the existing public ID if not being updated
+                    if 'passport_image_public_id' not in update_data:
+                        update_data['passport_image_public_id'] = current_student['passport_image_public_id']
+            
             result = mongo.db.student.update_one(
                 {'user_id': user_id},
                 {'$set': update_data}
@@ -347,23 +356,64 @@ class StudentService:
     # Education methods
     @staticmethod
     def get_education_by_student_id(student_id):
-        """
-        Get all education records for a student.
-        
-        Args:
-            student_id: The ID of the student
-            
-        Returns:
-            List of education documents
-        """
+        """Get education details for a student"""
         try:
-            # Convert string ID to ObjectId if needed
-            if isinstance(student_id, str):
-                student_id = ObjectId(student_id)
-                
-            return list(mongo.db.education.find({'student_id': student_id}))
+            education_records = mongo.db.education.find({"student_id": ObjectId(student_id)})
+            return [{
+                "_id": str(edu.get("_id", "")),
+                "student_id": str(edu.get("student_id", "")),
+                "education_details": {
+                    "institution": {
+                        "current_value": edu.get("education_details", {}).get("institution", {}).get("current_value", ""),
+                        "last_verified_value": edu.get("education_details", {}).get("institution", {}).get("last_verified_value")
+                    },
+                    "degree": {
+                        "current_value": edu.get("education_details", {}).get("degree", {}).get("current_value", ""),
+                        "last_verified_value": edu.get("education_details", {}).get("degree", {}).get("last_verified_value")
+                    },
+                    "field_of_study": {
+                        "current_value": edu.get("education_details", {}).get("field_of_study", {}).get("current_value", ""),
+                        "last_verified_value": edu.get("education_details", {}).get("field_of_study", {}).get("last_verified_value")
+                    },
+                    "start_date": {
+                        "current_value": edu.get("education_details", {}).get("start_date", {}).get("current_value", ""),
+                        "last_verified_value": edu.get("education_details", {}).get("start_date", {}).get("last_verified_value")
+                    },
+                    "end_date": {
+                        "current_value": edu.get("education_details", {}).get("end_date", {}).get("current_value", ""),
+                        "last_verified_value": edu.get("education_details", {}).get("end_date", {}).get("last_verified_value")
+                    },
+                    "gpa": {
+                        "current_value": str(edu.get("education_details", {}).get("gpa", {}).get("current_value", "0.0")),
+                        "last_verified_value": edu.get("education_details", {}).get("gpa", {}).get("last_verified_value")
+                    },
+                    "year": {
+                        "current_value": edu.get("education_details", {}).get("year", {}).get("current_value", ""),
+                        "last_verified_value": edu.get("education_details", {}).get("year", {}).get("last_verified_value")
+                    },
+                    "major": {
+                        "current_value": edu.get("education_details", {}).get("major", {}).get("current_value", ""),
+                        "last_verified_value": edu.get("education_details", {}).get("major", {}).get("last_verified_value")
+                    },
+                    "minor": {
+                        "current_value": edu.get("education_details", {}).get("minor", {}).get("current_value", ""),
+                        "last_verified_value": edu.get("education_details", {}).get("minor", {}).get("last_verified_value")
+                    },
+                    "relevant_courses": {
+                        "current_value": edu.get("education_details", {}).get("relevant_courses", {}).get("current_value", ""),
+                        "last_verified_value": edu.get("education_details", {}).get("relevant_courses", {}).get("last_verified_value")
+                    },
+                    "honors": {
+                        "current_value": edu.get("education_details", {}).get("honors", {}).get("current_value", ""),
+                        "last_verified_value": edu.get("education_details", {}).get("honors", {}).get("last_verified_value")
+                    }
+                },
+                "is_verified": edu.get("is_verified", False),
+                "created_at": edu.get("created_at", ""),
+                "updated_at": edu.get("updated_at", "")
+            } for edu in education_records]
         except Exception as e:
-            print(f"Error retrieving education records: {str(e)}")
+            print(f"Error getting education details: {str(e)}")
             return []
     
     @staticmethod
@@ -461,26 +511,76 @@ class StudentService:
             print(f"Error deleting education record: {str(e)}")
             return False
     
+    @staticmethod
+    def update_education_verification(education_id, status, verified_by):
+        """Update verification status for an education record"""
+        try:
+            if isinstance(education_id, str):
+                education_id = ObjectId(education_id)
+            if isinstance(verified_by, str):
+                verified_by = ObjectId(verified_by)
+
+            update_data = {
+                "is_verified": status == "verified",
+                "verified_by": verified_by,
+                "verified_at": datetime.utcnow()
+            }
+
+            result = mongo.db.education.update_one(
+                {'_id': education_id},
+                {'$set': update_data}
+            )
+
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating education verification: {str(e)}")
+            return False
+    
     # Experience methods
     @staticmethod
     def get_experience_by_student_id(student_id):
-        """
-        Get all experience records for a student.
-        
-        Args:
-            student_id: The ID of the student
-            
-        Returns:
-            List of experience documents
-        """
+        """Get experience details for a student"""
         try:
-            # Convert string ID to ObjectId if needed
-            if isinstance(student_id, str):
-                student_id = ObjectId(student_id)
-                
-            return list(mongo.db.experience.find({'student_id': student_id}))
+            experience = mongo.db.experience.find({"student_id": ObjectId(student_id)})
+            return [{
+                "_id": str(exp.get("_id", "")),
+                "student_id": str(exp.get("student_id", "")),
+                "experience_details": {
+                    "company": {
+                        "current_value": exp.get("experience_details", {}).get("company", {}).get("current_value", ""),
+                        "last_verified_value": exp.get("experience_details", {}).get("company", {}).get("last_verified_value")
+                    },
+                    "position": {
+                        "current_value": exp.get("experience_details", {}).get("position", {}).get("current_value", ""),
+                        "last_verified_value": exp.get("experience_details", {}).get("position", {}).get("last_verified_value")
+                    },
+                    "duration": {
+                        "current_value": exp.get("experience_details", {}).get("duration", {}).get("current_value", ""),
+                        "last_verified_value": exp.get("experience_details", {}).get("duration", {}).get("last_verified_value")
+                    },
+                    "description": {
+                        "current_value": exp.get("experience_details", {}).get("description", {}).get("current_value", ""),
+                        "last_verified_value": exp.get("experience_details", {}).get("description", {}).get("last_verified_value")
+                    },
+                    "technologies": {
+                        "current_value": exp.get("experience_details", {}).get("technologies", {}).get("current_value", ""),
+                        "last_verified_value": exp.get("experience_details", {}).get("technologies", {}).get("last_verified_value")
+                    },
+                    "achievements": {
+                        "current_value": exp.get("experience_details", {}).get("achievements", {}).get("current_value", ""),
+                        "last_verified_value": exp.get("experience_details", {}).get("achievements", {}).get("last_verified_value")
+                    },
+                    "skills": {
+                        "current_value": exp.get("experience_details", {}).get("skills", {}).get("current_value", ""),
+                        "last_verified_value": exp.get("experience_details", {}).get("skills", {}).get("last_verified_value")
+                    }
+                },
+                "is_verified": exp.get("is_verified", False),
+                "created_at": exp.get("created_at", ""),
+                "updated_at": exp.get("updated_at", "")
+            } for exp in experience]
         except Exception as e:
-            print(f"Error retrieving experience records: {str(e)}")
+            print(f"Error getting experience details: {str(e)}")
             return []
     
     @staticmethod
@@ -578,26 +678,72 @@ class StudentService:
             print(f"Error deleting experience record: {str(e)}")
             return False
     
+    @staticmethod
+    def update_experience_verification(experience_id, status, verified_by):
+        """Update verification status for an experience record"""
+        try:
+            if isinstance(experience_id, str):
+                experience_id = ObjectId(experience_id)
+            if isinstance(verified_by, str):
+                verified_by = ObjectId(verified_by)
+
+            update_data = {
+                "is_verified": status == "verified",
+                "verified_by": verified_by,
+                "verified_at": datetime.utcnow()
+            }
+
+            result = mongo.db.experience.update_one(
+                {'_id': experience_id},
+                {'$set': update_data}
+            )
+
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating experience verification: {str(e)}")
+            return False
+    
     # Position methods
     @staticmethod
     def get_positions_by_student_id(student_id):
-        """
-        Get all position records for a student.
-        
-        Args:
-            student_id: The ID of the student
-            
-        Returns:
-            List of position documents
-        """
+        """Get position details for a student"""
         try:
-            # Convert string ID to ObjectId if needed
-            if isinstance(student_id, str):
-                student_id = ObjectId(student_id)
-                
-            return list(mongo.db.positions.find({'student_id': student_id}))
+            positions = mongo.db.positions.find({"student_id": ObjectId(student_id)})
+            return [{
+                "_id": str(pos.get("_id", "")),
+                "student_id": str(pos.get("student_id", "")),
+                "position_details": {
+                    "title": {
+                        "current_value": pos.get("position_details", {}).get("title", {}).get("current_value", ""),
+                        "last_verified_value": pos.get("position_details", {}).get("title", {}).get("last_verified_value")
+                    },
+                    "organization": {
+                        "current_value": pos.get("position_details", {}).get("organization", {}).get("current_value", ""),
+                        "last_verified_value": pos.get("position_details", {}).get("organization", {}).get("last_verified_value")
+                    },
+                    "duration": {
+                        "current_value": pos.get("position_details", {}).get("duration", {}).get("current_value", ""),
+                        "last_verified_value": pos.get("position_details", {}).get("duration", {}).get("last_verified_value")
+                    },
+                    "description": {
+                        "current_value": pos.get("position_details", {}).get("description", {}).get("current_value", ""),
+                        "last_verified_value": pos.get("position_details", {}).get("description", {}).get("last_verified_value")
+                    },
+                    "responsibilities": {
+                        "current_value": pos.get("position_details", {}).get("responsibilities", {}).get("current_value", ""),
+                        "last_verified_value": pos.get("position_details", {}).get("responsibilities", {}).get("last_verified_value")
+                    },
+                    "achievements": {
+                        "current_value": pos.get("position_details", {}).get("achievements", {}).get("current_value", ""),
+                        "last_verified_value": pos.get("position_details", {}).get("achievements", {}).get("last_verified_value")
+                    }
+                },
+                "is_verified": pos.get("is_verified", False),
+                "created_at": pos.get("created_at", ""),
+                "updated_at": pos.get("updated_at", "")
+            } for pos in positions]
         except Exception as e:
-            print(f"Error retrieving position records: {str(e)}")
+            print(f"Error getting position details: {str(e)}")
             return []
     
     @staticmethod
@@ -695,26 +841,80 @@ class StudentService:
             print(f"Error deleting position record: {str(e)}")
             return False
     
+    @staticmethod
+    def update_position_verification(position_id, status, verified_by):
+        """Update verification status for a position record"""
+        try:
+            if isinstance(position_id, str):
+                position_id = ObjectId(position_id)
+            if isinstance(verified_by, str):
+                verified_by = ObjectId(verified_by)
+
+            update_data = {
+                "is_verified": status == "verified",
+                "verified_by": verified_by,
+                "verified_at": datetime.utcnow()
+            }
+
+            result = mongo.db.positions.update_one(
+                {'_id': position_id},
+                {'$set': update_data}
+            )
+
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating position verification: {str(e)}")
+            return False
+    
     # Project methods
     @staticmethod
     def get_projects_by_student_id(student_id):
-        """
-        Get all project records for a student.
-        
-        Args:
-            student_id: The ID of the student
-            
-        Returns:
-            List of project documents
-        """
+        """Get project details for a student"""
         try:
-            # Convert string ID to ObjectId if needed
-            if isinstance(student_id, str):
-                student_id = ObjectId(student_id)
-                
-            return list(mongo.db.projects.find({'student_id': student_id}))
+            projects = mongo.db.projects.find({"student_id": ObjectId(student_id)})
+            return [{
+                "_id": str(proj.get("_id", "")),
+                "student_id": str(proj.get("student_id", "")),
+                "project_details": {
+                    "name": {
+                        "current_value": proj.get("project_details", {}).get("name", {}).get("current_value", ""),
+                        "last_verified_value": proj.get("project_details", {}).get("name", {}).get("last_verified_value")
+                    },
+                    "description": {
+                        "current_value": proj.get("project_details", {}).get("description", {}).get("current_value", ""),
+                        "last_verified_value": proj.get("project_details", {}).get("description", {}).get("last_verified_value")
+                    },
+                    "technologies": {
+                        "current_value": proj.get("project_details", {}).get("technologies", {}).get("current_value", ""),
+                        "last_verified_value": proj.get("project_details", {}).get("technologies", {}).get("last_verified_value")
+                    },
+                    "duration": {
+                        "current_value": proj.get("project_details", {}).get("duration", {}).get("current_value", ""),
+                        "last_verified_value": proj.get("project_details", {}).get("duration", {}).get("last_verified_value")
+                    },
+                    "role": {
+                        "current_value": proj.get("project_details", {}).get("role", {}).get("current_value", ""),
+                        "last_verified_value": proj.get("project_details", {}).get("role", {}).get("last_verified_value")
+                    },
+                    "team_size": {
+                        "current_value": proj.get("project_details", {}).get("team_size", {}).get("current_value", ""),
+                        "last_verified_value": proj.get("project_details", {}).get("team_size", {}).get("last_verified_value")
+                    },
+                    "github_link": {
+                        "current_value": proj.get("project_details", {}).get("github_link", {}).get("current_value", ""),
+                        "last_verified_value": proj.get("project_details", {}).get("github_link", {}).get("last_verified_value")
+                    },
+                    "demo_link": {
+                        "current_value": proj.get("project_details", {}).get("demo_link", {}).get("current_value", ""),
+                        "last_verified_value": proj.get("project_details", {}).get("demo_link", {}).get("last_verified_value")
+                    }
+                },
+                "is_verified": proj.get("is_verified", False),
+                "created_at": proj.get("created_at", ""),
+                "updated_at": proj.get("updated_at", "")
+            } for proj in projects]
         except Exception as e:
-            print(f"Error retrieving project records: {str(e)}")
+            print(f"Error getting project details: {str(e)}")
             return []
     
     @staticmethod
@@ -810,6 +1010,31 @@ class StudentService:
             return result.deleted_count > 0
         except Exception as e:
             print(f"Error deleting project record: {str(e)}")
+            return False
+    
+    @staticmethod
+    def update_project_verification(project_id, status, verified_by):
+        """Update verification status for a project record"""
+        try:
+            if isinstance(project_id, str):
+                project_id = ObjectId(project_id)
+            if isinstance(verified_by, str):
+                verified_by = ObjectId(verified_by)
+
+            update_data = {
+                "is_verified": status == "verified",
+                "verified_by": verified_by,
+                "verified_at": datetime.utcnow()
+            }
+
+            result = mongo.db.projects.update_one(
+                {'_id': project_id},
+                {'$set': update_data}
+            )
+
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating project verification: {str(e)}")
             return False
     
     # Resume methods
@@ -913,6 +1138,10 @@ class StudentService:
             ID of the newly created resume record
         """
         try:
+            # Convert student_id to ObjectId if needed
+            if isinstance(resume_data.get('student_id'), str):
+                resume_data['student_id'] = ObjectId(resume_data['student_id'])
+            
             # Add timestamps
             resume_data['created_at'] = datetime.utcnow()
             resume_data['updated_at'] = datetime.utcnow()

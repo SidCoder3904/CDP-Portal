@@ -22,7 +22,7 @@ def format_placement_cycle(raw_cycle):
     }
 
 @placement_cycles_bp.route('', methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def get_all_placement_cycles():
     """Get all placement cycles with optional filtering"""
     status = request.args.get('status')

@@ -65,17 +65,26 @@ export default function JobListings() {
   
   const handleApplyForJob = async (jobId: string, resumeId: string) => {
     try {
+      console.log(`Applying for job ${jobId} with resume ${resumeId}`);
       setIsApplying(true);
-      await jobsApi.applyForJob(jobId, resumeId);
+      
+      if (!resumeId || resumeId === "None" || resumeId === "undefined") {
+        throw new Error("Invalid resume ID");
+      }
+      
+      const result = await jobsApi.applyForJob(jobId, resumeId);
+      console.log("Application result:", result);
       
       // Update applications list
       const newApplications = await jobsApi.getMyApplications();
       setApplications(newApplications);
       
-
+      // Update UI to show the job as applied
+      appliedJobs.add(jobId);
+      
     } catch (error) {
       console.error("Failed to apply for job:", error);
-
+      // Let the ResumeSelectDialog handle the error toast
     } finally {
       setIsApplying(false);
     }
@@ -113,7 +122,7 @@ export default function JobListings() {
               job={jobs.find((job) => job._id === activeJobId)!}
               activeTab={activeTab[activeJobId]}
               handleTabClick={(tab) => handleTabClick(activeJobId, tab)}
-              onApply={(jobId) => handleApplyForJob(jobId, "abc")}
+              onApply={(jobId: string, resumeId: string) => handleApplyForJob(jobId, resumeId)}
               isApplied={appliedJobs.has(activeJobId)}
               isApplying={isApplying}
             />
