@@ -6,9 +6,10 @@ import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
+import { Trash2, CheckCircle, Clock, Check, AlertCircle } from "lucide-react";
 import { useStudentApi, Position } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
 
 const positionSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -192,14 +193,26 @@ export default function PositionsPage() {
               <CardTitle>
                 {position.position_details.title.current_value}
               </CardTitle>
-              {position.is_verified && (
-                <div className="text-sm text-green-600">
-                  Verified on:{" "}
-                  {new Date(position.last_verified || "").toLocaleDateString()}
-                </div>
-              )}
+              <div className="flex items-center mt-1">
+                {position.is_verified ? (
+                  <Badge variant="default" className="flex items-center">
+                    <Check className="mr-1 h-3 w-3" />
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="flex items-center">
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Pending
+                  </Badge>
+                )}
+                {position.last_verified && (
+                  <div className="text-sm text-muted-foreground ml-3">
+                    on {new Date(position.last_verified).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
               {position.remark && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 mt-1">
                   Remark: {position.remark}
                 </div>
               )}
@@ -209,29 +222,24 @@ export default function PositionsPage() {
                 <DetailItem
                   label="Organization"
                   value={position.position_details.organization.current_value}
-                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Duration"
                   value={position.position_details.duration.current_value}
-                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Description"
                   value={position.position_details.description.current_value}
-                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Responsibilities"
                   value={
                     position.position_details.responsibilities.current_value
                   }
-                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Achievements"
                   value={position.position_details.achievements.current_value}
-                  status={position.is_verified ? "verified" : "pending"}
                 />
               </div>
               <div className="flex justify-end space-x-2 mt-4">

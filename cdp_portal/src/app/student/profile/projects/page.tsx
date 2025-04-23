@@ -6,9 +6,10 @@ import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
+import { Trash2, CheckCircle, Clock, Check, AlertCircle } from "lucide-react";
 import { useStudentApi, Project } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
 
 const projectSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -210,14 +211,26 @@ export default function ProjectsPage() {
               <CardTitle>
                 {project.project_details.name.current_value}
               </CardTitle>
-              {project.is_verified && (
-                <div className="text-sm text-green-600">
-                  Verified on:{" "}
-                  {new Date(project.last_verified || "").toLocaleDateString()}
-                </div>
-              )}
+              <div className="flex items-center mt-1">
+                {project.is_verified ? (
+                  <Badge variant="default" className="flex items-center">
+                    <Check className="mr-1 h-3 w-3" />
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="flex items-center">
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Pending
+                  </Badge>
+                )}
+                {project.last_verified && (
+                  <div className="text-sm text-muted-foreground ml-3">
+                    on {new Date(project.last_verified).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
               {project.remark && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 mt-1">
                   Remark: {project.remark}
                 </div>
               )}
@@ -227,37 +240,30 @@ export default function ProjectsPage() {
                 <DetailItem
                   label="Description"
                   value={project.project_details.description.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Technologies"
                   value={project.project_details.technologies.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Duration"
                   value={project.project_details.duration.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Role"
                   value={project.project_details.role.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Team Size"
                   value={project.project_details.teamSize.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="GitHub"
                   value={project.project_details.githubLink.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Demo"
                   value={project.project_details.demoLink.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
               </div>
               <div className="flex justify-end space-x-2 mt-4">

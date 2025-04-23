@@ -6,9 +6,10 @@ import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
+import { Trash2, CheckCircle, Clock, Check, AlertCircle } from "lucide-react";
 import { useStudentApi, Education } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
 
 const degreeOptions = ["BTech", "MTech", "MSc", "High School Diploma"];
 const majorOptions = ["CSE", "CE", "EE", "CBSE", "ICSE"];
@@ -215,14 +216,26 @@ export default function EducationPage() {
               <CardTitle>
                 {edu.education_details.degree.current_value}
               </CardTitle>
-              {edu.is_verified && (
-                <div className="text-sm text-green-600">
-                  Verified on:{" "}
-                  {new Date(edu.last_verified || "").toLocaleDateString()}
-                </div>
-              )}
+              <div className="flex items-center mt-1">
+                {edu.is_verified ? (
+                  <Badge variant="default" className="flex items-center">
+                    <Check className="mr-1 h-3 w-3" />
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="flex items-center">
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Pending
+                  </Badge>
+                )}
+                {edu.last_verified && (
+                  <div className="text-sm text-muted-foreground ml-3">
+                    on {new Date(edu.last_verified).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
               {edu.remark && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 mt-1">
                   Remark: {edu.remark}
                 </div>
               )}
@@ -232,37 +245,30 @@ export default function EducationPage() {
                 <DetailItem
                   label="Institution"
                   value={edu.education_details.institution.current_value}
-                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Year"
                   value={edu.education_details.year.current_value}
-                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="GPA"
                   value={edu.education_details.gpa.current_value}
-                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Major"
                   value={edu.education_details.major.current_value}
-                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Minor"
                   value={edu.education_details.minor.current_value}
-                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Relevant Courses"
                   value={edu.education_details.relevant_courses.current_value}
-                  status={edu.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Honors"
                   value={edu.education_details.honors.current_value}
-                  status={edu.is_verified ? "verified" : "pending"}
                 />
               </div>
               <div className="flex justify-end space-x-2 mt-4">

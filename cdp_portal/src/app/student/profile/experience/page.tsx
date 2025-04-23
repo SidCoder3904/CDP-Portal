@@ -6,9 +6,10 @@ import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
+import { Trash2, CheckCircle, Clock, Check, AlertCircle } from "lucide-react";
 import { useStudentApi, Experience } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
 
 const experienceSchema = z.object({
   company: z.string().min(1, "Company is required"),
@@ -200,14 +201,26 @@ export default function ExperiencePage() {
                 {exp.experience_details.position.current_value} at{" "}
                 {exp.experience_details.company.current_value}
               </CardTitle>
-              {exp.is_verified && (
-                <div className="text-sm text-green-600">
-                  Verified on:{" "}
-                  {new Date(exp.last_verified || "").toLocaleDateString()}
-                </div>
-              )}
+              <div className="flex items-center mt-1">
+                {exp.is_verified ? (
+                  <Badge variant="default" className="flex items-center">
+                    <Check className="mr-1 h-3 w-3" />
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="flex items-center">
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Pending
+                  </Badge>
+                )}
+                {exp.last_verified && (
+                  <div className="text-sm text-muted-foreground ml-3">
+                    on {new Date(exp.last_verified).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
               {exp.remark && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 mt-1">
                   Remark: {exp.remark}
                 </div>
               )}
@@ -217,37 +230,30 @@ export default function ExperiencePage() {
                 <DetailItem
                   label="Company"
                   value={exp.experience_details.company.current_value}
-                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Position"
                   value={exp.experience_details.position.current_value}
-                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Duration"
                   value={exp.experience_details.duration.current_value}
-                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Description"
                   value={exp.experience_details.description.current_value}
-                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Technologies"
                   value={exp.experience_details.technologies.current_value}
-                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Achievements"
                   value={exp.experience_details.achievements.current_value}
-                  status={exp.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Skills"
                   value={exp.experience_details.skills.current_value}
-                  status={exp.is_verified ? "verified" : "pending"}
                 />
               </div>
               <div className="flex justify-end space-x-2 mt-4">

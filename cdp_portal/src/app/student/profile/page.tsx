@@ -132,14 +132,41 @@ export default function BasicDetails() {
     try {
       setIsUpdating(true);
       setError(null);
-      const dataToUpdate: Partial<StudentProfile> = {
-        name: result.data.name,
-        email: result.data.email,
-        phone: result.data.phone,
-      };
-      const updatedProfile = await studentApi.updateMyProfile(dataToUpdate);
-      setStudentData(updatedProfile);
-      setEditableData(updatedProfile);
+      
+      // Check which fields have been modified
+      const dataToUpdate: Partial<StudentProfile> = {};
+      const fieldsWithVerificationStatus: Record<string, string> = {};
+      
+      // Check each field and add to update only if changed
+      if (result.data.name !== studentData?.name) {
+        dataToUpdate.name = result.data.name;
+        fieldsWithVerificationStatus.name = "pending";
+      }
+      
+      if (result.data.email !== studentData?.email) {
+        dataToUpdate.email = result.data.email;
+        fieldsWithVerificationStatus.email = "pending";
+      }
+      
+      if (result.data.phone !== studentData?.phone) {
+        dataToUpdate.phone = result.data.phone;
+        fieldsWithVerificationStatus.phone = "pending";
+      }
+      
+      // Only update if there are changes
+      if (Object.keys(dataToUpdate).length > 0) {
+        // Add verification status for changed fields
+        if (Object.keys(fieldsWithVerificationStatus).length > 0) {
+          dataToUpdate.verificationStatus = {
+            ...studentData?.verificationStatus,
+            ...fieldsWithVerificationStatus
+          };
+        }
+        
+        const updatedProfile = await studentApi.updateMyProfile(dataToUpdate);
+        setStudentData(updatedProfile);
+        setEditableData(updatedProfile);
+      }
     } catch (error) {
       console.error("Failed to update profile:", error);
       setError("Failed to update profile. Please try again.");
@@ -154,10 +181,65 @@ export default function BasicDetails() {
     try {
       setIsUpdating(true);
       setError(null);
-      const updatedProfile = await studentApi.updateMyProfile(newData);
-      setStudentData(updatedProfile);
-      setEditableData(updatedProfile);
-      setIsAdditionalDetailsDialogOpen(false);
+      
+      // Check which fields have been modified
+      const dataToUpdate: Partial<StudentProfile> = {};
+      const fieldsWithVerificationStatus: Record<string, string> = {};
+      
+      // Check each field and add to update only if changed
+      if ('dateOfBirth' in newData && newData.dateOfBirth !== studentData.dateOfBirth) {
+        dataToUpdate.dateOfBirth = newData.dateOfBirth;
+        fieldsWithVerificationStatus.dateOfBirth = "pending";
+      }
+      
+      if ('gender' in newData && newData.gender !== studentData.gender) {
+        dataToUpdate.gender = newData.gender;
+        fieldsWithVerificationStatus.gender = "pending";
+      }
+      
+      if ('address' in newData && newData.address !== studentData.address) {
+        dataToUpdate.address = newData.address;
+        fieldsWithVerificationStatus.address = "pending";
+      }
+      
+      if ('major' in newData && newData.major !== studentData.major) {
+        dataToUpdate.major = newData.major;
+        fieldsWithVerificationStatus.major = "pending";
+      }
+      
+      if ('studentId' in newData && newData.studentId !== studentData.studentId) {
+        dataToUpdate.studentId = newData.studentId;
+        fieldsWithVerificationStatus.studentId = "pending";
+      }
+      
+      if ('enrollmentYear' in newData && newData.enrollmentYear !== studentData.enrollmentYear) {
+        dataToUpdate.enrollmentYear = newData.enrollmentYear;
+        fieldsWithVerificationStatus.enrollmentYear = "pending";
+      }
+      
+      if ('expectedGraduationYear' in newData && newData.expectedGraduationYear !== studentData.expectedGraduationYear) {
+        dataToUpdate.expectedGraduationYear = newData.expectedGraduationYear;
+        fieldsWithVerificationStatus.expectedGraduationYear = "pending";
+      }
+      
+      // Only update if there are changes
+      if (Object.keys(dataToUpdate).length > 0) {
+        // Add verification status for changed fields
+        if (Object.keys(fieldsWithVerificationStatus).length > 0) {
+          dataToUpdate.verificationStatus = {
+            ...studentData.verificationStatus,
+            ...fieldsWithVerificationStatus
+          };
+        }
+        
+        const updatedProfile = await studentApi.updateMyProfile(dataToUpdate);
+        setStudentData(updatedProfile);
+        setEditableData(updatedProfile);
+        setIsAdditionalDetailsDialogOpen(false);
+      } else {
+        // If no changes, just close the dialog
+        setIsAdditionalDetailsDialogOpen(false);
+      }
     } catch (error) {
       console.error("Failed to update profile (additional details):", error);
       setError("Failed to update additional details. Please try again.");
@@ -233,10 +315,13 @@ export default function BasicDetails() {
     <div>
       <h1 className="text-2xl text-template font-bold mb-6">Basic Details</h1>
       <Card>
-        <CardHeader></CardHeader>
+        <CardHeader className="pb-2">
+          <h2 className="text-xl font-semibold">Personal Information</h2>
+        </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="col-span-2 flex items-center space-x-4">
+          {/* Profile Image Section */}
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <div className="flex items-center space-x-4">
               <Avatar 
                 className="w-24 h-24 cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => studentData.passportImage && setIsProfilePictureModalOpen(true)}
@@ -256,157 +341,133 @@ export default function BasicDetails() {
                   acceptedFileTypes={{ "image/*": [".jpeg", ".jpg", ".png"] }}
                 />
                 {studentData.verificationStatus?.passportImage && (
-                  <Badge
-                    variant={
-                      studentData.verificationStatus.passportImage ===
-                      "verified"
-                        ? "default"
-                        : studentData.verificationStatus.passportImage ===
-                          "rejected"
-                        ? "destructive"
-                        : "outline"
-                    }
-                  >
-                    {studentData.verificationStatus.passportImage === "verified"
-                      ? "Verified"
-                      : studentData.verificationStatus.passportImage ===
-                        "rejected"
-                      ? "Rejected"
-                      : "Pending"}
-                  </Badge>
+                  <div className="flex items-center mt-1">
+                    <Badge
+                      variant={
+                        studentData.verificationStatus.passportImage === "verified"
+                          ? "default"
+                          : studentData.verificationStatus.passportImage === "rejected"
+                          ? "destructive"
+                          : "outline"
+                      }
+                    >
+                      {studentData.verificationStatus.passportImage === "verified"
+                        ? "Verified"
+                        : studentData.verificationStatus.passportImage === "rejected"
+                        ? "Rejected"
+                        : "Pending"}
+                    </Badge>
+                    {isUpdating && (
+                      <Icons.spinner className="h-4 w-4 animate-spin ml-2" />
+                    )}
+                  </div>
                 )}
               </div>
-              {isUpdating && (
-                <Icons.spinner className="h-4 w-4 animate-spin ml-2" />
-              )}
             </div>
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={editableData.name}
-                onChange={(e) => handleDirectUpdate("name", e.target.value)}
-                className={cn(directEditErrors.name ? "border-red-500" : "")}
-              />
-              {directEditErrors.name && <p className="text-xs text-red-500 mt-1">{directEditErrors.name}</p>}
-              {studentData.verificationStatus?.name && (
-                <Badge
-                  variant={
-                    studentData.verificationStatus.name === "verified"
-                      ? "default"
-                      : studentData.verificationStatus.name === "rejected"
-                      ? "destructive"
-                      : "outline"
-                  }
-                  className="mt-1"
-                >
-                  {studentData.verificationStatus.name === "verified"
-                    ? "Verified"
-                    : studentData.verificationStatus.name === "rejected"
-                    ? "Rejected"
-                    : "Pending"}
-                </Badge>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                value={editableData.email}
-                onChange={(e) => handleDirectUpdate("email", e.target.value)}
-                className={cn(directEditErrors.email ? "border-red-500" : "")}
-              />
-              {directEditErrors.email && <p className="text-xs text-red-500 mt-1">{directEditErrors.email}</p>}
-              {studentData.verificationStatus?.email && (
-                <Badge
-                  variant={
-                    studentData.verificationStatus.email === "verified"
-                      ? "default"
-                      : studentData.verificationStatus.email === "rejected"
-                      ? "destructive"
-                      : "outline"
-                  }
-                  className="mt-1"
-                >
-                  {studentData.verificationStatus.email === "verified"
-                    ? "Verified"
-                    : studentData.verificationStatus.email === "rejected"
-                    ? "Rejected"
-                    : "Pending"}
-                </Badge>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                value={editableData.phone}
-                onChange={(e) => handleDirectUpdate("phone", e.target.value)}
-                className={cn(directEditErrors.phone ? "border-red-500" : "")}
-              />
-              {directEditErrors.phone && <p className="text-xs text-red-500 mt-1">{directEditErrors.phone}</p>}
-              {studentData.verificationStatus?.phone && (
-                <Badge
-                  variant={
-                    studentData.verificationStatus.phone === "verified"
-                      ? "default"
-                      : studentData.verificationStatus.phone === "rejected"
-                      ? "destructive"
-                      : "outline"
-                  }
-                  className="mt-1"
-                >
-                  {studentData.verificationStatus.phone === "verified"
-                    ? "Verified"
-                    : studentData.verificationStatus.phone === "rejected"
-                    ? "Rejected"
-                    : "Pending"}
-                </Badge>
-              )}
-            </div>
-            <DetailItem
-              label="Date of Birth"
-              value={studentData.dateOfBirth}
-              status={studentData.verificationStatus?.dateOfBirth || "pending"}
-            />
-            <DetailItem
-              label="Gender"
-              value={studentData.gender}
-              status={studentData.verificationStatus?.gender || "pending"}
-            />
-            <DetailItem
-              label="Address"
-              value={studentData.address}
-              status={studentData.verificationStatus?.address || "pending"}
-            />
-            <DetailItem
-              label="Major"
-              value={studentData.major}
-              status={studentData.verificationStatus?.major || "pending"}
-            />
-            <DetailItem
-              label="Student ID"
-              value={studentData.studentId}
-              status={studentData.verificationStatus?.studentId || "pending"}
-            />
-            <DetailItem
-              label="Enrollment Year"
-              value={studentData.enrollmentYear}
-              status={
-                studentData.verificationStatus?.enrollmentYear || "pending"
-              }
-            />
-            <DetailItem
-              label="Expected Graduation Year"
-              value={studentData.expectedGraduationYear}
-              status={
-                studentData.verificationStatus?.expectedGraduationYear ||
-                "pending"
-              }
-            />
           </div>
-          <div className="flex justify-between mt-6">
-            <AlertDialog>
+
+          {/* Editable Fields Section */}
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <h3 className="text-md font-bold mb-4">Basic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <Label htmlFor="name" className="block mb-1">Name</Label>
+                <div className="relative">
+                  <Input
+                    id="name"
+                    value={editableData.name}
+                    onChange={(e) => handleDirectUpdate("name", e.target.value)}
+                    className={cn(directEditErrors.name ? "border-red-500" : "")}
+                  />
+                  {directEditErrors.name && <p className="text-xs text-red-500 mt-1">{directEditErrors.name}</p>}
+                </div>
+                {studentData.verificationStatus?.name && (
+                  <div className="mt-1">
+                    <Badge
+                      variant={
+                        studentData.verificationStatus.name === "verified"
+                          ? "default"
+                          : studentData.verificationStatus.name === "rejected"
+                          ? "destructive"
+                          : "outline"
+                      }
+                    >
+                      {studentData.verificationStatus.name === "verified"
+                        ? "Verified"
+                        : studentData.verificationStatus.name === "rejected"
+                        ? "Rejected"
+                        : "Pending"}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="email" className="block mb-1">Email</Label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    value={editableData.email}
+                    onChange={(e) => handleDirectUpdate("email", e.target.value)}
+                    className={cn(directEditErrors.email ? "border-red-500" : "")}
+                  />
+                  {directEditErrors.email && <p className="text-xs text-red-500 mt-1">{directEditErrors.email}</p>}
+                </div>
+                {studentData.verificationStatus?.email && (
+                  <div className="mt-1">
+                    <Badge
+                      variant={
+                        studentData.verificationStatus.email === "verified"
+                          ? "default"
+                          : studentData.verificationStatus.email === "rejected"
+                          ? "destructive"
+                          : "outline"
+                      }
+                    >
+                      {studentData.verificationStatus.email === "verified"
+                        ? "Verified"
+                        : studentData.verificationStatus.email === "rejected"
+                        ? "Rejected"
+                        : "Pending"}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="phone" className="block mb-1">Phone</Label>
+                <div className="relative">
+                  <Input
+                    id="phone"
+                    value={editableData.phone}
+                    onChange={(e) => handleDirectUpdate("phone", e.target.value)}
+                    className={cn(directEditErrors.phone ? "border-red-500" : "")}
+                  />
+                  {directEditErrors.phone && <p className="text-xs text-red-500 mt-1">{directEditErrors.phone}</p>}
+                </div>
+                {studentData.verificationStatus?.phone && (
+                  <div className="mt-1">
+                    <Badge
+                      variant={
+                        studentData.verificationStatus.phone === "verified"
+                          ? "default"
+                          : studentData.verificationStatus.phone === "rejected"
+                          ? "destructive"
+                          : "outline"
+                      }
+                    >
+                      {studentData.verificationStatus.phone === "verified"
+                        ? "Verified"
+                        : studentData.verificationStatus.phone === "rejected"
+                        ? "Rejected"
+                        : "Pending"}
+                    </Badge>
+                  </div>
+                )}
+
+              </div>
+              
+            </div>
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-4 pt-2">
+              <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" disabled={isUpdating || Object.values(directEditErrors).some(e => e !== undefined)}>
                   {isUpdating ? (
@@ -435,6 +496,60 @@ export default function BasicDetails() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+              </div>
+          </div>
+
+          {/* Additional Details Section */}
+          <div className="mb-6">
+            <h3 className="text-md font-bold mb-4">Additional Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DetailItem
+                label="Date of Birth"
+                value={studentData.dateOfBirth}
+                status={studentData.verificationStatus?.dateOfBirth || "pending"}
+              />
+              <DetailItem
+                label="Gender"
+                value={studentData.gender}
+                status={studentData.verificationStatus?.gender || "pending"}
+              />
+              <DetailItem
+                label="Address"
+                value={studentData.address}
+                status={studentData.verificationStatus?.address || "pending"}
+              />
+              <DetailItem
+                label="Major"
+                value={studentData.major}
+                status={studentData.verificationStatus?.major || "pending"}
+              />
+              <DetailItem
+                label="Student ID"
+                value={studentData.studentId}
+                status={studentData.verificationStatus?.studentId || "pending"}
+              />
+              <DetailItem
+                label="Enrollment Year"
+                value={studentData.enrollmentYear}
+                status={
+                  studentData.verificationStatus?.enrollmentYear || "pending"
+                }
+              />
+              <DetailItem
+                label="Expected Graduation Year"
+                value={studentData.expectedGraduationYear}
+                status={
+                  studentData.verificationStatus?.expectedGraduationYear ||
+                  "pending"
+                }
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-4 pt-2">
+            
+            
             <EditDialog
               title="Update Additional Details"
               description="Edit your additional profile information."
@@ -472,7 +587,7 @@ export default function BasicDetails() {
                 enrollmentYear: editableData.enrollmentYear,
                 expectedGraduationYear: editableData.expectedGraduationYear,
               }}
-              zodSchema={additionalDetailsSchema}
+              zodSchema={additionalDetailsSchema.innerType()}
               onSaveValidated={handleAdditionalDetailsUpdate}
               isOpen={isAdditionalDetailsDialogOpen}
               onOpenChange={setIsAdditionalDetailsDialogOpen}
