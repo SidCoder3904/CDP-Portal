@@ -4,7 +4,7 @@ import Navbar from "@/components/navbar";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import MainFooter from "@/components/main_footer";
+import LoginFooter from "@/components/login_footer";
 
 export default function AdminLayout({
   children,
@@ -24,7 +24,13 @@ export default function AdminLayout({
   }, [isAuthenticated, user, router]);
 
   return (
-    <>
+    // <div className="min-h-screen flex flex-col">
+      
+    //   <main className="flex-grow max-w-7xl mx-auto w-full">{children}</main>
+    //   <div className="mb-0"><LoginFooter /></div>
+
+    // </>
+    <div className="min-h-screen flex flex-col">
       <Navbar
         menuItems={[
           { label: "Notifications", href: "/admin" },
@@ -35,8 +41,7 @@ export default function AdminLayout({
         ]}
       />
       <main className="flex-grow max-w-7xl mx-auto w-full">{children}</main>
-      <MainFooter />
-
-    </>
+      <LoginFooter />
+    </div>
   );
 }
