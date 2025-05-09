@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,11 +29,20 @@ export default function Navbar({ menuItems }: NavbarProps) {
   const [activeStyle, setActiveStyle] = useState({ left: "0px", width: "0px" });
   const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   // Set mounted state after component mounts
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Update active index based on current pathname
+  useEffect(() => {
+    const currentIndex = menuItems.findIndex(item => pathname === item.href);
+    if (currentIndex !== -1) {
+      setActiveIndex(currentIndex);
+    }
+  }, [pathname, menuItems]);
 
   const setTabRef = (index: number) => (el: HTMLDivElement | null) => {
     tabRefs.current[index] = el;
@@ -153,16 +163,16 @@ export default function Navbar({ menuItems }: NavbarProps) {
                     console.error(`Missing href for menu item: ${item.label}`);
                     return null;
                   }
+                  const isActive = pathname === item.href;
                   return (
                     <Link key={index} href={item.href} passHref>
                       <div
                         ref={setTabRef(index)}
                         className={`px-3 py-2 cursor-pointer transition-colors duration-300 h-[30px] ${
-                          index === activeIndex ? "text-white" : "text-white/80"
+                          isActive ? "text-white" : "text-white/80"
                         }`}
                         onMouseEnter={() => setHoveredIndex(index)}
                         onMouseLeave={() => setHoveredIndex(null)}
-                        onClick={() => setActiveIndex(index)}
                       >
                         <div className="text-sm font-medium leading-5 whitespace-nowrap flex items-center justify-center h-full">
                           {item.label}
