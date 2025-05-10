@@ -1710,9 +1710,9 @@ def get_my_applications():
     """Get all applications submitted by the current student"""
     current_user = get_jwt_identity()
     user_id = current_user.get('id')
-    student_id = StudentService.get_student_id_by_user_id(user_id)
+    # student_id = StudentService.get_student_id_by_user_id(user_id)
     
-    applications = JobService.get_applications_by_student(student_id)
+    applications = JobService.get_applications_by_student(user_id)
     
     # Convert ObjectId to string for JSON serialization
     return json_response(applications), 200

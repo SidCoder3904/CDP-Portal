@@ -63,16 +63,6 @@ export function JobDetails({ job }: JobDetailsProps) {
               </div>
             </div>
 
-            <div>
-              <h3 className="text-sm font-medium mb-2">Eligible Programs</h3>
-              <div className="flex flex-wrap gap-2">
-                {job.eligibility.programs.map((program) => (
-                  <Badge key={program} variant="outline">
-                    {program.toUpperCase()}
-                  </Badge>
-                ))}
-              </div>
-            </div>
 
             <div>
               <h3 className="text-sm font-medium mb-2">Minimum CGPA Criteria</h3>

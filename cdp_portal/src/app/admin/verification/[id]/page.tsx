@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, ArrowRight, Check, X, AlertCircle } from "lucide-react"
 import { useAdminApi, type StudentDetail } from "@/lib/api/admin"
 import { Icons } from "@/components/icons"
+import React from "react"
 
 interface VerificationItemProps {
   label: string
@@ -54,7 +55,7 @@ function VerificationItem({ label, value, status, onVerify, onReject, isUpdating
 export default function StudentVerificationPage() {
   const router = useRouter()
   const params = useParams()
-  const studentId = params.id as string
+  const studentId = params?.id as string || ""
   const adminApi = useAdminApi()
 
   const [student, setStudent] = useState<StudentDetail | null>(null)

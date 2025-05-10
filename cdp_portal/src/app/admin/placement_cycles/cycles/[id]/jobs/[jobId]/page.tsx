@@ -18,9 +18,19 @@ import { JobWorkflow } from "@/components/job-workflow";
 import { useEffect, useState } from "react";
 import { useJobsApi } from "@/lib/api/jobs";
 
-export default function JobPage(props: any) {
-  const { params } = props;
-  const { id, jobId } = params;
+// Define the props type with params structure
+interface JobPageProps {
+  params: {
+    id: string;
+    jobId: string;
+  };
+}
+
+// Use the single page function pattern recommended by Next.js
+export default function JobPage({ params }: JobPageProps) {
+  // Instead of destructuring immediately, access properties when needed
+  const cycleId = params.id;
+  const jobId = params.jobId;
   
   const [job, setJob] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,6 +43,7 @@ export default function JobPage(props: any) {
         setIsLoading(true);
         const jobData = await jobsApi.getJobById(jobId);
         setJob(jobData);
+        console.log(jobData);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -41,7 +52,7 @@ export default function JobPage(props: any) {
     }
 
     fetchData();
-  }, [jobsApi, jobId]);
+  }, [jobId]);
 
   if (!job) {
     return (
@@ -50,7 +61,7 @@ export default function JobPage(props: any) {
         <p className="text-muted-foreground">
           The requested job does not exist.
         </p>
-        <Link href={`/admin/placement_cycles/cycles/${id}`}>
+        <Link href={`/admin/placement_cycles/cycles/${cycleId}`}>
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Cycle
@@ -63,7 +74,7 @@ export default function JobPage(props: any) {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <Link href={`/admin/placement_cycles/cycles/${id}`}>
+        <Link href={`/admin/placement_cycles/cycles/${cycleId}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>

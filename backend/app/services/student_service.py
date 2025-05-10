@@ -1503,3 +1503,56 @@ class StudentService:
         except Exception as e:
             print(f"Error getting students for cycle: {str(e)}")
             return []
+
+    @staticmethod
+    def get_student_eligible_cycles(student_id):
+        """
+        Find all placement cycles that a student is eligible for based on their enrollment year and program
+        
+        Args:
+            student_id: ID of the student
+            
+        Returns:
+            List of eligible placement cycles with details
+        """
+        try:
+            # Get student details
+            if isinstance(student_id, str):
+                student_id = ObjectId(student_id)
+            
+            student = mongo.db.student.find_one({'user_id': student_id})
+            if not student:
+                return []
+            
+            enrollment_year = student.get('enrollmentYear')
+            email = student.get('email', '')
+            
+            # Determine program type from email
+            program_identifier = None
+            program_type = None
+            
+            if '@' in email:
+                program_identifier = email.split('@')[0][6].lower()
+                
+                if program_identifier == 'b':
+                    program_type = 'btech'
+                elif program_identifier == 'm':
+                    program_type = 'mtech'
+                elif program_identifier == 'p':
+                    program_type = 'phd'
+            
+            if not enrollment_year or not program_type:
+                return []
+            
+            # Find active placement cycles matching the student's batch and program
+            cycle = mongo.db.placement_cycles.find_one({
+                'batch': enrollment_year,
+                'eligiblePrograms': program_type,
+                'status': 'active'  # Only include active cycles
+            })
+
+            return f"{cycle.get('_id', '')}"
+
+        except Exception as e:
+            print(f"Error finding eligible cycles for student: {str(e)}")
+            return []

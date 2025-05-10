@@ -21,6 +21,7 @@ import { CycleStats } from "@/components/cycle-stats";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useApi } from "@/lib/api";
+import React from "react";
 
 // Loading component
 function LoadingState() {
