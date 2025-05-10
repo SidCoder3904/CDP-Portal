@@ -4,13 +4,23 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.comment_service import CommentService
 from app.utils.auth import admin_required
 from app.utils.validators import validate_comment
+from bson.objectid import ObjectId
 
 comments_bp = Blueprint('comments', __name__)
 
-@comments_bp.route('/notices/<notice_id>/comments', methods=['GET'])
-def get_comments(notice_id):
-    comments = CommentService.get_comments_by_notice(notice_id)
-    return jsonify(comments), 200
+@comments_bp.route('/', methods=['GET'])
+def get_comments():
+    """Get all comments for a placement cycle"""
+    try:
+        placement_cycle_id = request.args.get('placement_cycle_id')
+        if not placement_cycle_id:
+            return jsonify({'error': 'placement_cycle_id is required'}), 400
+
+        comments = CommentService.get_comments(placement_cycle_id)
+        return jsonify(comments)
+    except Exception as e:
+        print(f"Error in get_comments route: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @comments_bp.route('/notices/<notice_id>/comments', methods=['POST'])
 @jwt_required()
