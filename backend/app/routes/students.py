@@ -80,6 +80,34 @@ def update_my_profile():
     if errors:
         print("Errors:", errors)
         return jsonify({"errors": errors}), 400
+    
+    # Handle verification status updates
+    verification_updates = {}
+    if data.get("verificationStatus"):
+        verification_status = data.get("verificationStatus")
+        print("Verification status from frontend:", verification_status)
+        
+        # Map frontend field names to backend field names for verification
+        field_mapping = {
+            "name": "name",
+            "email": "email",
+            "phone": "phone",
+            "dateOfBirth": "date_of_birth",
+            "gender": "gender",
+            "address": "address",
+            "major": "major",
+            "studentId": "student_id",
+            "enrollmentYear": "enrollment_year",
+            "expectedGraduationYear": "expected_graduation_year",
+            "passportImage": "passport_image"
+        }
+        
+        # For each field in verification status, update verification
+        for frontend_field, status in verification_status.items():
+            if frontend_field in field_mapping:
+                backend_field = field_mapping[frontend_field]
+                verification_updates[f"verification.{backend_field}.status"] = status
+    
     # Convert frontend field names to backend field names
     backend_data = {
         "name": data.get("name"),
@@ -96,6 +124,10 @@ def update_my_profile():
     
     # Remove None values
     backend_data = {k: v for k, v in backend_data.items() if v is not None}
+    
+    # Merge verification updates with other updates
+    backend_data.update(verification_updates)
+    
     # print("Backend data:", backend_data)
     updated = StudentService.update_student(student_id, backend_data)
     if not updated:
@@ -361,6 +393,29 @@ def update_education(education_id):
     # print("Education:", education)
     if not education or str(education.get("student_id")) != str(student_id):
         return jsonify({"message": "Education record not found or access denied"}), 404
+    
+    # Check if content has changed and was previously verified
+    content_changed = False
+    if education.get("is_verified"):
+        # Check if any values have changed
+        if (data.get("education_details").get("degree").get("current_value") != 
+            education.get("education_details", {}).get("degree", {}).get("current_value")) or \
+           (data.get("education_details").get("institution").get("current_value") != 
+            education.get("education_details", {}).get("institution", {}).get("current_value")) or \
+           (data.get("education_details").get("year").get("current_value") != 
+            education.get("education_details", {}).get("year", {}).get("current_value")) or \
+           (data.get("education_details").get("gpa").get("current_value") != 
+            education.get("education_details", {}).get("gpa", {}).get("current_value")) or \
+           (data.get("education_details").get("major").get("current_value") != 
+            education.get("education_details", {}).get("major", {}).get("current_value", "")) or \
+           (data.get("education_details").get("minor").get("current_value") != 
+            education.get("education_details", {}).get("minor", {}).get("current_value", "")) or \
+           (data.get("education_details").get("relevant_courses").get("current_value") != 
+            education.get("education_details", {}).get("relevant_courses", {}).get("current_value", "")) or \
+           (data.get("education_details").get("honors").get("current_value") != 
+            education.get("education_details", {}).get("honors", {}).get("current_value", "")):
+            content_changed = True
+    
     # Convert frontend field names to backend field names
     backend_data = {
         "education_details": {
@@ -381,24 +436,29 @@ def update_education(education_id):
                 "last_verified_value": education.get("education_details", {}).get("gpa", {}).get("last_verified_value", None)
             },
             "major": {
-                "current_value": data.get("major"),
+                "current_value": data.get("education_details").get("major").get("current_value"),
                 "last_verified_value": education.get("education_details", {}).get("major", {}).get("last_verified_value", None)
             },
             "minor": {
-                "current_value": data.get("minor"),
+                "current_value": data.get("education_details").get("minor").get("current_value"),
                 "last_verified_value": education.get("education_details", {}).get("minor", {}).get("last_verified_value", None)
             },
             "relevant_courses": {
-                "current_value": data.get("relevantCourses"),
+                "current_value": data.get("education_details").get("relevant_courses").get("current_value"),
                 "last_verified_value": education.get("education_details", {}).get("relevant_courses", {}).get("last_verified_value", None)
             },
             "honors": {
-                "current_value": data.get("honors"),
+                "current_value": data.get("education_details").get("honors").get("current_value"),
                 "last_verified_value": education.get("education_details", {}).get("honors", {}).get("last_verified_value", None)
             }
         },
         "updated_at": datetime.utcnow()
     }
+    
+    # If content changed and was previously verified, set to unverified
+    if content_changed:
+        backend_data["is_verified"] = False
+        backend_data["last_verified"] = None
     
     # Remove None values
     backend_data = {k: v for k, v in backend_data.items() if v is not None}
@@ -655,6 +715,26 @@ def update_experience(experience_id):
     if not experience or str(experience.get("student_id")) != str(student_id):
         return jsonify({"message": "Experience record not found or access denied"}), 404
     
+    # Check if content has changed and was previously verified
+    content_changed = False
+    if experience.get("is_verified"):
+        # Check if any values have changed
+        if (data.get("experience_details").get("company").get("current_value") != 
+            experience.get("experience_details", {}).get("company", {}).get("current_value")) or \
+           (data.get("experience_details").get("position").get("current_value") != 
+            experience.get("experience_details", {}).get("position", {}).get("current_value")) or \
+           (data.get("experience_details").get("duration").get("current_value") != 
+            experience.get("experience_details", {}).get("duration", {}).get("current_value")) or \
+           (data.get("experience_details").get("description").get("current_value") != 
+            experience.get("experience_details", {}).get("description", {}).get("current_value")) or \
+           (data.get("experience_details").get("technologies").get("current_value") != 
+            experience.get("experience_details", {}).get("technologies", {}).get("current_value")) or \
+           (data.get("experience_details").get("achievements").get("current_value") != 
+            experience.get("experience_details", {}).get("achievements", {}).get("current_value")) or \
+           (data.get("experience_details").get("skills").get("current_value") != 
+            experience.get("experience_details", {}).get("skills", {}).get("current_value")):
+            content_changed = True
+    
     # Convert frontend field names to backend field names
     backend_data = {
         "experience_details": {
@@ -689,6 +769,11 @@ def update_experience(experience_id):
         },
         "updated_at": datetime.utcnow()
     }
+    
+    # If content changed and was previously verified, set to unverified
+    if content_changed:
+        backend_data["is_verified"] = False
+        backend_data["last_verified"] = None
     
     # Remove None values
     backend_data = {k: v for k, v in backend_data.items() if v is not None}
@@ -930,6 +1015,24 @@ def update_position(position_id):
     if not position or str(position.get("student_id")) != str(student_id):
         return jsonify({"message": "Position record not found or access denied"}), 404
     
+    # Check if content has changed and was previously verified
+    content_changed = False
+    if position.get("is_verified"):
+        # Check if any values have changed
+        if (data.get("position_details").get("title").get("current_value") != 
+            position.get("position_details", {}).get("title", {}).get("current_value")) or \
+           (data.get("position_details").get("organization").get("current_value") != 
+            position.get("position_details", {}).get("organization", {}).get("current_value")) or \
+           (data.get("position_details").get("duration").get("current_value") != 
+            position.get("position_details", {}).get("duration", {}).get("current_value")) or \
+           (data.get("position_details").get("description").get("current_value") != 
+            position.get("position_details", {}).get("description", {}).get("current_value")) or \
+           (data.get("position_details").get("responsibilities").get("current_value") != 
+            position.get("position_details", {}).get("responsibilities", {}).get("current_value")) or \
+           (data.get("position_details").get("achievements").get("current_value") != 
+            position.get("position_details", {}).get("achievements", {}).get("current_value")):
+            content_changed = True
+    
     # Convert frontend field names to backend field names
     backend_data = {
         "position_details": {
@@ -960,6 +1063,11 @@ def update_position(position_id):
         },
         "updated_at": datetime.utcnow()
     }
+    
+    # If content changed and was previously verified, set to unverified
+    if content_changed:
+        backend_data["is_verified"] = False
+        backend_data["last_verified"] = None
     
     # Remove None values
     backend_data = {k: v for k, v in backend_data.items() if v is not None}
@@ -1216,6 +1324,28 @@ def update_project(project_id):
     if not project or str(project.get("student_id")) != str(student_id):
         return jsonify({"message": "Project record not found or access denied"}), 404
     
+    # Check if content has changed and was previously verified
+    content_changed = False
+    if project.get("is_verified"):
+        # Check if any values have changed
+        if (data.get("project_details").get("name").get("current_value") != 
+            project.get("project_details", {}).get("name", {}).get("current_value")) or \
+           (data.get("project_details").get("description").get("current_value") != 
+            project.get("project_details", {}).get("description", {}).get("current_value")) or \
+           (data.get("project_details").get("technologies").get("current_value") != 
+            project.get("project_details", {}).get("technologies", {}).get("current_value")) or \
+           (data.get("project_details").get("duration").get("current_value") != 
+            project.get("project_details", {}).get("duration", {}).get("current_value")) or \
+           (data.get("project_details").get("role").get("current_value") != 
+            project.get("project_details", {}).get("role", {}).get("current_value")) or \
+           (data.get("project_details").get("teamSize").get("current_value") != 
+            project.get("project_details", {}).get("team_size", {}).get("current_value")) or \
+           (data.get("project_details").get("githubLink").get("current_value") != 
+            project.get("project_details", {}).get("github_link", {}).get("current_value")) or \
+           (data.get("project_details").get("demoLink").get("current_value") != 
+            project.get("project_details", {}).get("demo_link", {}).get("current_value")):
+            content_changed = True
+    
     # Convert frontend field names to backend field names
     backend_data = {
         "project_details": {
@@ -1254,6 +1384,11 @@ def update_project(project_id):
         },
         "updated_at": datetime.utcnow()
     }
+    
+    # If content changed and was previously verified, set to unverified
+    if content_changed:
+        backend_data["is_verified"] = False
+        backend_data["last_verified"] = None
     
     # Remove None values
     backend_data = {k: v for k, v in backend_data.items() if v is not None}

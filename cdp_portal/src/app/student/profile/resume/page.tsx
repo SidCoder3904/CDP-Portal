@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { z } from "zod";
 import { useStudentApi } from "@/lib/api/students";
 import { FileUploader } from "@/components/file-uploader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Trash2, Download, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const resumeSchema = z.object({
+  resumeName: z.string().min(1, "Resume name cannot be empty"),
+});
 
 interface Resume {
   _id: string;
@@ -28,6 +34,7 @@ export default function ResumePage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resumeNameError, setResumeNameError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchResumes();
@@ -39,7 +46,6 @@ export default function ResumePage() {
       setResumes(data);
     } catch (err) {
       setError("Failed to fetch resumes");
-      toast.error("Failed to fetch resumes");
     } finally {
       setLoading(false);
     }
@@ -47,18 +53,30 @@ export default function ResumePage() {
 
   const handleFileUpload = async (file: File) => {
     try {
+      const validationResult = resumeSchema.safeParse({ resumeName });
+      if (!validationResult.success) {
+        setResumeNameError(validationResult.error.errors[0]?.message || "Invalid name");
+        return;
+      }
+      setResumeNameError(null);
+
       setUpdating(true);
       setError(null);
       
       const newResume = await studentApi.uploadResume(resumeName, file);
       setResumes((prev) => [...prev, newResume]);
       setResumeName("");
-      toast.success("Resume uploaded successfully");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload resume");
-      toast.error("Failed to upload resume");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleResumeNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setResumeName(e.target.value);
+    if (resumeNameError) {
+      setResumeNameError(null);
     }
   };
 
@@ -66,10 +84,8 @@ export default function ResumePage() {
     try {
       await studentApi.deleteResume(resumeId);
       setResumes((prev) => prev.filter((resume) => resume._id !== resumeId));
-      toast.success("Resume deleted successfully");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete resume");
-      toast.error("Failed to delete resume");
     }
   };
 
@@ -89,7 +105,7 @@ export default function ResumePage() {
       document.body.removeChild(link);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to download resume");
-      toast.error("Failed to download resume");
+
     }
   };
 
@@ -118,7 +134,6 @@ export default function ResumePage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to view resume");
-      toast.error("Failed to view resume");
     }
   };
 
@@ -147,9 +162,12 @@ export default function ResumePage() {
             type="text"
             placeholder="Resume Name (optional)"
             value={resumeName}
-            onChange={(e) => setResumeName(e.target.value)}
+            onChange={handleResumeNameChange}
             className="w-full p-2 border rounded"
           />
+          {resumeNameError && (
+            <p className="text-xs text-red-500 mt-1">{resumeNameError}</p>
+          )}
           <FileUploader
             onFileUpload={handleFileUpload}
             acceptedFileTypes={{

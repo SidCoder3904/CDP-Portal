@@ -1,13 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { z } from "zod";
 import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
+import { Trash2, CheckCircle, Clock, Check, AlertCircle } from "lucide-react";
 import { useStudentApi, Position } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
+
+const positionSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  organization: z.string().min(1, "Organization is required"),
+  duration: z.string().min(1, "Duration is required"),
+  description: z.string().optional(),
+  responsibilities: z.string().optional(),
+  achievements: z.string().optional(),
+});
+
+type PositionFormData = z.infer<typeof positionSchema>;
 
 export default function PositionsPage() {
   const [positionsData, setPositionsData] = useState<Position[]>([]);
@@ -35,24 +48,23 @@ export default function PositionsPage() {
     fetchPositionsData();
   }, []);
 
-  const handleAdd = async (newData: any) => {
+  const handleAdd = async (newData: PositionFormData) => {
     try {
       setIsUpdating(true);
       setError(null);
 
-      // Convert flat data to the nested structure
       const transformedData = {
         position_details: {
           title: {
-            current_value: newData.title ?? "",
+            current_value: newData.title,
             last_verified_value: null,
           },
           organization: {
-            current_value: newData.organization ?? "",
+            current_value: newData.organization,
             last_verified_value: null,
           },
           duration: {
-            current_value: newData.duration ?? "",
+            current_value: newData.duration,
             last_verified_value: null,
           },
           description: {
@@ -80,24 +92,23 @@ export default function PositionsPage() {
     }
   };
 
-  const handleUpdate = async (id: string, newData: any) => {
+  const handleUpdate = async (id: string, newData: PositionFormData) => {
     try {
       setIsUpdating(true);
       setError(null);
 
-      // Convert flat data to the nested structure
       const transformedData = {
         position_details: {
           title: {
-            current_value: newData.title ?? "",
+            current_value: newData.title,
             last_verified_value: null,
           },
           organization: {
-            current_value: newData.organization ?? "",
+            current_value: newData.organization,
             last_verified_value: null,
           },
           duration: {
-            current_value: newData.duration ?? "",
+            current_value: newData.duration,
             last_verified_value: null,
           },
           description: {
@@ -182,14 +193,26 @@ export default function PositionsPage() {
               <CardTitle>
                 {position.position_details.title.current_value}
               </CardTitle>
-              {position.is_verified && (
-                <div className="text-sm text-green-600">
-                  Verified on:{" "}
-                  {new Date(position.last_verified || "").toLocaleDateString()}
-                </div>
-              )}
+              <div className="flex items-center mt-1">
+                {position.is_verified ? (
+                  <Badge variant="default" className="flex items-center">
+                    <Check className="mr-1 h-3 w-3" />
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="flex items-center">
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Pending
+                  </Badge>
+                )}
+                {position.last_verified && (
+                  <div className="text-sm text-muted-foreground ml-3">
+                    on {new Date(position.last_verified).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
               {position.remark && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 mt-1">
                   Remark: {position.remark}
                 </div>
               )}
@@ -199,29 +222,24 @@ export default function PositionsPage() {
                 <DetailItem
                   label="Organization"
                   value={position.position_details.organization.current_value}
-                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Duration"
                   value={position.position_details.duration.current_value}
-                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Description"
                   value={position.position_details.description.current_value}
-                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Responsibilities"
                   value={
                     position.position_details.responsibilities.current_value
                   }
-                  status={position.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Achievements"
                   value={position.position_details.achievements.current_value}
-                  status={position.is_verified ? "verified" : "pending"}
                 />
               </div>
               <div className="flex justify-end space-x-2 mt-4">
@@ -259,7 +277,16 @@ export default function PositionsPage() {
                       type: "text",
                     },
                   ]}
-                  onSave={(data) => handleUpdate(position.id, data)}
+                  initialData={{
+                    title: position.position_details.title.current_value,
+                    organization: position.position_details.organization.current_value,
+                    duration: position.position_details.duration.current_value,
+                    description: position.position_details.description.current_value,
+                    responsibilities: position.position_details.responsibilities.current_value,
+                    achievements: position.position_details.achievements.current_value,
+                  }}
+                  zodSchema={positionSchema}
+                  onSaveValidated={(data) => handleUpdate(position.id, data)}
                   triggerButton={
                     <Button variant="outline" disabled={isUpdating}>
                       {isUpdating ? (
@@ -328,7 +355,8 @@ export default function PositionsPage() {
             type: "text",
           },
         ]}
-        onSave={handleAdd}
+        zodSchema={positionSchema}
+        onSaveValidated={handleAdd}
         triggerButton={
           <Button className="bg-template" disabled={isUpdating}>
             {isUpdating ? (

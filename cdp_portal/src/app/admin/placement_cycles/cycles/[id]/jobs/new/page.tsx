@@ -4,11 +4,14 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { JobForm } from "@/components/job-form";
 
-export default function NewJobPage({ params }: { params: { id: string } }) {
+export default function NewJobPage(props: any) {
+  const { params } = props;
+  const { id } = params;
+  
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <Link href={`/admin/placement_cycles/cycles/${params.id}`}>
+        <Link href={`/admin/placement_cycles/cycles/${id}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -22,7 +25,7 @@ export default function NewJobPage({ params }: { params: { id: string } }) {
       </div>
 
       <Card className="p-6">
-        <JobForm cycleId={params.id} />
+        <JobForm cycleId={id} />
       </Card>
     </div>
   );

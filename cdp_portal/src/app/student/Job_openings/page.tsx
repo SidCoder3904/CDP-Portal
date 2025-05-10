@@ -84,7 +84,6 @@ export default function JobListings() {
       
     } catch (error) {
       console.error("Failed to apply for job:", error);
-      // Let the ResumeSelectDialog handle the error toast
     } finally {
       setIsApplying(false);
     }

@@ -1,13 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { z } from "zod";
 import { DetailItem } from "@/components/detail-item";
 import { Button } from "@/components/ui/button";
 import { EditDialog } from "@/components/edit-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
+import { Trash2, CheckCircle, Clock, Check, AlertCircle } from "lucide-react";
 import { useStudentApi, Project } from "@/lib/api/students";
 import { Icons } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
+
+const projectSchema = z.object({
+  name: z.string().min(1, "Project name is required"),
+  description: z.string().optional(),
+  technologies: z.string().optional(),
+  duration: z.string().optional(),
+  role: z.string().optional(),
+  teamSize: z.coerce.number().int().min(1, "Team size must be at least 1").optional().or(z.literal('')),
+  githubLink: z.string().url("Invalid URL format").optional().or(z.literal('')),
+  demoLink: z.string().url("Invalid URL format").optional().or(z.literal('')),
+});
+
+type ProjectFormData = z.infer<typeof projectSchema>;
 
 export default function ProjectsPage() {
   const [projectsData, setProjectsData] = useState<Project[]>([]);
@@ -35,16 +50,15 @@ export default function ProjectsPage() {
     fetchProjectsData();
   }, []);
 
-  const handleAdd = async (newData: any) => {
+  const handleAdd = async (newData: ProjectFormData) => {
     try {
       setIsUpdating(true);
       setError(null);
 
-      // Convert flat data to the nested structure
       const transformedData = {
         project_details: {
           name: {
-            current_value: newData.name ?? "",
+            current_value: newData.name,
             last_verified_value: null,
           },
           description: {
@@ -64,7 +78,7 @@ export default function ProjectsPage() {
             last_verified_value: null,
           },
           teamSize: {
-            current_value: newData.teamSize ?? "",
+            current_value: String(newData.teamSize ?? ''),
             last_verified_value: null,
           },
           githubLink: {
@@ -88,16 +102,15 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleUpdate = async (id: string, newData: any) => {
+  const handleUpdate = async (id: string, newData: ProjectFormData) => {
     try {
       setIsUpdating(true);
       setError(null);
 
-      // Convert flat data to the nested structure
       const transformedData = {
         project_details: {
           name: {
-            current_value: newData.name ?? "",
+            current_value: newData.name,
             last_verified_value: null,
           },
           description: {
@@ -117,7 +130,7 @@ export default function ProjectsPage() {
             last_verified_value: null,
           },
           teamSize: {
-            current_value: newData.teamSize ?? "",
+            current_value: String(newData.teamSize ?? ''),
             last_verified_value: null,
           },
           githubLink: {
@@ -198,14 +211,26 @@ export default function ProjectsPage() {
               <CardTitle>
                 {project.project_details.name.current_value}
               </CardTitle>
-              {project.is_verified && (
-                <div className="text-sm text-green-600">
-                  Verified on:{" "}
-                  {new Date(project.last_verified || "").toLocaleDateString()}
-                </div>
-              )}
+              <div className="flex items-center mt-1">
+                {project.is_verified ? (
+                  <Badge variant="default" className="flex items-center">
+                    <Check className="mr-1 h-3 w-3" />
+                    Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="flex items-center">
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Pending
+                  </Badge>
+                )}
+                {project.last_verified && (
+                  <div className="text-sm text-muted-foreground ml-3">
+                    on {new Date(project.last_verified).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
               {project.remark && (
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 mt-1">
                   Remark: {project.remark}
                 </div>
               )}
@@ -215,37 +240,30 @@ export default function ProjectsPage() {
                 <DetailItem
                   label="Description"
                   value={project.project_details.description.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Technologies"
                   value={project.project_details.technologies.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Duration"
                   value={project.project_details.duration.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Role"
                   value={project.project_details.role.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Team Size"
                   value={project.project_details.teamSize.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="GitHub"
                   value={project.project_details.githubLink.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
                 <DetailItem
                   label="Demo"
                   value={project.project_details.demoLink.current_value}
-                  status={project.is_verified ? "verified" : "pending"}
                 />
               </div>
               <div className="flex justify-end space-x-2 mt-4">
@@ -293,7 +311,18 @@ export default function ProjectsPage() {
                       type: "url",
                     },
                   ]}
-                  onSave={(data) => handleUpdate(project.id, data)}
+                  initialData={{
+                    name: project.project_details.name.current_value,
+                    description: project.project_details.description.current_value,
+                    technologies: project.project_details.technologies.current_value,
+                    duration: project.project_details.duration.current_value,
+                    role: project.project_details.role.current_value,
+                    teamSize: project.project_details.teamSize.current_value,
+                    githubLink: project.project_details.githubLink.current_value,
+                    demoLink: project.project_details.demoLink.current_value,
+                  }}
+                  zodSchema={projectSchema}
+                  onSaveValidated={(data) => handleUpdate(project.id, data)}
                   triggerButton={
                     <Button variant="outline" disabled={isUpdating}>
                       {isUpdating ? (
@@ -372,7 +401,8 @@ export default function ProjectsPage() {
             type: "url",
           },
         ]}
-        onSave={handleAdd}
+        zodSchema={projectSchema}
+        onSaveValidated={handleAdd}
         triggerButton={
           <Button className="bg-template" disabled={isUpdating}>
             {isUpdating ? (
