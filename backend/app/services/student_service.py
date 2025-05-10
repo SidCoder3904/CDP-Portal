@@ -520,11 +520,23 @@ class StudentService:
             if isinstance(verified_by, str):
                 verified_by = ObjectId(verified_by)
 
+            # Get the current education record
+            education = mongo.db.education.find_one({'_id': education_id})
+            if not education:
+                return False
+
             update_data = {
                 "is_verified": status == "verified",
                 "verified_by": verified_by,
                 "verified_at": datetime.utcnow()
             }
+
+            # If verifying, update last_verified_value for all fields
+            if status == "verified":
+                education_details = education.get("education_details", {})
+                for field in education_details:
+                    if isinstance(education_details[field], dict) and "current_value" in education_details[field]:
+                        update_data[f"education_details.{field}.last_verified_value"] = education_details[field]["current_value"]
 
             result = mongo.db.education.update_one(
                 {'_id': education_id},
@@ -687,11 +699,23 @@ class StudentService:
             if isinstance(verified_by, str):
                 verified_by = ObjectId(verified_by)
 
+            # Get the current experience record
+            experience = mongo.db.experience.find_one({'_id': experience_id})
+            if not experience:
+                return False
+
             update_data = {
                 "is_verified": status == "verified",
                 "verified_by": verified_by,
                 "verified_at": datetime.utcnow()
             }
+
+            # If verifying, update last_verified_value for all fields
+            if status == "verified":
+                experience_details = experience.get("experience_details", {})
+                for field in experience_details:
+                    if isinstance(experience_details[field], dict) and "current_value" in experience_details[field]:
+                        update_data[f"experience_details.{field}.last_verified_value"] = experience_details[field]["current_value"]
 
             result = mongo.db.experience.update_one(
                 {'_id': experience_id},
@@ -850,11 +874,23 @@ class StudentService:
             if isinstance(verified_by, str):
                 verified_by = ObjectId(verified_by)
 
+            # Get the current position record
+            position = mongo.db.positions.find_one({'_id': position_id})
+            if not position:
+                return False
+
             update_data = {
                 "is_verified": status == "verified",
                 "verified_by": verified_by,
                 "verified_at": datetime.utcnow()
             }
+
+            # If verifying, update last_verified_value for all fields
+            if status == "verified":
+                position_details = position.get("position_details", {})
+                for field in position_details:
+                    if isinstance(position_details[field], dict) and "current_value" in position_details[field]:
+                        update_data[f"position_details.{field}.last_verified_value"] = position_details[field]["current_value"]
 
             result = mongo.db.positions.update_one(
                 {'_id': position_id},
@@ -1021,11 +1057,23 @@ class StudentService:
             if isinstance(verified_by, str):
                 verified_by = ObjectId(verified_by)
 
+            # Get the current project record
+            project = mongo.db.projects.find_one({'_id': project_id})
+            if not project:
+                return False
+
             update_data = {
                 "is_verified": status == "verified",
                 "verified_by": verified_by,
                 "verified_at": datetime.utcnow()
             }
+
+            # If verifying, update last_verified_value for all fields
+            if status == "verified":
+                project_details = project.get("project_details", {})
+                for field in project_details:
+                    if isinstance(project_details[field], dict) and "current_value" in project_details[field]:
+                        update_data[f"project_details.{field}.last_verified_value"] = project_details[field]["current_value"]
 
             result = mongo.db.projects.update_one(
                 {'_id': project_id},

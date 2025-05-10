@@ -1618,6 +1618,6 @@ def get_my_documents():
                 "createdAt": doc.get("createdAt").isoformat() if doc.get("createdAt") else "",
                 "verified": doc.get("verified", False)
             }
-            formatted_documents.append(formatted_doc)
+            formatted_documents.append(formatted_doc) 
         
         return jsonify(formatted_documents), 200

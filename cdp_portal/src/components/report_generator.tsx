@@ -26,7 +26,6 @@ interface PlacementCycle {
 
 export function ReportGenerator() {
   const { fetchWithAuth } = useApi();
-  const { fetchWithAuth } = useApi();
   const [selectedReport, setSelectedReport] = useState("")
   const [selectedCycle, setSelectedCycle] = useState("")
   const [reportTypes, setReportTypes] = useState<ReportType[]>([])
