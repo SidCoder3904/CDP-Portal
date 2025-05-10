@@ -44,13 +44,12 @@ const formSchema = z.object({
   endDate: z.string().min(1, {
     message: "End date is required.",
   }),
-  eligibleBranches: z.array(z.string()).min(1, {
-    message: "Select at least one branch.",
-  }),
   eligiblePrograms: z.array(z.string()).min(1, {
     message: "Select at least one program.",
   }),
-
+  batch: z.string().min(1, {
+    message: "Batch is required.",
+  }),
 });
 
 export function CycleForm() {
@@ -66,8 +65,8 @@ export function CycleForm() {
       description: "",
       startDate: "",
       endDate: "",
-      eligibleBranches: [],
       eligiblePrograms: [],
+      batch: "",
     },
   });
 
@@ -84,24 +83,17 @@ export function CycleForm() {
         status: "active", // Default status for new cycles
         startDate: values.startDate,
         endDate: values.endDate,
-        eligibleBranches: values.eligibleBranches,
         eligiblePrograms: values.eligiblePrograms,
+        batch: values.batch,
       };
       
-      // Get the token from localStorage
-      const token = localStorage.getItem('token');
-      
-      // if (!token) {
-      //   setError("You must be logged in to create a placement cycle");
-      //   return;
-      // }
       
       // Call the API to create the cycle
       const response = await fetch(`${API_BASE_URL}/api/placement-cycles`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer `
         },
         body: JSON.stringify(formattedData),
       });
@@ -121,13 +113,6 @@ export function CycleForm() {
     }
   }
 
-  const branches = [
-    { id: "cs", label: "Computer Science" },
-    { id: "ec", label: "Electronics" },
-    { id: "ee", label: "Electrical" },
-    { id: "me", label: "Mechanical" },
-    { id: "ce", label: "Civil" },
-  ];
 
   const programs = [
     { id: "btech", label: "B.Tech" },
@@ -214,6 +199,8 @@ export function CycleForm() {
               />
             </div>
 
+  
+
             <FormField
               control={form.control}
               name="description"
@@ -234,59 +221,7 @@ export function CycleForm() {
           </div>
 
           <div className="space-y-6">
-            <FormField
-              control={form.control}
-              name="eligibleBranches"
-              render={() => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel>Eligible Branches</FormLabel>
-                    <FormDescription>
-                      Select the branches eligible for this cycle
-                    </FormDescription>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {branches.map((branch) => (
-                      <FormField
-                        key={branch.id}
-                        control={form.control}
-                        name="eligibleBranches"
-                        render={({ field }) => {
-                          return (
-                            <FormItem
-                              key={branch.id}
-                              className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(branch.id)}
-                                  onCheckedChange={(checked) => {
-                                    return checked
-                                      ? field.onChange([
-                                          ...field.value,
-                                          branch.id,
-                                        ])
-                                      : field.onChange(
-                                          field.value?.filter(
-                                            (value) => value !== branch.id
-                                          )
-                                        );
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal">
-                                {branch.label}
-                              </FormLabel>
-                            </FormItem>
-                          );
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
 
             <FormField
               control={form.control}
@@ -337,6 +272,32 @@ export function CycleForm() {
                       />
                     ))}
                   </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="batch"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Batch</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select batch year" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="2022">2022</SelectItem>
+                      <SelectItem value="2023">2023</SelectItem>
+                      <SelectItem value="2024">2024</SelectItem>
+                      <SelectItem value="2025">2025</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

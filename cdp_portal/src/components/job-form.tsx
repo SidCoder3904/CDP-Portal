@@ -54,12 +54,10 @@ const formSchema = z.object({
   accommodation: z.boolean().default(false),
   eligibility: z.object({
     uniformCgpa: z.boolean().default(true),
-    cgpaCriteria: z.record(z.record(z.string())).optional(),
+    cgpaCriteria: z.record(z.string()).optional(),
     cgpa: z.string().min(1, "CGPA is required"),
-    // branchSpecificCgpa: z.record(z.string()).optional(),
     gender: z.enum(["All", "Male", "Female"]),
     branches: z.array(z.string()).min(1, "At least one branch must be selected"),
-    programs: z.array(z.string()).min(1, "At least one program must be selected"),
   }),
   hiringFlow: z
     .array(
@@ -111,7 +109,6 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
         cgpaCriteria: {},
         gender: "All",
         branches: [],
-        programs: [],
       },
       hiringFlow: workflowSteps.map(step => ({
         step: step.name,
@@ -175,13 +172,6 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
     { id: "ee", label: "Electrical" },
     { id: "me", label: "Mechanical" },
     { id: "ce", label: "Civil" },
-  ];
-
-  const programs = [
-    { id: "btech", label: "B.Tech" },
-    { id: "mtech", label: "M.Tech" },
-    { id: "mca", label: "MCA" },
-    { id: "phd", label: "PhD" },
   ];
 
   const genders = [
@@ -380,48 +370,7 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="eligibility.programs"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="mb-4">
-                        <FormLabel>Eligible Programs</FormLabel>
-                        <FormDescription>
-                          Select the programs eligible for this job
-                        </FormDescription>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {programs.map((program) => (
-                          <FormItem
-                            key={program.id}
-                            className="flex flex-row items-start space-x-3 space-y-0"
-                          >
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(program.id)}
-                                onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([...field.value, program.id])
-                                    : field.onChange(
-                                        field.value?.filter(
-                                          (value) => value !== program.id
-                                        )
-                                      );
-                                }}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              {program.label}
-                            </FormLabel>
-                          </FormItem>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+                
                 <FormField
                   control={form.control}
                   name="eligibility.cgpa"
@@ -464,9 +413,9 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Use same CGPA for all branches and programs</FormLabel>
+                        <FormLabel>Use same CGPA for all branches</FormLabel>
                         <FormDescription>
-                          When checked, a single CGPA value will be applied to all combinations
+                          When checked, a single CGPA value will be applied to all branches
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -479,7 +428,7 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                     name="eligibility.cgpa"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Minimum CGPA (All Branches and Programs)</FormLabel>
+                        <FormLabel>Minimum CGPA (All Branches)</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
@@ -504,11 +453,11 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                     )}
                   />
                 ) : (
-                  // Existing branch and program-specific CGPA criteria UI
+                  // Existing branch-specific CGPA criteria UI
                   <div className="space-y-4">
                 <FormLabel>CGPA Criteria</FormLabel>
                 <FormDescription>
-                  Set CGPA requirements for each branch and program combination
+                  Set CGPA requirements for each branch
                 </FormDescription>
                 
                 {form.watch("eligibility.branches").map((branchId) => {
@@ -516,41 +465,34 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                   
                   return (
                     <div key={branchId} className="space-y-2">
-                      <h3 className="font-semibold">{branch?.label}</h3>
-                      {form.watch("eligibility.programs").map((programId) => {
-                        const program = programs.find(p => p.id === programId);
-                        
-                        return (
-                          <div key={`${branchId}-${programId}`} className="flex items-center gap-4">
-                            <span className="w-1/3">{program?.label}:</span>
-                            <FormField
-                              control={form.control}
-                              name={`eligibility.cgpaCriteria.${branchId}.${programId}`}
-                              render={({ field }) => (
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value || "7.0"}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger className="w-full">
-                                      <SelectValue placeholder="Select CGPA" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="6.0">6.0</SelectItem>
-                                    <SelectItem value="6.5">6.5</SelectItem>
-                                    <SelectItem value="7.0">7.0</SelectItem>
-                                    <SelectItem value="7.5">7.5</SelectItem>
-                                    <SelectItem value="8.0">8.0</SelectItem>
-                                    <SelectItem value="8.5">8.5</SelectItem>
-                                    <SelectItem value="9.0">9.0</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
-                          </div>
-                        );
-                      })}
+                      <div className="flex items-center gap-4">
+                        <span className="w-1/3">{branch?.label}:</span>
+                        <FormField
+                          control={form.control}
+                          name={`eligibility.cgpaCriteria.${branchId}`}
+                          render={({ field }) => (
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value || "7.0"}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select CGPA" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="6.0">6.0</SelectItem>
+                                <SelectItem value="6.5">6.5</SelectItem>
+                                <SelectItem value="7.0">7.0</SelectItem>
+                                <SelectItem value="7.5">7.5</SelectItem>
+                                <SelectItem value="8.0">8.0</SelectItem>
+                                <SelectItem value="8.5">8.5</SelectItem>
+                                <SelectItem value="9.0">9.0</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
                     </div>
                   );
                 })}

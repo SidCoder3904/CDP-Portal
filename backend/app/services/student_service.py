@@ -1,3 +1,4 @@
+from venv import logger
 from app import mongo
 from bson.objectid import ObjectId
 from datetime import datetime
@@ -1413,3 +1414,92 @@ class StudentService:
         except Exception as e:
             print(f"Error verifying all fields: {str(e)}")
             return None
+
+    @staticmethod
+    def get_students_by_cycle(cycle_id, batch, eligible_programs):
+        """
+        Get students eligible for a specific placement cycle based on batch and programs
+        
+        Args:
+            cycle_id: ID of the placement cycle
+            batch: Batch year to filter by
+            eligible_programs: List of eligible programs (e.g., ['btech', 'mtech'])
+            
+        Returns:
+            List of formatted student documents for the cycle
+        """
+        try:
+            # Match students with the given batch
+            students = list(mongo.db.student.find({'enrollmentYear': batch}))
+
+            logger.info(f"Students in batch {batch}: {students}")
+            # Process students to match program eligibility
+            eligible_students = []
+            
+            for student in students:
+                # Check program eligibility based on email
+                email = student.get('email', '')
+                program_identifier = None
+                
+                if '@' in email:
+                    program_identifier = email.split('@')[0][6].lower()
+                
+                # Match program identifier with eligible programs
+                is_eligible = False
+                student_program = ""
+                
+                if 'btech' in eligible_programs and program_identifier == 'b':
+                    is_eligible = True
+                    student_program = "B.Tech"
+                elif 'mtech' in eligible_programs and program_identifier == 'm':
+                    is_eligible = True
+                    student_program = "M.Tech"
+                elif 'phd' in eligible_programs and program_identifier == 'p':
+                    is_eligible = True
+                    student_program = "PhD"
+                
+                if not is_eligible:
+                    continue
+                
+                # Format student for response
+                formatted_student = {
+                    "id": str(student.get("_id", "")),
+                    "name": student.get("name", ""),
+                    "rollNo": student.get("student_id", ""),
+                    "branch": student.get("major", ""),
+                    "program": student_program,
+                    "cgpa": float(student.get("cgpa", 0)),
+                    "status": student.get("status", "Registered"),
+                    "jobsApplied": 0,
+                    "jobsSelected": 0,
+                    "jobsRejected": 0,
+                    "jobsInProgress": 0
+                }
+                
+                # Get job application statistics for this student
+                student_id = str(student.get("_id", ""))
+                
+                # Get all jobs in this cycle
+                jobs = list(mongo.db.jobs.find({"cycleId": cycle_id}))
+                job_ids = [str(job["_id"]) for job in jobs]
+                
+                # Get student's applications for jobs in this cycle
+                if job_ids:
+                    applications = list(mongo.db.applications.find({
+                        "studentId": student_id,
+                        "jobId": {"$in": job_ids}
+                    }))
+                    
+                    if applications:
+                        formatted_student["jobsApplied"] = len(applications)
+                        formatted_student["jobsSelected"] = len([a for a in applications if a.get("status") == "selected"])
+                        formatted_student["jobsRejected"] = len([a for a in applications if a.get("status") == "rejected"])
+                        formatted_student["jobsInProgress"] = len([a for a in applications if a.get("status") not in ["selected", "rejected"]])
+                
+                eligible_students.append(formatted_student)
+            
+            return eligible_students
+        
+        except Exception as e:
+            print(f"Error getting students for cycle: {str(e)}")
+            return []

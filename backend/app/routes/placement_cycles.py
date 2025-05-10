@@ -1,3 +1,4 @@
+from venv import logger
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from app.services.placement_service import PlacementService
@@ -5,6 +6,8 @@ from app.utils.auth import admin_required
 from app.utils.validators import validate_placement_cycle, validate_job
 from bson.json_util import dumps
 import json
+from app.services.student_service import StudentService
+
 
 placement_cycles_bp = Blueprint('placement_cycles', __name__)
 
@@ -52,12 +55,13 @@ def get_placement_cycle(cycle_id):
 
 
 @placement_cycles_bp.route('', methods=['POST'])
-@jwt_required()
-@admin_required
+# @jwt_required()
+# @admin_required
 def create_placement_cycle():
     """Create a new placement cycle"""
+    logger.info("Creating a new placement cycle")
     data = request.get_json()
-    print(data)
+    
     
     # Validate input
     errors = validate_placement_cycle(data)
@@ -67,8 +71,6 @@ def create_placement_cycle():
     cycle_id = PlacementService.create_placement_cycle(data)
     cycle = PlacementService.get_placement_cycle_by_id(cycle_id)
 
-
-    
     return dumps(cycle), 201
 
 @placement_cycles_bp.route('/<cycle_id>', methods=['PUT'])
@@ -148,3 +150,30 @@ def create_job(cycle_id):
 def get_cycle_statistics(cycle_id):
     """Get statistics for a placement cycle"""
     statistics = PlacementService.get_cycle
+
+@placement_cycles_bp.route('/<cycle_id>/students', methods=['GET'])
+# @jwt_required()
+def get_cycle_students(cycle_id):
+    """Get all students eligible for a placement cycle based on batch and programs"""
+    try:
+        # Get cycle details first
+        cycle = PlacementService.get_placement_cycle_by_id(cycle_id)
+        if not cycle:
+            return jsonify({"message": "Placement cycle not found"}), 404
+        
+        # Extract batch and eligible programs from cycle
+        batch = cycle.get('batch')
+        eligible_programs = cycle.get('eligiblePrograms', [])
+        
+        if not batch or not eligible_programs:
+            return jsonify({"message": "Cycle is missing batch or eligible programs information"}), 400
+        
+        # Use the new service method to get eligible students
+        students = StudentService.get_students_by_cycle(cycle_id, batch, eligible_programs)
+        logger.info(f"Students in cycle {cycle_id}: {students}")
+        
+        return dumps(students), 200
+    
+    except Exception as e:
+        print(f"Error in get_cycle_students: {str(e)}")
+        return jsonify({"message": f"Error fetching students: {str(e)}"}), 500
