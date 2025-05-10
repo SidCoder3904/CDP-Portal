@@ -135,9 +135,7 @@ export default function StudentLogin() {
       setSuccess("Logged in successfully!");
       
       // Get redirect path or default to student dashboard
-      const redirectPath = localStorage.getItem("redirectAfterLogin") || "/student";
-      localStorage.removeItem("redirectAfterLogin");
-      
+      const redirectPath = "/student";   
       setTimeout(() => router.push(redirectPath), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to login with OTP");

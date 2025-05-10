@@ -19,8 +19,7 @@ export function ProtectedRoute({ children, allowedRoles = [] }: ProtectedRoutePr
     if (!isLoading) {
       // If not authenticated, redirect to login
       if (!isAuthenticated) {
-        // Store the current path to redirect back after login
-        localStorage.setItem("redirectAfterLogin", pathname);
+
         
         // Determine which login page to redirect to based on the current path
         if (pathname.startsWith("/admin")) {
