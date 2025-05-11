@@ -21,7 +21,11 @@ export default function JobListings() {
   const jobsApi = useJobsApi();
 
   // Create a Set of job IDs that the student has applied to
-  const appliedJobs = new Set(applications.map((app) => app.jobId));
+  const appliedJobs: Set<string> = new Set(
+    applications
+      .map((app) => app.jobId || (app.job ? app.job._id : null))
+      .filter((id): id is string => id !== null && id !== undefined)
+  );
 
   useEffect(() => {
     async function fetchData() {
@@ -76,6 +80,15 @@ export default function JobListings() {
       // Update applications list
       const newApplications = await jobsApi.getMyApplications();
       setApplications(newApplications);
+
+      // Update the jobs array to mark this job as applied
+      setJobs(prevJobs => 
+        prevJobs.map(job => 
+          job._id === jobId 
+            ? { ...job, hasApplied: true } 
+            : job
+        )
+      );
 
       // Update UI to show the job as applied
       appliedJobs.add(jobId);

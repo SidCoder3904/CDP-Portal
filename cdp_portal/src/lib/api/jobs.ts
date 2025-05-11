@@ -43,6 +43,12 @@ export interface JobApplication {
   status: string;
   currentStage: string;
   appliedAt: string;
+  job?: {
+    _id: string;
+    company: string;
+    location?: string;
+    role: string;
+  };
 }
 
 export interface StudentProfile {
@@ -136,10 +142,20 @@ export function useJobsApi() {
       const error = await response.json();
       throw new Error(error.message || 'Failed to fetch applications');
     }
-    // Store the JSON response instead of logging the promise
     const applications = await response.json();
     console.log("Applications", applications);
-    return applications;
+    
+    // Normalize applications to ensure they have proper jobId
+    return applications.map((app: any) => {
+      // If the application has a job object but no jobId, use the job._id
+      if (!app.jobId && app.job && app.job._id) {
+        return {
+          ...app,
+          jobId: app.job._id
+        };
+      }
+      return app;
+    });
   };
 
   const getJobApplications = async (jobId: string): Promise<StudentProfile[]> => {

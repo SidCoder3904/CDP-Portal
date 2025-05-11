@@ -104,18 +104,19 @@ export default function JobDetails({
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <Badge
-            variant={
-              !job.isEligible
-                ? "destructive"
-                : job.status === "closed"
+          {/* Only show the badge if the job is eligible */}
+          {job.isEligible && (
+            <Badge
+              variant={
+                job.status === "closed"
                 ? "outline"
                 : "default"
-            }
-            className="text-xs"
-          >
-            {!job.isEligible ? "Not Eligible" : job.status}
-          </Badge>
+              }
+              className="text-xs"
+            >
+              {job.status}
+            </Badge>
+          )}
           <Button
             onClick={handleApplyClick}
             disabled={
