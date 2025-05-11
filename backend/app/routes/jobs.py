@@ -7,6 +7,10 @@ from app.utils.validators import validate_job
 from bson.objectid import ObjectId
 from bson.json_util import dumps
 from flask import Response
+from app.utils.cloudinary_config import upload_company_image, upload_job_description
+from werkzeug.utils import secure_filename
+import os
+import time
 
 from app.services.student_service import StudentService
 
@@ -183,4 +187,67 @@ def get_all_jobs():
         'per_page': per_page,
         'pages': (total + per_page - 1) // per_page
     }), 200
+
+@jobs_bp.route('/upload-company-image', methods=['POST'])
+@jwt_required()
+@admin_required
+def upload_company_image_handler():
+    """Upload a company image"""
+    try:
+        if 'image' not in request.files:
+            return jsonify({"error": "No image file provided"}), 400
+            
+        file = request.files['image']
+        if file.filename == '':
+            return jsonify({"error": "No image selected"}), 400
+            
+        # Get company ID from form data
+        company_id = request.form.get('company_id')
+        if not company_id:
+            # Generate a temporary ID if none provided
+            company_id = f"temp_{int(time.time())}"
+            
+        # Upload to Cloudinary
+        upload_result = upload_company_image(file, company_id)
+        
+        return jsonify({
+            "imageUrl": upload_result['view_url'],
+            "thumbnailUrl": upload_result['thumbnail_url'],
+            "publicId": upload_result['public_id']
+        }), 200
+        
+    except Exception as e:
+        print(f"Company image upload error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@jobs_bp.route('/upload-job-description', methods=['POST'])
+@jwt_required()
+@admin_required
+def upload_job_description_handler():
+    """Upload a job description PDF"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+            
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+            
+        # Get job ID from form data
+        job_id = request.form.get('job_id')
+        if not job_id:
+            return jsonify({"error": "Job ID is required"}), 400
+            
+        # Upload to Cloudinary
+        upload_result = upload_job_description(file, job_id)
+        
+        return jsonify({
+            "fileUrl": upload_result['view_url'],
+            "downloadUrl": upload_result['download_url'],
+            "publicId": upload_result['public_id']
+        }), 200
+        
+    except Exception as e:
+        print(f"Job description upload error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 

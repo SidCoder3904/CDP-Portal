@@ -266,4 +266,118 @@ def get_profile_picture_url(public_id: str, size: str = "full") -> str:
             )[0]
         return cloudinary.utils.cloudinary_url(public_id)[0]
     except Exception as e:
-        raise Exception(f"Failed to get profile picture URL from Cloudinary: {str(e)}") 
+        raise Exception(f"Failed to get profile picture URL from Cloudinary: {str(e)}")
+
+def upload_company_image(file: Any, company_id: str) -> Dict[str, Any]:
+    """
+    Upload a company image to Cloudinary
+    
+    Args:
+        file: The image file to upload
+        company_id: The ID of the company
+    
+    Returns:
+        Dict containing upload result with URLs
+    """
+    try:
+        # Validate file
+        if not file:
+            raise ValueError("No file provided")
+
+        # Get file extension
+        filename = secure_filename(file.filename)
+        file_ext = os.path.splitext(filename)[1].lower()
+
+        # Validate file format
+        allowed_formats = ['.jpg', '.jpeg', '.png']
+        if file_ext not in allowed_formats:
+            raise ValueError(f"File format not allowed. Allowed formats: {', '.join(allowed_formats)}")
+
+        # Generate unique public ID
+        public_id = generate_public_id('company', company_id)
+
+        upload_params = {
+            "folder": "company_images",
+            "resource_type": "image",
+            "public_id": public_id,
+            "transformation": [
+                {"width": 800, "height": 400, "crop": "fill"},
+                {"quality": "auto:good"}
+            ]
+        }
+            
+        result = cloudinary.uploader.upload(file, **upload_params)
+        
+        # Get the secure URL
+        file_url = result.get('secure_url')
+        if file_url:
+            # For viewing, use the original URL
+            view_url = file_url
+            # For thumbnail, use a smaller version
+            thumbnail_url = file_url.replace('/upload/', '/upload/w_200,h_100,c_fill/')
+            
+            result['view_url'] = view_url
+            result['thumbnail_url'] = thumbnail_url
+            logger.info(f"Company image uploaded successfully. View URL: {view_url}")
+            
+        return result
+    except Exception as e:
+        logger.error(f"Cloudinary company image upload error: {str(e)}")
+        raise Exception(f"Failed to upload company image to Cloudinary: {str(e)}")
+
+def upload_job_description(file: Any, job_id: str) -> Dict[str, Any]:
+    """
+    Upload a job description PDF to Cloudinary
+    
+    Args:
+        file: The PDF file to upload
+        job_id: The ID of the job
+    
+    Returns:
+        Dict containing upload result with URLs
+    """
+    try:
+        # Validate file
+        if not file:
+            raise ValueError("No file provided")
+
+        # Get file extension
+        filename = secure_filename(file.filename)
+        file_ext = os.path.splitext(filename)[1].lower()
+
+        # Validate file format
+        if file_ext != '.pdf':
+            raise ValueError("Only PDF files are allowed")
+
+        # Generate unique public ID
+        public_id = generate_public_id('job_description', job_id)
+
+        upload_params = {
+            "folder": "job_descriptions",
+            "resource_type": "raw",
+            "public_id": public_id,
+            "format": "pdf",
+            "resource_options": {
+                "content_type": "application/pdf",
+                "delivery_type": "upload"
+            }
+        }
+            
+        result = cloudinary.uploader.upload(file, **upload_params)
+        
+        # Get the secure URL
+        file_url = result.get('secure_url')
+        if file_url:
+            # For viewing, use the original URL
+            view_url = file_url
+            # For downloading, use the fl_attachment parameter
+            download_url = file_url.replace('/upload/', '/upload/fl_attachment/')
+            
+            result['view_url'] = view_url
+            result['download_url'] = download_url
+            logger.info(f"Job description uploaded successfully. View URL: {view_url}")
+            
+        return result
+    except Exception as e:
+        logger.error(f"Cloudinary job description upload error: {str(e)}")
+        raise Exception(f"Failed to upload job description to Cloudinary: {str(e)}") 

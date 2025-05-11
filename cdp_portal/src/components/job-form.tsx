@@ -52,6 +52,10 @@ const formSchema = z.object({
   location: z.string().min(1, "Location is required"),
   deadline: z.string().min(1, "Application deadline is required"),
   accommodation: z.boolean().default(false),
+  companyImage: z.string().optional(),
+  companyImagePublicId: z.string().optional(),
+  jobDescriptionFile: z.string().optional(),
+  jobDescriptionFilePublicId: z.string().optional(),
   eligibility: z.object({
     uniformCgpa: z.boolean().default(true),
     cgpaCriteria: z.record(z.string()).optional(),
@@ -76,6 +80,8 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const { token } = useAuth();
 
   
@@ -180,6 +186,75 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
     { id: "Female", label: "Female" },
   ];
 
+  const handleImageUpload = async (file: File) => {
+    try {
+      setIsUploadingImage(true);
+      setError(null);
+
+      // Generate a temporary ID using timestamp
+      const tempCompanyId = `temp_${Date.now()}`;
+
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('company_id', tempCompanyId);
+
+      const response = await fetch(`${API_BASE_URL}/api/jobs/upload-company-image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to upload image");
+      }
+
+      const data = await response.json();
+      form.setValue('companyImage', data.imageUrl);
+      form.setValue('companyImagePublicId', data.publicId);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      setError(error instanceof Error ? error.message : "Failed to upload image");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    try {
+      setIsUploadingFile(true);
+      setError(null);
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('job_id', cycleId);
+
+      const response = await fetch(`${API_BASE_URL}/api/jobs/upload-job-description`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to upload file");
+      }
+
+      const data = await response.json();
+      form.setValue('jobDescriptionFile', data.fileUrl);
+      form.setValue('jobDescriptionFilePublicId', data.publicId);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setError(error instanceof Error ? error.message : "Failed to upload file");
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -204,6 +279,64 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                 </FormItem>
               )}
             />
+
+            <div className="space-y-2">
+              <Label>Company Image</Label>
+              <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center">
+                {form.watch('companyImage') ? (
+                  <div className="relative w-full">
+                    <img
+                      src={form.watch('companyImage')}
+                      alt="Company"
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => {
+                        form.setValue('companyImage', '');
+                        form.setValue('companyImagePublicId', '');
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm font-medium">
+                      Drag or drop the company image here, or click to browse
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Supports JPG, PNG (Max 5MB)
+                    </p>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImageUpload(file);
+                        }
+                      }}
+                      id="company-image-upload"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      type="button"
+                      onClick={() => document.getElementById('company-image-upload')?.click()}
+                      disabled={isUploadingImage}
+                    >
+                      {isUploadingImage ? "Uploading..." : "Upload Image"}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
 
             <FormField
               control={form.control}
@@ -305,16 +438,86 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
             <div className="space-y-2">
               <Label>Job Description Document</Label>
               <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center">
-                <Upload className="h-8 w-8 text-muted-foreground" />
-                <p className="text-sm font-medium">
-                  Drag and drop your JD file here, or click to browse
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Supports PDF, DOCX (Max 5MB)
-                </p>
-                <Button variant="outline" size="sm" className="mt-2" type="button">
-                  Upload File
-                </Button>
+                {form.watch('jobDescriptionFile') ? (
+                  <div className="relative w-full">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <svg
+                          className="w-8 h-8 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            Job Description PDF
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {form.watch('jobDescriptionFile')?.split('/').pop()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(form.watch('jobDescriptionFile'), '_blank')}
+                        >
+                          View
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            form.setValue('jobDescriptionFile', '');
+                            form.setValue('jobDescriptionFilePublicId', '');
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm font-medium">
+                      Drag and drop your JD file here, or click to browse
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Supports PDF (Max 5MB)
+                    </p>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleFileUpload(file);
+                        }
+                      }}
+                      id="jd-file-upload"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      type="button"
+                      onClick={() => document.getElementById('jd-file-upload')?.click()}
+                      disabled={isUploadingFile}
+                    >
+                      {isUploadingFile ? "Uploading..." : "Upload File"}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
