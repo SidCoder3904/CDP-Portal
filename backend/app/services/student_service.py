@@ -68,11 +68,13 @@ class StudentService:
                 if filters.get('major') and filters['major'] != 'all':
                     query['major'] = filters['major']
                 
-                if 'cgpa' in filters:
-                    query['cgpa'] = filters['cgpa']
+                if '$expr' in filters:
+                    # Handle CGPA filtering using $expr
+                    query['$expr'] = filters['$expr']
                 
-                if filters.get('roll_number'):
-                    query['student_id'] = {'$regex': filters['roll_number'], '$options': 'i'}
+                if filters.get('student_id'):
+                    # Handle roll number filtering
+                    query['student_id'] = filters['student_id']
             
             # Calculate skip value for pagination
             skip = (page - 1) * per_page

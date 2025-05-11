@@ -49,12 +49,16 @@ export default function StudentsListPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [perPage] = useState(20)
 
-  const [filters, setFilters] = useState<StudentFilters>({
+  const [filterInputs, setFilterInputs] = useState({
     branch: "all",
     minCgpa: "any",
     rollNumber: "",
-    page: 1,
-    perPage: 20,
+  })
+
+  const [appliedFilters, setAppliedFilters] = useState({
+    branch: "all",
+    minCgpa: "any",
+    rollNumber: "",
   })
 
   useEffect(() => {
@@ -64,7 +68,7 @@ export default function StudentsListPage() {
         setError(null)
 
         const { students: fetchedStudents, total } = await adminApi.getStudents({
-          ...filters,
+          ...appliedFilters,
           page: currentPage,
         })
 
@@ -79,11 +83,26 @@ export default function StudentsListPage() {
     }
 
     fetchStudents()
-  }, [filters, currentPage])
+  }, [appliedFilters, currentPage])
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }))
-    setCurrentPage(1) // Reset to first page when filters change
+  const handleFilterInputChange = (key: string, value: string) => {
+    setFilterInputs((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleApplyFilters = () => {
+    setAppliedFilters(filterInputs)
+    setCurrentPage(1) // Reset to first page when applying new filters
+  }
+
+  const handleResetFilters = () => {
+    const resetFilters = {
+      branch: "all",
+      minCgpa: "any",
+      rollNumber: "",
+    }
+    setFilterInputs(resetFilters)
+    setAppliedFilters(resetFilters)
+    setCurrentPage(1)
   }
 
   const navigateToStudentDetails = (student_id: string) => {
@@ -101,32 +120,33 @@ export default function StudentsListPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">Branch</label>
-              <Select value={filters.branch} onValueChange={(value) => handleFilterChange("branch", value)}>
+              <Select value={filterInputs.branch} onValueChange={(value) => handleFilterInputChange("branch", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All Branches" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Branches</SelectItem>
-                  <SelectItem value="CSE">CSE</SelectItem>
-                  <SelectItem value="EE">EE</SelectItem>
-                  <SelectItem value="CE">CE</SelectItem>
+                  <SelectItem value="cs">Computer Science</SelectItem>
+                  <SelectItem value="ee">Electrical Engineering</SelectItem>
+                  <SelectItem value="ce">Civil Engineering</SelectItem>
+                  <SelectItem value="me">Mechanical Engineering</SelectItem>
+                  <SelectItem value="ch">Chemical Engineering</SelectItem>
+                  <SelectItem value="mm">Metallurgical Engineering</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
               <label className="text-sm font-medium mb-1 block">Min CGPA</label>
-              <Select value={filters.minCgpa} onValueChange={(value) => handleFilterChange("minCgpa", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Any CGPA" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">Any CGPA</SelectItem>
-                  <SelectItem value="7.0">7.0+</SelectItem>
-                  <SelectItem value="8.0">8.0+</SelectItem>
-                  <SelectItem value="9.0">9.0+</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                placeholder="Enter minimum CGPA"
+                value={filterInputs.minCgpa === 'any' ? '' : filterInputs.minCgpa}
+                onChange={(e) => handleFilterInputChange("minCgpa", e.target.value || 'any')}
+              />
             </div>
 
             <div>
@@ -136,28 +156,27 @@ export default function StudentsListPage() {
                 <Input
                   placeholder="Search by roll number"
                   className="pl-8"
-                  value={filters.rollNumber}
-                  onChange={(e) => handleFilterChange("rollNumber", e.target.value)}
+                  value={filterInputs.rollNumber}
+                  onChange={(e) => handleFilterInputChange("rollNumber", e.target.value)}
                 />
               </div>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
+              <Button
+                variant="default"
+                className="flex-1"
+                onClick={handleApplyFilters}
+              >
+                Apply Filters
+              </Button>
               <Button
                 variant="outline"
-                className="w-full"
-                onClick={() =>
-                  setFilters({
-                    branch: "all",
-                    minCgpa: "any",
-                    rollNumber: "",
-                    page: 1,
-                    perPage: 20,
-                  })
-                }
+                className="flex-1"
+                onClick={handleResetFilters}
               >
                 <Filter className="mr-2 h-4 w-4" />
-                Reset Filters
+                Reset
               </Button>
             </div>
           </div>

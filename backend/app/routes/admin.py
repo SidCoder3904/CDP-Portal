@@ -13,9 +13,9 @@ def get_students():
     """
     Get students with optional filtering for admin verification
     Query Parameters:
-    - branch: Filter by branch
+    - branch: Filter by branch (major field in DB)
     - min_cgpa: Minimum CGPA
-    - roll_number: Search by roll number
+    - roll_number: Search by roll number (student_id field in DB)
     - page: Page number for pagination
     - per_page: Number of items per page
     """
@@ -26,16 +26,36 @@ def get_students():
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 20))
 
+    print(f"[DEBUG] Received filter parameters: branch={branch}, min_cgpa={min_cgpa}, roll_number={roll_number}")
+
     # Build filter dictionary
     filters = {}
     if branch and branch != 'all':
-        filters['branch'] = branch
+        # Use lowercase branch codes to match DB format
+        filters['major'] = branch.lower()
+        print(f"[DEBUG] Added major filter: {filters['major']}")
     
     if min_cgpa and min_cgpa != 'any':
-        filters['cgpa'] = {'$gte': float(min_cgpa)}
+        try:
+            # Convert both the filter value and database value to float for comparison
+            min_cgpa_float = float(min_cgpa)
+            # Use $expr to convert string CGPA to number and compare
+            filters['$expr'] = {
+                '$gte': [
+                    {'$toDouble': {'$ifNull': ['$cgpa', '0']}},  # Convert string CGPA to double, default to 0 if null
+                    min_cgpa_float
+                ]
+            }
+            print(f"[DEBUG] Added CGPA filter: {min_cgpa_float}")
+        except ValueError:
+            print(f"[DEBUG] Invalid CGPA value: {min_cgpa}")
     
     if roll_number:
-        filters['student_id'] = {'$regex': roll_number, '$options': 'i'}
+        # Use student_id field for roll number search with case-insensitive regex
+        filters['student_id'] = {'$regex': f'^{roll_number}', '$options': 'i'}
+        print(f"[DEBUG] Added roll number filter: {roll_number}")
+
+    print(f"[DEBUG] Final filters: {filters}")
 
     try:
         # Get paginated students
@@ -45,13 +65,17 @@ def get_students():
             per_page=per_page
         )
 
+        print(f"[DEBUG] Found {len(students)} students matching filters")
+        if students:
+            print(f"[DEBUG] Sample student data: major={students[0].get('major')}, cgpa={students[0].get('cgpa')}, student_id={students[0].get('student_id')}")
+
         # Format students for frontend
         formatted_students = [
             {
                 "_id": str(student.get('_id', '')),
                 "name": student.get('name', ''),
-                "studentId": student.get('studentId', ''),
-                "cgpa": student.get('cgpa', 0.0),
+                "studentId": student.get('student_id', ''),
+                "cgpa": float(student.get('cgpa', 0.0)),  # Convert string CGPA to float for frontend
                 "major": student.get('major', ''),
                 "isVerified": student.get('is_verified', False)
             } for student in students
