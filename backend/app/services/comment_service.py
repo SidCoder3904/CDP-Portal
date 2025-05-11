@@ -245,3 +245,81 @@ class CommentService:
         ]
         
         return list(mongo.db.comments.aggregate(pipeline))
+
+    @staticmethod
+    def get_comments(placement_cycle_id: str):
+        """Get all comments for a placement cycle"""
+        try:
+            # Validate placement_cycle_id
+            if not placement_cycle_id:
+                raise ValueError("placement_cycle_id is required")
+
+            print(f"Fetching comments for placement cycle: {placement_cycle_id}")  # Debug log
+
+            # Find comments for this placement cycle
+            query = {"placement_cycle_id": placement_cycle_id}
+            print(f"MongoDB query: {query}")  # Debug log
+
+            comments = list(mongo.db.comments.find(query).sort("created_at", -1))
+            print(f"Found {len(comments)} comments")  # Debug log
+            
+            # Convert ObjectId to string for JSON serialization
+            serialized_comments = []
+            for comment in comments:
+                # Create a new dict to avoid modifying the original
+                serialized_comment = {}
+                
+                # Convert all fields
+                for key, value in comment.items():
+                    if isinstance(value, ObjectId):
+                        serialized_comment[key] = str(value)
+                    elif isinstance(value, dict):
+                        # Handle nested dictionaries (like reply)
+                        serialized_dict = {}
+                        for k, v in value.items():
+                            if isinstance(v, ObjectId):
+                                serialized_dict[k] = str(v)
+                            else:
+                                serialized_dict[k] = v
+                        serialized_comment[key] = serialized_dict
+                    else:
+                        serialized_comment[key] = value
+                
+                # Ensure all required fields are present
+                if 'reply' not in serialized_comment:
+                    serialized_comment['reply'] = None
+                if 'created_at' not in serialized_comment:
+                    serialized_comment['created_at'] = datetime.utcnow().isoformat()
+                if 'updated_at' not in serialized_comment:
+                    serialized_comment['updated_at'] = datetime.utcnow().isoformat()
+                
+                serialized_comments.append(serialized_comment)
+            
+            return serialized_comments
+        except Exception as e:
+            print(f"Error in get_comments: {str(e)}")  # Debug log
+            print(f"Error type: {type(e)}")  # Debug log
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")  # Debug log
+            raise Exception(f"Failed to fetch comments: {str(e)}")
+
+    def create_comment(self, data: dict):
+        """Create a new comment"""
+        comment = {
+            "content": data['content'],
+            "user": data['user'],
+            "user_type": data['user_type'],
+            "placement_cycle_id": data['placement_cycle_id'],
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        result = mongo.db.comments.insert_one(comment)
+        comment['_id'] = str(result.inserted_id)
+        return comment
+
+    def delete_comment(self, comment_id: str):
+        """Delete a comment by ID"""
+        result = mongo.db.comments.delete_one({"_id": ObjectId(comment_id)})
+        if result.deleted_count == 0:
+            raise Exception("Comment not found")

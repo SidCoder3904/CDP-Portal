@@ -1,51 +1,67 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useCommentApi, Comment } from "@/lib/api/comment"
+import { useAuth } from "@/context/auth-context"
 
-interface Comment {
-  id: number
-  user: string
-  content: string
-  timestamp: string
+interface CommentSectionProps {
+  placementCycleId: string
 }
 
-export function CommentSection() {
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: 1,
-      user: "Samarth Jain",
-      content: "When will the exact schedule for the Tech Giants recruitment drive be announced?",
-      timestamp: "2 hours ago",
-    },
-    {
-      id: 2,
-      user: "Akash Verma",
-      content: "Is the resume workshop mandatory for internship applicants as well?",
-      timestamp: "1 hour ago",
-    },
-  ])
+export function CommentSection({ placementCycleId }: CommentSectionProps) {
+  const { user } = useAuth()
+  const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const { getComments, createComment } = useCommentApi()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const fetchComments = async () => {
+    try {
+      const data = await getComments(placementCycleId)
+      console.log('Received comments data:', data)
+      const validComments = data.filter((comment): comment is Comment => 
+        comment !== null && 
+        typeof comment === 'object' &&
+        'content' in comment &&
+        'user' in comment &&
+        'created_at' in comment
+      )
+      setComments(validComments)
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching comments:', err)
+      setError('Failed to fetch comments')
+    }
+  }
+
+  useEffect(() => {
+    fetchComments()
+  }, [placementCycleId])
+
+  const handlePostComment = async () => {
     if (!newComment.trim()) return
 
-    const comment: Comment = {
-      id: comments.length + 1,
-      user: "Student",
-      content: newComment,
-      timestamp: "Just now",
+    try {
+      await createComment({
+        content: newComment.trim(),
+        user: user?.name || 'Student',
+        user_type: 'student',
+        placement_cycle_id: placementCycleId
+      })
+      
+      // Clear the input and refresh comments
+      setNewComment("")
+      await fetchComments()
+      setError(null)
+    } catch (err) {
+      console.error('Error posting comment:', err)
+      setError('Failed to post comment')
     }
-
-    setComments([...comments, comment])
-    setNewComment("")
   }
 
   return (
@@ -56,23 +72,33 @@ export function CommentSection() {
       <CardContent>
         <ScrollArea className="h-[300px] mb-4">
           <div className="space-y-4">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex gap-3">
-                <Avatar>
-                  <AvatarFallback>{comment.user[0]}</AvatarFallback>
-                </Avatar>
-                <div className="grid gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{comment.user}</span>
-                    <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
+            {error ? (
+              <div className="text-center text-red-500">{error}</div>
+            ) : comments.length === 0 ? (
+              <div className="text-center text-muted-foreground">No comments yet</div>
+            ) : (
+              comments.map((comment) => (
+                <div key={comment._id} className="flex gap-3">
+                  <Avatar>
+                    <AvatarFallback>
+                      {comment.user_type === 'admin' ? 'A' : 'S'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{comment.user}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(comment.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">{comment.content}</p>
                   </div>
-                  <p className="text-sm text-gray-600">{comment.content}</p>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </ScrollArea>
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={(e) => { e.preventDefault(); handlePostComment(); }} className="space-y-3">
           <Textarea
             placeholder="Ask your question here..."
             value={newComment}

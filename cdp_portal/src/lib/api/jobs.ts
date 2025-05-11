@@ -72,6 +72,7 @@ export function useJobsApi() {
     }
     
     const data = await response.json();
+    console.log(data);
     
     // Handle both array response and paginated response format
     if (Array.isArray(data)) {
@@ -135,7 +136,10 @@ export function useJobsApi() {
       const error = await response.json();
       throw new Error(error.message || 'Failed to fetch applications');
     }
-    return response.json();
+    // Store the JSON response instead of logging the promise
+    const applications = await response.json();
+    console.log("Applications", applications);
+    return applications;
   };
 
   const getJobApplications = async (jobId: string): Promise<StudentProfile[]> => {

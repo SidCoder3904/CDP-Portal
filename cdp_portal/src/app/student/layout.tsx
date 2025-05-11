@@ -5,7 +5,7 @@ import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icons } from "@/components/icons";
-import MainFooter from "@/components/main_footer";
+import LoginFooter from "@/components/login_footer";
 
 export default function StudentLayout({
   children,
@@ -45,18 +45,17 @@ export default function StudentLayout({
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Navbar
         menuItems={[
-          { label: "Notifications", href: "/student/" },
+          { label: "Notifications", href: "/student" },
           { label: "My Profile", href: "/student/profile" },
           { label: "Job Openings", href: "/student/job_openings" },
           { label: "Notices", href: "/student/notices" },
         ]}
       />
-      <main>{children}</main>
-      <MainFooter />
-
-    </>
+      <main className="flex-grow max-w-7xl w-full">{children}</main>
+      <LoginFooter />
+    </div>
   );
 }

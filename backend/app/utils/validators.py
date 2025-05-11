@@ -131,10 +131,6 @@ def validate_placement_cycle(data):
     if not data.get('endDate'):
         errors['endDate'] = 'End date is required'
     
-    if not data.get('eligibleBranches') or not isinstance(data.get('eligibleBranches'), list):
-        errors['eligibleBranches'] = 'Eligible branches are required and must be a list'
-    elif len(data.get('eligibleBranches', [])) == 0:
-        errors['eligibleBranches'] = 'At least one eligible branch is required'
     
     if not data.get('eligiblePrograms') or not isinstance(data.get('eligiblePrograms'), list):
         errors['eligiblePrograms'] = 'Eligible programs are required and must be a list'
@@ -206,11 +202,6 @@ def validate_job(data):
             errors['eligibility.branches'] = 'At least one branch must be selected'
         elif len(eligibility.get('branches', [])) == 0:
             errors['eligibility.branches'] = 'At least one branch must be selected'
-        
-        if not eligibility.get('programs') or not isinstance(eligibility.get('programs'), list):
-            errors['eligibility.programs'] = 'At least one program must be selected'
-        elif len(eligibility.get('programs', [])) == 0:
-            errors['eligibility.programs'] = 'At least one program must be selected'
     
     # Validate hiring flow
     if not data.get('hiringFlow') or not isinstance(data.get('hiringFlow'), list):

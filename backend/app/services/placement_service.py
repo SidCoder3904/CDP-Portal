@@ -49,9 +49,9 @@ class PlacementService:
             'type': data.get('type'),
             'status': data.get('status'),
             'description': data.get('description'),
+            'batch': data.get('batch'),
             'startDate': datetime.strptime(data.get('startDate'), '%Y-%m-%d'),
             'endDate': datetime.strptime(data.get('endDate'), '%Y-%m-%d'),
-            'eligibleBranches': data.get('eligibleBranches'),
             'eligiblePrograms': data.get('eligiblePrograms'),
             'createdAt': datetime.utcnow(),
             'updatedAt': datetime.utcnow()
@@ -82,7 +82,6 @@ class PlacementService:
                 'status': data['status'],
                 'startDate': datetime.strptime(data['startDate'], '%Y-%m-%d'),
                 'endDate': datetime.strptime(data['endDate'], '%Y-%m-%d'),
-                'eligibleBranches': data['eligibleBranches'],
                 'updatedAt': datetime.utcnow()
             }
             
@@ -175,7 +174,6 @@ class PlacementService:
                 'cgpaCriteria': data['eligibility']['cgpaCriteria'] if not data['eligibility']['uniformCgpa'] else {},
                 'gender': data['eligibility']['gender'],
                 'branches': data['eligibility']['branches'],
-                'programs': data['eligibility']['programs']
             },
             'hiringFlow': data['hiringFlow'],
             'jobDescription': data['jobDescription'],
