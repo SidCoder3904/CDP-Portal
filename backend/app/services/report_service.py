@@ -328,37 +328,93 @@ class ReportService:
             # Get all applications for these jobs
             applications = []
             if job_ids:
-                app_query = {'jobId': {'$in': job_ids}}
-                applications = list(mongo.db.applications.find(app_query))
+                # Try multiple field names for jobId in applications collection
+                for field_name in ['jobId', 'job_id', 'job']:
+                    app_query = {field_name: {'$in': job_ids}}
+                    applications = list(mongo.db.applications.find(app_query))
+                    if applications:
+                        print(f"Found applications using field '{field_name}'")
+                        break
             
             # Get unique student IDs from applications
-            student_ids = list(set(app['studentId'] for app in applications))
+            student_ids = []
+            for app in applications:
+                # Try multiple field names for studentId
+                for field_name in ['studentId', 'student_id', 'student', 'userId', 'user_id']:
+                    if field_name in app:
+                        student_ids.append(app[field_name])
+                        break
+
+            student_ids = list(set(str(sid) for sid in student_ids if sid))
             
             # Get student details
             students = {}
             if student_ids:
                 for student_id in student_ids:
                     try:
-                        student = mongo.db.students.find_one({'_id': to_object_id(student_id)})
+                        # Try different ways to look up students
+                        student = None
+                        for collection_name in ['students', 'student']:
+                            collection = getattr(mongo.db, collection_name, None)
+                            if not collection:
+                                continue
+                                
+                            # Try with ObjectId
+                            try:
+                                student = collection.find_one({'_id': to_object_id(student_id)})
+                                if student:
+                                    break
+                            except:
+                                pass
+                                
+                            # Try with string ID in various fields
+                            for id_field in ['_id', 'id', 'studentId', 'student_id', 'userId', 'user_id']:
+                                try:
+                                    student = collection.find_one({id_field: student_id})
+                                    if student:
+                                        break
+                                except:
+                                    pass
+                                    
                         if student:
                             students[student_id] = student
-                    except:
-                        pass
+                    except Exception as e:
+                        print(f"Error finding student {student_id}: {e}")
             
             # Create summary data
             summary_data = []
             
             for app in applications:
-                job_id = app.get('jobId')
-                student_id = app.get('studentId')
+                # Extract job_id and student_id from app using various field names
+                job_id = None
+                for job_field in ['jobId', 'job_id', 'job']:
+                    if job_field in app:
+                        job_id = str(app[job_field])
+                        break
+                        
+                student_id = None
+                for student_field in ['studentId', 'student_id', 'student', 'userId', 'user_id']:
+                    if student_field in app:
+                        student_id = str(app[student_field])
+                        break
                 
+                if not job_id or not student_id:
+                    continue
+                    
                 # Find corresponding job and student
                 job = next((j for j in jobs if str(j['_id']) == job_id), None)
                 student = students.get(student_id)
                 
                 if job and student:
+                    # Extract student fields with fallbacks
+                    student_major = None
+                    for field in ['major', 'branch', 'department']:
+                        if field in student and student[field]:
+                            student_major = student[field]
+                            break
+                    
                     # Apply branch filter if specified
-                    if 'branches' in filters and filters['branches'] and student.get('major') not in filters['branches']:
+                    if 'branches' in filters and filters['branches'] and student_major not in filters['branches']:
                         continue
                         
                     # Apply company filter if specified
@@ -366,30 +422,66 @@ class ReportService:
                         continue
                         
                     # Apply package range filter if specified
-                    package = float(job.get('package', '0').replace('LPA', '').strip())
+                    package_value = job.get('package', '0')
+                    if isinstance(package_value, str):
+                        package = float(package_value.replace('LPA', '').strip())
+                    else:
+                        package = float(package_value)
+                        
                     if 'minPackage' in filters and filters['minPackage'] and package < float(filters['minPackage']):
                         continue
                     if 'maxPackage' in filters and filters['maxPackage'] and package > float(filters['maxPackage']):
                         continue
                     
+                    # Get application status with fallbacks
+                    app_status = None
+                    for status_field in ['status', 'applicationStatus', 'app_status']:
+                        if status_field in app and app[status_field]:
+                            app_status = app[status_field]
+                            break
+                    
+                    # Get current stage with fallbacks
+                    current_stage = None
+                    for stage_field in ['currentStage', 'current_stage', 'stage']:
+                        if stage_field in app and app[stage_field]:
+                            current_stage = app[stage_field]
+                            break
+                    
+                    # Get created date with fallbacks
+                    created_date = ''
+                    for date_field in ['createdAt', 'created_at', 'dateCreated', 'date_created', 'appliedDate']:
+                        if date_field in app:
+                            date_value = app[date_field]
+                            if isinstance(date_value, datetime):
+                                created_date = date_value.strftime('%Y-%m-%d')
+                                break
+                            elif isinstance(date_value, str):
+                                created_date = date_value
+                                break
+                    
+                    # Get student ID with fallbacks
+                    display_student_id = student.get('studentId') or student.get('student_id') or student.get('roll_number') or student_id
+                    
                     summary_data.append({
-                        'studentId': student.get('studentId') or student_id,
+                        'studentId': display_student_id,
                         'studentName': student.get('name', ''),
                         'email': student.get('email', ''),
-                        'major': student.get('major', ''),
+                        'major': student_major or 'Unknown',
                         'company': job.get('company', ''),
                         'role': job.get('role', ''),
                         'package': job.get('package', ''),
                         'location': job.get('location', ''),
-                        'status': app.get('status', ''),
-                        'currentStage': app.get('currentStage', ''),
-                        'appliedDate': app.get('createdAt', '').strftime('%Y-%m-%d') if isinstance(app.get('createdAt'), datetime) else ''
+                        'status': app_status or 'Unknown',
+                        'currentStage': current_stage or 'Unknown',
+                        'appliedDate': created_date
                     })
             
             return summary_data
             
         except Exception as e:
             print(f"Error generating placement summary: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
             return []
     
     @staticmethod
@@ -411,11 +503,44 @@ class ReportService:
             # Get all students
             student_query = {}
             
+            # Try to identify which collection and fields to use for students
+            student_collections_to_try = ['students', 'student']
+            branch_fields_to_try = ['major', 'branch', 'department']
+            
+            # Find the correct collection and branch field
+            students = []
+            collection_name = None
+            branch_field = None
+            
+            for coll_name in student_collections_to_try:
+                collection = getattr(mongo.db, coll_name, None)
+                if not collection:
+                    continue
+                    
+                # Check which branch field is available
+                for field in branch_fields_to_try:
+                    # Try to find one document with this field
+                    sample = collection.find_one({field: {"$exists": True}})
+                    if sample:
+                        collection_name = coll_name
+                        branch_field = field
+                        break
+                        
+                if collection_name and branch_field:
+                    break
+                
+            if not collection_name or not branch_field:
+                print(f"Could not determine student collection or branch field")
+                return []
+            
+            print(f"Using collection '{collection_name}' with branch field '{branch_field}'")
+            collection = getattr(mongo.db, collection_name)
+            
             # Apply branch filter if specified
             if 'branches' in filters and filters['branches']:
-                student_query['major'] = {'$in': filters['branches']}
+                student_query[branch_field] = {'$in': filters['branches']}
                 
-            students = list(mongo.db.students.find(student_query))
+            students = list(collection.find(student_query))
             student_ids = [str(student['_id']) for student in students]
             
             # Get all jobs from the cycle
@@ -427,29 +552,67 @@ class ReportService:
                 
             # Apply package range filter if specified
             if 'minPackage' in filters and filters['minPackage']:
-                job_query['package'] = {'$gte': filters['minPackage']}
+                try:
+                    min_package = float(filters['minPackage'])
+                    job_query['$where'] = f"function() {{ return parseFloat(this.package.replace('LPA', '').trim()) >= {min_package}; }}"
+                except:
+                    pass
+                
             if 'maxPackage' in filters and filters['maxPackage']:
-                if 'package' in job_query:
-                    job_query['package']['$lte'] = filters['maxPackage']
-                else:
-                    job_query['package'] = {'$lte': filters['maxPackage']}
+                try:
+                    max_package = float(filters['maxPackage'])
+                    if '$where' in job_query:
+                        job_query['$where'] = f"function() {{ return parseFloat(this.package.replace('LPA', '').trim()) >= {min_package} && parseFloat(this.package.replace('LPA', '').trim()) <= {max_package}; }}"
+                    else:
+                        job_query['$where'] = f"function() {{ return parseFloat(this.package.replace('LPA', '').trim()) <= {max_package}; }}"
+                except:
+                    pass
             
             jobs = list(mongo.db.jobs.find(job_query))
             job_ids = [str(job['_id']) for job in jobs]
             
             # Get all applications
             applications = []
+            
+            # Try different field names for applications
+            job_field_name = None
+            student_field_name = None
+            
             if job_ids and student_ids:
-                app_query = {
-                    'jobId': {'$in': job_ids},
-                    'studentId': {'$in': student_ids}
-                }
+                # First, find which field names are used in the applications collection
+                for job_field in ['jobId', 'job_id', 'job']:
+                    for student_field in ['studentId', 'student_id', 'student', 'userId', 'user_id']:
+                        # Test query with these field names
+                        test_query = {
+                            job_field: {'$in': job_ids[:1]},
+                            student_field: {'$in': student_ids[:1]}
+                        }
+                        
+                        test_results = list(mongo.db.applications.find(test_query, {'_id': 1}).limit(1))
+                        if test_results:
+                            job_field_name = job_field
+                            student_field_name = student_field
+                            print(f"Found applications using fields '{job_field}' and '{student_field}'")
+                            break
+                            
+                    if job_field_name and student_field_name:
+                        break
                 
-                # Apply status filter if specified
-                if 'status' in filters and filters['status']:
-                    app_query['status'] = {'$in': filters['status']}
+                if job_field_name and student_field_name:
+                    # Now build the full query
+                    app_query = {
+                        job_field_name: {'$in': job_ids},
+                        student_field_name: {'$in': student_ids}
+                    }
                     
-                applications = list(mongo.db.applications.find(app_query))
+                    # Apply status filter if specified
+                    if 'status' in filters and filters['status']:
+                        app_query['status'] = {'$in': filters['status']}
+                        
+                    applications = list(mongo.db.applications.find(app_query))
+                    print(f"Found {len(applications)} applications")
+                else:
+                    print("Could not determine application field names")
             
             # Create status data
             status_data = []
@@ -461,9 +624,20 @@ class ReportService:
             # Group applications by student
             student_applications = {}
             for app in applications:
-                student_id = app.get('studentId')
+                student_id = None
+                # Extract student ID using the field name we found
+                if student_field_name:
+                    student_id = str(app.get(student_field_name))
+                else:
+                    # Try multiple fields if not found earlier
+                    for field in ['studentId', 'student_id', 'student', 'userId', 'user_id']:
+                        if field in app:
+                            student_id = str(app[field])
+                            break
+                            
                 if student_id not in student_applications:
                     student_applications[student_id] = []
+                    
                 student_applications[student_id].append(app)
             
             # Generate report data
@@ -474,25 +648,50 @@ class ReportService:
                 
                 # Count application statuses
                 total_apps = len(apps)
-                pending_apps = sum(1 for app in apps if app.get('status') == 'applied')
-                rejected_apps = sum(1 for app in apps if app.get('status') == 'rejected')
-                selected_apps = sum(1 for app in apps if app.get('status') == 'selected')
+                pending_apps = 0
+                rejected_apps = 0
+                selected_apps = 0
+                
+                for app in apps:
+                    status = app.get('status', '').lower()
+                    if status in ['applied', 'pending', 'shortlisted', 'in process', 'in progress']:
+                        pending_apps += 1
+                    elif status in ['rejected', 'not selected']:
+                        rejected_apps += 1
+                    elif status in ['selected', 'offered', 'placed', 'accepted']:
+                        selected_apps += 1
                 
                 # Get best offer if any
                 best_offer = None
                 highest_package = 0
                 
                 for app in apps:
-                    if app.get('status') == 'selected':
-                        job = job_map.get(app.get('jobId'))
-                        if job:
+                    if app.get('status', '').lower() in ['selected', 'offered', 'placed', 'accepted']:
+                        job_id = None
+                        # Extract job ID using field name we found earlier
+                        if job_field_name:
+                            job_id = str(app.get(job_field_name))
+                        else:
+                            # Try multiple fields if not found earlier
+                            for field in ['jobId', 'job_id', 'job']:
+                                if field in app:
+                                    job_id = str(app[field])
+                                    break
+                                    
+                        if job_id and job_id in job_map:
+                            job = job_map[job_id]
                             try:
-                                package = float(job.get('package', '0').replace('LPA', '').strip())
+                                package_str = job.get('package', '0')
+                                if isinstance(package_str, str):
+                                    package = float(package_str.replace('LPA', '').strip())
+                                else:
+                                    package = float(package_str)
+                                    
                                 if package > highest_package:
                                     highest_package = package
                                     best_offer = job
-                            except:
-                                pass
+                            except Exception as e:
+                                print(f"Error parsing package: {e}")
                 
                 placement_status = 'Unplaced'
                 if selected_apps > 0:
@@ -506,11 +705,21 @@ class ReportService:
                 if 'status' in filters and filters['status'] and placement_status not in filters['status']:
                     continue
                 
+                # Get student's major/branch
+                student_major = None
+                for field in branch_fields_to_try:
+                    if field in student and student[field]:
+                        student_major = student[field]
+                        break
+                
+                # Get student ID and other fields with fallbacks
+                display_student_id = student.get('studentId') or student.get('student_id') or student.get('roll_number') or student_id
+                
                 status_data.append({
-                    'studentId': student.get('studentId', ''),
+                    'studentId': display_student_id,
                     'studentName': student.get('name', ''),
                     'email': student.get('email', ''),
-                    'major': student.get('major', ''),
+                    'major': student_major or 'Unknown',
                     'gender': student.get('gender', ''),
                     'totalApplications': total_apps,
                     'pendingApplications': pending_apps,
@@ -526,6 +735,8 @@ class ReportService:
             
         except Exception as e:
             print(f"Error generating student placement status: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
             return []
     
     @staticmethod
@@ -674,32 +885,110 @@ class ReportService:
             # Get all applications for these jobs
             applications = []
             if job_ids:
-                applications = list(mongo.db.applications.find({'jobId': {'$in': job_ids}}))
+                # Try multiple field names for jobId in applications collection
+                for field_name in ['jobId', 'job_id', 'job']:
+                    app_query = {field_name: {'$in': job_ids}}
+                    applications = list(mongo.db.applications.find(app_query))
+                    if applications:
+                        print(f"Found {len(applications)} applications using field '{field_name}'")
+                        break
             
             # Get student IDs from applications
-            student_ids = [app.get('studentId') for app in applications]
+            student_ids = []
+            for app in applications:
+                # Try multiple field names for studentId
+                for field_name in ['studentId', 'student_id', 'student', 'userId', 'user_id']:
+                    if field_name in app:
+                        student_ids.append(str(app[field_name]))
+                        break
+            
+            # Identify student collection and branch field
+            student_collections_to_try = ['students', 'student']
+            branch_fields_to_try = ['major', 'branch', 'department']
+            
+            collection_name = None
+            branch_field = None
+            
+            for coll_name in student_collections_to_try:
+                collection = getattr(mongo.db, coll_name, None)
+                if not collection:
+                    continue
+                    
+                # Check which branch field is available
+                for field in branch_fields_to_try:
+                    # Try to find one document with this field
+                    sample = collection.find_one({field: {"$exists": True}})
+                    if sample:
+                        collection_name = coll_name
+                        branch_field = field
+                        break
+                        
+                if collection_name and branch_field:
+                    break
+                
+            if not collection_name or not branch_field:
+                print(f"Could not determine student collection or branch field")
+                return []
+            
+            print(f"Using collection '{collection_name}' with branch field '{branch_field}'")
+            collection = getattr(mongo.db, collection_name)
             
             # Get student details
             students = {}
             for student_id in student_ids:
                 try:
-                    student = mongo.db.students.find_one({'_id': to_object_id(student_id)})
-                    if student:
-                        students[student_id] = student
-                except:
-                    pass
+                    # Try with ObjectId
+                    try:
+                        student = collection.find_one({'_id': to_object_id(student_id)})
+                        if student:
+                            students[student_id] = student
+                            continue
+                    except:
+                        pass
+                        
+                    # Try with string ID in various fields
+                    for id_field in ['_id', 'id', 'studentId', 'student_id', 'userId', 'user_id']:
+                        try:
+                            student = collection.find_one({id_field: student_id})
+                            if student:
+                                students[student_id] = student
+                                break
+                        except:
+                            pass
+                except Exception as e:
+                    print(f"Error finding student {student_id}: {e}")
             
             # Group by branch
             branch_data = {}
             
             for app in applications:
-                student_id = app.get('studentId')
+                # Extract fields from application
+                student_id = None
+                for student_field in ['studentId', 'student_id', 'student', 'userId', 'user_id']:
+                    if student_field in app:
+                        student_id = str(app[student_field])
+                        break
+                    
+                job_id = None
+                for job_field in ['jobId', 'job_id', 'job']:
+                    if job_field in app:
+                        job_id = str(app[job_field])
+                        break
+                
+                if not student_id or not job_id:
+                    continue
+                    
                 student = students.get(student_id)
                 
                 if not student:
                     continue
                 
-                branch = student.get('major', 'Unknown')
+                # Determine branch
+                branch = 'Unknown'
+                for field in branch_fields_to_try:
+                    if field in student and student[field]:
+                        branch = student[field]
+                        break
                 
                 # Apply branch filter if specified
                 if 'branches' in filters and filters['branches'] and branch not in filters['branches']:
@@ -718,7 +1007,6 @@ class ReportService:
                         'packageCount': 0
                     }
                 
-                job_id = app.get('jobId')
                 job = next((j for j in jobs if str(j['_id']) == job_id), None)
                 
                 if not job:
@@ -728,30 +1016,33 @@ class ReportService:
                 branch_data[branch]['totalApplications'] += 1
                 branch_data[branch]['studentsApplied'].add(student_id)
                 
-                if app.get('status') == 'selected':
+                # Check application status (support multiple status formats)
+                status = app.get('status', '').lower()
+                if status in ['selected', 'offered', 'placed', 'accepted']:
                     branch_data[branch]['selectedApplications'] += 1
                     branch_data[branch]['studentsSelected'].add(student_id)
                     
                     # Process package information
                     try:
-                        package = float(job.get('package', '0').replace('LPA', '').strip())
+                        package_str = job.get('package', '0')
+                        if isinstance(package_str, str):
+                            package = float(package_str.replace('LPA', '').strip())
+                        else:
+                            package = float(package_str)
+                            
                         if package > 0:
                             branch_data[branch]['highestPackage'] = max(branch_data[branch]['highestPackage'], package)
                             branch_data[branch]['totalPackage'] += package
                             branch_data[branch]['packageCount'] += 1
-                    except:
-                        pass
+                    except Exception as e:
+                        print(f"Error parsing package: {e}")
             
             # Get total students by branch from the database
             branch_counts = {}
             try:
-                pipeline = [
-                    {'$group': {'_id': '$major', 'count': {'$sum': 1}}}
-                ]
-                result = list(mongo.db.students.aggregate(pipeline))
-                for item in result:
-                    if item['_id']:
-                        branch_counts[item['_id']] = item['count']
+                for branch in branch_data.keys():
+                    count = collection.count_documents({branch_field: branch})
+                    branch_counts[branch] = count
             except Exception as e:
                 print(f"Error counting students by branch: {str(e)}")
             
@@ -785,6 +1076,8 @@ class ReportService:
             
         except Exception as e:
             print(f"Error generating branch-wise statistics: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
             return []
     
     @staticmethod
@@ -810,38 +1103,150 @@ class ReportService:
             if 'companies' in filters and filters['companies']:
                 job_query['company'] = {'$in': filters['companies']}
                 
-            # Apply package range filter if specified
-            if 'minPackage' in filters and filters['minPackage']:
-                job_query['package'] = {'$gte': filters['minPackage']}
-            if 'maxPackage' in filters and filters['maxPackage']:
-                if 'package' in job_query:
-                    job_query['package']['$lte'] = filters['maxPackage']
-                else:
-                    job_query['package'] = {'$lte': filters['maxPackage']}
+            # Apply package range filter
+            # We'll handle package filtering in memory since we need to parse strings
             
             jobs = list(mongo.db.jobs.find(job_query))
+            
+            # Filter jobs based on package if specified
+            filtered_jobs = []
+            min_package = None
+            max_package = None
+            
+            if 'minPackage' in filters and filters['minPackage']:
+                try:
+                    min_package = float(filters['minPackage'])
+                except:
+                    pass
+                    
+            if 'maxPackage' in filters and filters['maxPackage']:
+                try:
+                    max_package = float(filters['maxPackage'])
+                except:
+                    pass
+            
+            for job in jobs:
+                try:
+                    package_str = job.get('package', '0')
+                    if isinstance(package_str, str):
+                        package = float(package_str.replace('LPA', '').strip())
+                    else:
+                        package = float(package_str)
+                        
+                    # Apply package filters
+                    if min_package is not None and package < min_package:
+                        continue
+                    if max_package is not None and package > max_package:
+                        continue
+                        
+                    filtered_jobs.append(job)
+                except:
+                    # If we can't parse the package, include the job anyway
+                    filtered_jobs.append(job)
+            
+            jobs = filtered_jobs
             job_ids = [str(job['_id']) for job in jobs]
+            
+            print(f"Found {len(jobs)} jobs after filtering")
             
             # Get all successful applications for these jobs
             applications = []
             if job_ids:
-                applications = list(mongo.db.applications.find({
-                    'jobId': {'$in': job_ids},
-                    'status': 'selected'
-                }))
+                # Try multiple field names for jobId in applications collection
+                for job_field in ['jobId', 'job_id', 'job']:
+                    # First try with 'selected' status
+                    for status_value in ['selected', 'placed', 'offered', 'accepted']:
+                        app_query = {
+                            job_field: {'$in': job_ids},
+                            'status': status_value
+                        }
+                        apps = list(mongo.db.applications.find(app_query))
+                        if apps:
+                            print(f"Found {len(apps)} applications with status '{status_value}' using field '{job_field}'")
+                            applications.extend(apps)
+            
+            # If no applications found, try without status filter
+            if not applications:
+                for job_field in ['jobId', 'job_id', 'job']:
+                    app_query = {job_field: {'$in': job_ids}}
+                    apps = list(mongo.db.applications.find(app_query))
+                    if apps:
+                        print(f"Found {len(apps)} applications (any status) using field '{job_field}'")
+                        # Filter for selected applications manually
+                        selected_apps = [
+                            app for app in apps 
+                            if app.get('status', '').lower() in ['selected', 'placed', 'offered', 'accepted']
+                        ]
+                        if selected_apps:
+                            print(f"Filtered to {len(selected_apps)} selected applications")
+                            applications.extend(selected_apps)
+            
+            print(f"Total applications after filtering: {len(applications)}")
+            
+            # Identify student collection and branch field
+            student_collections_to_try = ['students', 'student']
+            branch_fields_to_try = ['major', 'branch', 'department']
+            
+            collection_name = None
+            branch_field = None
+            
+            for coll_name in student_collections_to_try:
+                collection = getattr(mongo.db, coll_name, None)
+                if not collection:
+                    continue
+                    
+                # Check which branch field is available
+                for field in branch_fields_to_try:
+                    # Try to find one document with this field
+                    sample = collection.find_one({field: {"$exists": True}})
+                    if sample:
+                        collection_name = coll_name
+                        branch_field = field
+                        break
+                        
+                if collection_name and branch_field:
+                    break
+                
+            if not collection_name or not branch_field:
+                print(f"Could not determine student collection or branch field")
+                return []
+            
+            print(f"Using collection '{collection_name}' with branch field '{branch_field}'")
+            collection = getattr(mongo.db, collection_name)
             
             # Get student IDs from applications
-            student_ids = [app.get('studentId') for app in applications]
+            student_ids = []
+            for app in applications:
+                # Try multiple field names for studentId
+                for field_name in ['studentId', 'student_id', 'student', 'userId', 'user_id']:
+                    if field_name in app:
+                        student_ids.append(str(app[field_name]))
+                        break
             
             # Get student details
             students = {}
             for student_id in student_ids:
                 try:
-                    student = mongo.db.students.find_one({'_id': to_object_id(student_id)})
-                    if student:
-                        students[student_id] = student
-                except:
-                    pass
+                    # Try with ObjectId
+                    try:
+                        student = collection.find_one({'_id': to_object_id(student_id)})
+                        if student:
+                            students[student_id] = student
+                            continue
+                    except:
+                        pass
+                        
+                    # Try with string ID in various fields
+                    for id_field in ['_id', 'id', 'studentId', 'student_id', 'userId', 'user_id']:
+                        try:
+                            student = collection.find_one({id_field: student_id})
+                            if student:
+                                students[student_id] = student
+                                break
+                        except:
+                            pass
+                except Exception as e:
+                    print(f"Error finding student {student_id}: {e}")
             
             # Create package ranges
             ranges = [
@@ -855,44 +1260,73 @@ class ReportService:
             
             # Process job offers
             for app in applications:
-                student_id = app.get('studentId')
+                # Extract fields from application
+                student_id = None
+                for student_field in ['studentId', 'student_id', 'student', 'userId', 'user_id']:
+                    if student_field in app:
+                        student_id = str(app[student_field])
+                        break
+                    
+                job_id = None
+                for job_field in ['jobId', 'job_id', 'job']:
+                    if job_field in app:
+                        job_id = str(app[job_field])
+                        break
+                
+                if not student_id or not job_id:
+                    continue
+                    
                 student = students.get(student_id)
                 
                 if not student:
+                    print(f"No student found for ID {student_id}")
                     continue
                 
-                branch = student.get('major', 'Unknown')
+                # Determine branch
+                branch = 'Unknown'
+                for field in branch_fields_to_try:
+                    if field in student and student[field]:
+                        branch = student[field]
+                        break
                 
                 # Apply branch filter if specified
                 if 'branches' in filters and filters['branches'] and branch not in filters['branches']:
                     continue
                 
-                job_id = app.get('jobId')
                 job = next((j for j in jobs if str(j['_id']) == job_id), None)
                 
                 if not job:
+                    print(f"No job found for ID {job_id}")
                     continue
                 
                 # Process package information
                 try:
                     package_str = job.get('package', '0')
-                    package = float(package_str.replace('LPA', '').strip())
+                    if isinstance(package_str, str):
+                        package = float(package_str.replace('LPA', '').strip())
+                    else:
+                        package = float(package_str)
                     
                     # Find appropriate range
                     for range_info in ranges:
                         if range_info['min'] <= package < range_info['max']:
                             range_info['count'] += 1
+                            
+                            # Get student ID and name with fallbacks
+                            display_student_id = student.get('studentId') or student.get('student_id') or student.get('roll_number') or student_id
+                            student_name = student.get('name', 'Unknown')
+                            
                             range_info['students'].append({
-                                'studentId': student.get('studentId', ''),
-                                'studentName': student.get('name', ''),
+                                'studentId': display_student_id,
+                                'studentName': student_name,
                                 'branch': branch,
                                 'company': job.get('company', ''),
                                 'role': job.get('role', ''),
-                                'package': package_str
+                                'package': package_str if isinstance(package_str, str) else f"{package_str} LPA"
                             })
                             break
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Error processing package for job {job_id}: {e}")
             
             # Format final data
             report_data = []
@@ -923,6 +1357,8 @@ class ReportService:
             
         except Exception as e:
             print(f"Error generating CTC analysis: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
             return []
     
     @staticmethod
