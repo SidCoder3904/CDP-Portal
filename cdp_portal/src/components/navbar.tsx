@@ -38,9 +38,14 @@ export default function Navbar({ menuItems }: NavbarProps) {
 
   // Update activeIndex on route change
   useEffect(() => {
-    const idx = menuItems.findIndex(item => item.href === pathname);
-    if (idx !== -1) {
-      setActiveIndex(idx);
+    // Find the menu item with the longest matching prefix
+    const matchingItems = menuItems
+      .map((item, index) => ({ href: item.href, index }))
+      .filter((item) => pathname.startsWith(item.href))
+      .sort((a, b) => b.href.length - a.href.length);
+
+    if (matchingItems.length > 0) {
+      setActiveIndex(matchingItems[0].index);
     }
   }, [pathname, menuItems]);
 
@@ -102,17 +107,30 @@ export default function Navbar({ menuItems }: NavbarProps) {
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <Link href={user?.role === 'admin' ? '/admin' : '/student'} className="w-full">
+                  <Link
+                    href={user?.role === "admin" ? "/admin" : "/student"}
+                    className="w-full"
+                  >
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Link href={user?.role === 'admin' ? '/admin/profile' : '/student/profile'} className="w-full">
+                  <Link
+                    href={
+                      user?.role === "admin"
+                        ? "/admin/profile"
+                        : "/student/profile"
+                    }
+                    className="w-full"
+                  >
                     Profile
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="text-red-600 cursor-pointer">
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="text-red-600 cursor-pointer"
+                >
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout
                 </DropdownMenuItem>
@@ -128,7 +146,10 @@ export default function Navbar({ menuItems }: NavbarProps) {
             <div className="relative">
               <div
                 className="absolute h-[30px] transition-all duration-300 ease-out bg-white/10 rounded-[6px] flex items-center"
-                style={{ ...hoverStyle, opacity: hoveredIndex !== null ? 1 : 0 }}
+                style={{
+                  ...hoverStyle,
+                  opacity: hoveredIndex !== null ? 1 : 0,
+                }}
               />
               <div
                 className="absolute bottom-[-6px] h-[2px] bg-white transition-all duration-300 ease-out"
@@ -137,7 +158,14 @@ export default function Navbar({ menuItems }: NavbarProps) {
 
               <div className="relative flex space-x-[6px] items-center">
                 {menuItems.map((item, idx) => {
-                  const isActive = pathname === item.href;
+                  // Find all matching prefixes and sort by length to get the longest match
+                  const matchingItems = menuItems
+                    .map((menuItem) => menuItem.href)
+                    .filter((href) => pathname.startsWith(href))
+                    .sort((a, b) => b.length - a.length);
+
+                  const isActive =
+                    matchingItems.length > 0 && matchingItems[0] === item.href;
                   return (
                     <Link key={idx} href={item.href} passHref>
                       <div

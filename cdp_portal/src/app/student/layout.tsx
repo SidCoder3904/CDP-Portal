@@ -54,7 +54,7 @@ export default function StudentLayout({
           { label: "Notices", href: "/student/notices" },
         ]}
       />
-      <main className="flex-grow max-w-7xl w-full">{children}</main>
+      <main className="flex-grow">{children}</main>
       <LoginFooter />
     </div>
   );
