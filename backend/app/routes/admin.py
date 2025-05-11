@@ -52,7 +52,7 @@ def get_students():
     
     if roll_number:
         # Use student_id field for roll number search with case-insensitive regex
-        filters['student_id'] = {'$regex': f'^{roll_number}', '$options': 'i'}
+        filters['student_id'] = {'$regex': roll_number, '$options': 'i'}
         print(f"[DEBUG] Added roll number filter: {roll_number}")
 
     print(f"[DEBUG] Final filters: {filters}")

@@ -65,15 +65,16 @@ class StudentService:
             
             # Apply filters if provided
             if filters:
+                # Handle branch/major filter
                 if filters.get('major') and filters['major'] != 'all':
-                    query['major'] = filters['major']
+                    query['major'] = filters['major'].lower()
                 
-                if '$expr' in filters:
-                    # Handle CGPA filtering using $expr
+                # Handle CGPA filter
+                if filters.get('$expr'):
                     query['$expr'] = filters['$expr']
                 
+                # Handle roll number filter
                 if filters.get('student_id'):
-                    # Handle roll number filtering
                     query['student_id'] = filters['student_id']
             
             # Calculate skip value for pagination
