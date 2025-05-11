@@ -22,7 +22,31 @@ export interface StudentDetail extends StudentProfile {
     _id: string
     student_id: string
     education_details: {
-      [key: string]: {
+      institution: {
+        current_value: string | null
+        last_verified_value: string | null
+      }
+      gpa: {
+        current_value: string | null
+        last_verified_value: string | null
+      }
+      year: {
+        current_value: string | null
+        last_verified_value: string | null
+      }
+      major: {
+        current_value: string | null
+        last_verified_value: string | null
+      }
+      minor: {
+        current_value: string | null
+        last_verified_value: string | null
+      }
+      relevant_courses: {
+        current_value: string | null
+        last_verified_value: string | null
+      }
+      honors: {
         current_value: string | null
         last_verified_value: string | null
       }

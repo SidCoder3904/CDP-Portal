@@ -49,6 +49,9 @@ def create_app(config_class=Config):
     from app.routes.jobs import jobs_bp
     from app.routes.reports import reports_bp
     from app.routes.admin import admin_bp
+    from app.routes.notification_routes import notification_bp
+    from app.routes.comment_routes import comment_bp
+    
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(notices_bp, url_prefix='/api/notices')
     app.register_blueprint(comments_bp, url_prefix='/api/comments')
@@ -58,6 +61,8 @@ def create_app(config_class=Config):
     app.register_blueprint(jobs_bp, url_prefix='/api/jobs')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(notification_bp)
+    app.register_blueprint(comment_bp)
     
     # Error handlers
     from app.utils.errors import register_error_handlers

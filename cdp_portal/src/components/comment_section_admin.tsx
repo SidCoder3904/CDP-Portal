@@ -1,95 +1,115 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useCommentApi, Comment } from "@/lib/api/comment"
 
-interface Comment {
-  id: number
-  user: string
-  content: string
-  timestamp: string
-  adminReply?: string
+interface CommentSectionProps {
+  placementCycleId: string
 }
 
-export function CommentSectionAdmin() {
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: 1,
-      user: "Samarth Jain",
-      content: "When will the exact schedule for the Tech Giants recruitment drive be announced?",
-      timestamp: "2 hours ago",
-    },
-    {
-      id: 2,
-      user: "Akash Verma",
-      content: "Is the resume workshop mandatory for internship applicants as well?",
-      timestamp: "1 hour ago",
-    },
-  ])
-  const [replyContent, setReplyContent] = useState<{ [key: number]: string }>({})
+export function CommentSectionAdmin({ placementCycleId }: CommentSectionProps) {
+  const [comments, setComments] = useState<Comment[]>([])
+  const [newComment, setNewComment] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const { getComments, createComment } = useCommentApi()
 
-  const handleReply = (commentId: number) => {
-    const updatedComments = comments.map((comment) =>
-      comment.id === commentId ? { ...comment, adminReply: replyContent[commentId] } : comment,
-    )
-    setComments(updatedComments)
-    setReplyContent({ ...replyContent, [commentId]: "" })
+  const fetchComments = async () => {
+    try {
+      const data = await getComments(placementCycleId)
+      console.log('Received comments data:', data)
+      const validComments = data.filter((comment): comment is Comment => 
+        comment !== null && 
+        typeof comment === 'object' &&
+        'content' in comment &&
+        'user' in comment &&
+        'created_at' in comment
+      )
+      setComments(validComments)
+      setError(null)
+    } catch (err) {
+      console.error('Error fetching comments:', err)
+      setError('Failed to fetch comments')
+    }
+  }
+
+  useEffect(() => {
+    fetchComments()
+  }, [placementCycleId])
+
+  const handlePostComment = async () => {
+    if (!newComment.trim()) return
+
+    try {
+      await createComment({
+        content: newComment.trim(),
+        user: 'Admin',
+        user_type: 'admin',
+        placement_cycle_id: placementCycleId
+      })
+      
+      // Clear the input and refresh comments
+      setNewComment("")
+      await fetchComments()
+      setError(null)
+    } catch (err) {
+      console.error('Error posting comment:', err)
+      setError('Failed to post comment')
+    }
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-template">Student Queries</CardTitle>
+        <CardTitle className="text-lg font-semibold text-template">Comments</CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[600px] pr-4">
+        <div className="space-y-4 mb-4">
+          <Textarea
+            placeholder="Reply to queries here..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+          />
+          <Button 
+            onClick={handlePostComment}
+            className="bg-template hover:bg-[#003167]"
+          >
+            Post Comment
+          </Button>
+        </div>
+
+        <ScrollArea className="h-[500px] pr-4">
           <div className="space-y-6">
-            {comments.map((comment) => (
-              <div key={comment.id} className="space-y-4">
-                <div className="flex gap-3">
+            {error ? (
+              <div className="text-center text-red-500">{error}</div>
+            ) : comments.length === 0 ? (
+              <div className="text-center text-muted-foreground">No comments yet</div>
+            ) : (
+              comments.map((comment) => (
+                <div key={comment._id} className="flex gap-3">
                   <Avatar>
-                    <AvatarFallback>{comment.user[0]}</AvatarFallback>
+                    <AvatarFallback>
+                      {comment.user_type === 'admin' ? 'A' : 'S'}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="grid gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{comment.user}</span>
-                      <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
+                      <span className="text-sm font-medium">
+                        {comment.user}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(comment.created_at).toLocaleString()}
+                      </span>
                     </div>
                     <p className="text-sm text-gray-600">{comment.content}</p>
                   </div>
                 </div>
-                {comment.adminReply && (
-                  <div className="flex gap-3 ml-8">
-                    <Avatar>
-                      <AvatarFallback>A</AvatarFallback>
-                    </Avatar>
-                    <div className="grid gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Admin</span>
-                        <span className="text-xs text-muted-foreground">Just now</span>
-                      </div>
-                      <p className="text-sm text-gray-600">{comment.adminReply}</p>
-                    </div>
-                  </div>
-                )}
-                {!comment.adminReply && (
-                  <div className="ml-8 space-y-2">
-                    <Textarea
-                      placeholder="Reply to this query..."
-                      value={replyContent[comment.id] || ""}
-                      onChange={(e) => setReplyContent({ ...replyContent, [comment.id]: e.target.value })}
-                    />
-                    <Button onClick={() => handleReply(comment.id)} className="bg-template hover:bg-[#003167]">
-                      Post Reply
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </ScrollArea>
       </CardContent>

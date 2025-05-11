@@ -11,6 +11,33 @@ import { Badge } from "@/components/ui/badge"
 import { Search, Filter, AlertCircle } from "lucide-react"
 import { useAdminApi, type StudentListItem, type StudentFilters } from "@/lib/api/admin"
 
+interface VerificationStatus {
+  [key: string]: string
+}
+
+interface EducationItem {
+  is_verified: boolean
+}
+
+interface ExperienceItem {
+  is_verified: boolean
+}
+
+interface PositionItem {
+  is_verified: boolean
+}
+
+interface ProjectItem {
+  is_verified: boolean
+}
+
+// Add helper function to check if student is fully verified
+const isStudentFullyVerified = (student: StudentListItem) => {
+  // For now, just check if the student has isVerified flag
+  // This will be updated when the API returns full verification data
+  return student.isVerified
+}
+
 export default function StudentsListPage() {
   const router = useRouter()
   const adminApi = useAdminApi()
@@ -164,15 +191,14 @@ export default function StudentsListPage() {
                 <TableBody>
                   {students.length > 0 ? (
                     students.map((student) => (
-                        
                       <TableRow key={student._id}>
                         <TableCell className="font-medium">{student.name}</TableCell>
                         <TableCell>{student.studentId}</TableCell>
                         <TableCell>{student.cgpa}</TableCell>
                         <TableCell>{student.major}</TableCell>
                         <TableCell>
-                          <Badge variant={student.isVerified ? "default" : "destructive"}>
-                            {student.isVerified ? "Verified" : "Pending"}
+                          <Badge variant={isStudentFullyVerified(student) ? "default" : "destructive"}>
+                            {isStudentFullyVerified(student) ? "Verified" : "Not Verified"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">

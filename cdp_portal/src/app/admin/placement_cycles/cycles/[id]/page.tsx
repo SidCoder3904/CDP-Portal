@@ -21,6 +21,7 @@ import { CycleStats } from "@/components/cycle-stats";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useApi } from "@/lib/api";
+import React from "react";
 
 // Loading component
 function LoadingState() {
@@ -41,9 +42,7 @@ interface CycleData {
   endDate: string;
   status: string;
   description?: string;
-  eligibleBranches?: string[];
   eligiblePrograms?: string[];
-  coordinators?: string[];
   jobs?: number;
   students?: number;
 }
@@ -73,9 +72,7 @@ function CycleDetail({ id }: { id: string }) {
         
         // Ensure optional fields have default values if not provided by API
         cycleData.description = cycleData.description || "No description available";
-        cycleData.eligibleBranches = cycleData.eligibleBranches || [];
         cycleData.eligiblePrograms = cycleData.eligiblePrograms || [];
-        cycleData.coordinators = cycleData.coordinators || [];
         
         setCycle(cycleData);
       } catch (err) {
@@ -160,26 +157,7 @@ function CycleDetail({ id }: { id: string }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Eligible Branches
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {(cycle.eligibleBranches ?? []).length > 0 ? (
-                cycle.eligibleBranches?.map((branch) => (
-                  <Badge key={branch} variant="outline">
-                    {branch}
-                  </Badge>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No branches specified</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">
@@ -188,8 +166,8 @@ function CycleDetail({ id }: { id: string }) {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {cycle.eligiblePrograms?.length > 0 ? (
-                cycle.eligiblePrograms?.map((program) => (
+              {cycle.eligiblePrograms && cycle.eligiblePrograms.length > 0 ? (
+                cycle.eligiblePrograms.map((program) => (
                   <Badge key={program} variant="outline">
                     {program}
                   </Badge>
@@ -200,24 +178,7 @@ function CycleDetail({ id }: { id: string }) {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Coordinators</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              {cycle.coordinators?.length > 0 ? (
-                cycle.coordinators?.map((coordinator) => (
-                  <p key={coordinator} className="text-sm">
-                    {coordinator}
-                  </p>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No coordinators assigned</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
 
       <CycleStats cycleId={id} />

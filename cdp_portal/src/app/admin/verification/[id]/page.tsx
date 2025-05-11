@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, ArrowRight, Check, X, AlertCircle } from "lucide-react"
 import { useAdminApi, type StudentDetail } from "@/lib/api/admin"
+import { Icons } from "@/components/icons"
+import React from "react"
 
 interface VerificationItemProps {
   label: string
@@ -20,33 +22,31 @@ interface VerificationItemProps {
 }
 
 function VerificationItem({ label, value, status, onVerify, onReject, isUpdating }: VerificationItemProps) {
+  const handleToggle = () => {
+    if (status === "verified") {
+      onReject()
+    } else {
+      onVerify()
+    }
+  }
+
   return (
     <div className="flex items-center justify-between py-2">
-      <div>
-        <span className="text-muted-foreground">{label}:</span>
-        <span className="ml-2">{value}</span>
+      <div className="flex items-center space-x-4">
+        <div>
+          <span className="text-muted-foreground">{label}:</span>
+          <span className="ml-2">{value}</span>
+        </div>
       </div>
-      <div className="flex space-x-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-          onClick={onReject}
-          disabled={isUpdating}
+      <div className="flex items-center space-x-2">
+        {isUpdating && <Icons.spinner className="h-4 w-4 animate-spin" />}
+        <Badge
+          variant={status === "verified" ? "default" : "destructive"}
+          className="cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={handleToggle}
         >
-          <X className="mr-1 h-3 w-3" />
-          Reject
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600"
-          onClick={onVerify}
-          disabled={isUpdating}
-        >
-          <Check className="mr-1 h-3 w-3" />
-          Verify
-        </Button>
+          {status === "verified" ? "Verified" : "Not Verified"}
+        </Badge>
       </div>
     </div>
   )
@@ -55,7 +55,7 @@ function VerificationItem({ label, value, status, onVerify, onReject, isUpdating
 export default function StudentVerificationPage() {
   const router = useRouter()
   const params = useParams()
-  const studentId = params.id as string
+  const studentId = params?.id as string || ""
   const adminApi = useAdminApi()
 
   const [student, setStudent] = useState<StudentDetail | null>(null)
@@ -64,6 +64,21 @@ export default function StudentVerificationPage() {
   const [studentIds, setStudentIds] = useState<string[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [updatingField, setUpdatingField] = useState<string | null>(null)
+
+  // Helper function to render verification button
+  const renderVerificationButton = (field: string, isVerified: boolean) => (
+    <div className="flex items-center space-x-2">
+      {updatingField === field && <Icons.spinner className="h-4 w-4 animate-spin" />}
+      <Badge
+        variant={isVerified ? "default" : "destructive"}
+        className="cursor-pointer hover:opacity-80 transition-opacity"
+        onClick={() => handleVerification(field, isVerified ? "rejected" : "verified")}
+      >
+        {isVerified ? "Verified" : "Not Verified"}
+      </Badge>
+    </div>
+  )
 
   // Fetch student IDs for navigation
   useEffect(() => {
@@ -123,15 +138,58 @@ export default function StudentVerificationPage() {
     if (!student) return
 
     try {
-      setIsUpdating(true)
+      setUpdatingField(field)
       console.log(`[Frontend] Making verification API call for field: ${field}, status: ${status}`)
-      const updatedStudent = await adminApi.updateVerificationStatus(studentId, field, status)
-      console.log(`[Frontend] Verification API response:`, updatedStudent)
-      setStudent(updatedStudent)
+      await adminApi.updateVerificationStatus(studentId, field, status)
+      
+      // Update only the specific field that was changed
+      setStudent(prevStudent => {
+        if (!prevStudent) return null
+        
+        // Handle nested fields (education, positions, projects, experience)
+        if (field.includes('.')) {
+          const [section, index] = field.split('.')
+          const newStudent = { ...prevStudent }
+          if (section === 'education') {
+            newStudent.education = [...(prevStudent.education || [])]
+            newStudent.education[parseInt(index)] = {
+              ...newStudent.education[parseInt(index)],
+              is_verified: status === 'verified'
+            }
+          } else if (section === 'positions') {
+            newStudent.positions = [...(prevStudent.positions || [])]
+            newStudent.positions[parseInt(index)] = {
+              ...newStudent.positions[parseInt(index)],
+              is_verified: status === 'verified'
+            }
+          } else if (section === 'projects') {
+            newStudent.projects = [...(prevStudent.projects || [])]
+            newStudent.projects[parseInt(index)] = {
+              ...newStudent.projects[parseInt(index)],
+              is_verified: status === 'verified'
+            }
+          } else if (section === 'experience') {
+            newStudent.experience = [...(prevStudent.experience || [])]
+            newStudent.experience[parseInt(index)] = {
+              ...newStudent.experience[parseInt(index)],
+              is_verified: status === 'verified'
+            }
+          }
+          return newStudent
+        }
+        
+        // Handle simple fields
+        const newStudent = { ...prevStudent }
+        newStudent.verification = {
+          ...prevStudent.verification,
+          [field]: status
+        }
+        return newStudent
+      })
     } catch (err) {
       console.error(`[Frontend] Failed to update ${field} verification status:`, err)
     } finally {
-      setIsUpdating(false)
+      setUpdatingField(null)
     }
   }
 
@@ -140,7 +198,45 @@ export default function StudentVerificationPage() {
 
     try {
       setIsUpdating(true)
-      const updatedStudent = await adminApi.verifyAllFields(studentId)
+      
+      // Verify all basic info fields
+      const basicFields = Object.keys(student.verification)
+        .filter(key => !['education', 'experience', 'positions', 'projects'].includes(key))
+      
+      for (const field of basicFields) {
+        await adminApi.updateVerificationStatus(studentId, field, "verified")
+      }
+
+      // Verify all education items
+      if (student.education) {
+        for (let i = 0; i < student.education.length; i++) {
+          await adminApi.updateVerificationStatus(studentId, `education.${i}`, "verified")
+        }
+      }
+
+      // Verify all experience items
+      if (student.experience) {
+        for (let i = 0; i < student.experience.length; i++) {
+          await adminApi.updateVerificationStatus(studentId, `experience.${i}`, "verified")
+        }
+      }
+
+      // Verify all positions items
+      if (student.positions) {
+        for (let i = 0; i < student.positions.length; i++) {
+          await adminApi.updateVerificationStatus(studentId, `positions.${i}`, "verified")
+        }
+      }
+
+      // Verify all projects items
+      if (student.projects) {
+        for (let i = 0; i < student.projects.length; i++) {
+          await adminApi.updateVerificationStatus(studentId, `projects.${i}`, "verified")
+        }
+      }
+
+      // Fetch updated student data
+      const updatedStudent = await adminApi.getStudentById(studentId)
       setStudent(updatedStudent)
     } catch (err) {
       console.error("Failed to verify all fields:", err)
@@ -149,7 +245,19 @@ export default function StudentVerificationPage() {
     }
   }
 
-  const isFullyVerified = student && Object.values(student.verification).every((v) => v === "verified")
+  const isFullyVerified = student && 
+    // Check basic info fields
+    Object.entries(student.verification)
+      .filter(([key]) => !['education', 'experience', 'positions', 'projects'].includes(key))
+      .every(([_, value]) => value === "verified") &&
+    // Check education items
+    (student.education || []).every(edu => edu.is_verified) &&
+    // Check experience items
+    (student.experience || []).every(exp => exp.is_verified) &&
+    // Check positions items
+    (student.positions || []).every(pos => pos.is_verified) &&
+    // Check projects items
+    (student.projects || []).every(proj => proj.is_verified)
 
   if (loading) {
     return (
@@ -281,106 +389,120 @@ export default function StudentVerificationPage() {
               </TabsList>
 
               <TabsContent value="personal" className="space-y-4">
-                <VerificationItem
-                  label="Name"
-                  value={student.name}
-                  status={student.verification.name || "pending"}
-                  onVerify={() => handleVerification("name", "verified")}
-                  onReject={() => handleVerification("name", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Personal Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <VerificationItem
+                      label="Name"
+                      value={student.name}
+                      status={student.verification.name}
+                      onVerify={() => handleVerification("name", "verified")}
+                      onReject={() => handleVerification("name", "rejected")}
+                      isUpdating={isUpdating}
+                    />
 
-                <VerificationItem
-                  label="Email"
-                  value={student.email}
-                  status={student.verification.email || "pending"}
-                  onVerify={() => handleVerification("email", "verified")}
-                  onReject={() => handleVerification("email", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                    <VerificationItem
+                      label="Email"
+                      value={student.email}
+                      status={student.verification.email}
+                      onVerify={() => handleVerification("email", "verified")}
+                      onReject={() => handleVerification("email", "rejected")}
+                      isUpdating={isUpdating}
+                    />
 
-                <VerificationItem
-                  label="Phone"
-                  value={student.phone}
-                  status={student.verification.phone || "pending"}
-                  onVerify={() => handleVerification("phone", "verified")}
-                  onReject={() => handleVerification("phone", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                    <VerificationItem
+                      label="Phone"
+                      value={student.phone}
+                      status={student.verification.phone}
+                      onVerify={() => handleVerification("phone", "verified")}
+                      onReject={() => handleVerification("phone", "rejected")}
+                      isUpdating={isUpdating}
+                    />
 
-                <VerificationItem
-                  label="Date of Birth"
-                  value={student.dateOfBirth}
-                  status={student.verification.date_of_birth || "pending"}
-                  onVerify={() => handleVerification("date_of_birth", "verified")}
-                  onReject={() => handleVerification("date_of_birth", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                    <VerificationItem
+                      label="Date of Birth"
+                      value={student.dateOfBirth}
+                      status={student.verification.dateOfBirth}
+                      onVerify={() => handleVerification("date_of_birth", "verified")}
+                      onReject={() => handleVerification("date_of_birth", "rejected")}
+                      isUpdating={isUpdating}
+                    />
 
-                <VerificationItem
-                  label="Gender"
-                  value={student.gender}
-                  status={student.verification.gender || "pending"}
-                  onVerify={() => handleVerification("gender", "verified")}
-                  onReject={() => handleVerification("gender", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                    <VerificationItem
+                      label="Gender"
+                      value={student.gender}
+                      status={student.verification.gender}
+                      onVerify={() => handleVerification("gender", "verified")}
+                      onReject={() => handleVerification("gender", "rejected")}
+                      isUpdating={isUpdating}
+                    />
 
-                <VerificationItem
-                  label="Address"
-                  value={student.address}
-                  status={student.verification.address || "pending"}
-                  onVerify={() => handleVerification("address", "verified")}
-                  onReject={() => handleVerification("address", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                    <VerificationItem
+                      label="Address"
+                      value={student.address}
+                      status={student.verification.address}
+                      onVerify={() => handleVerification("address", "verified")}
+                      onReject={() => handleVerification("address", "rejected")}
+                      isUpdating={isUpdating}
+                    />
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="academic" className="space-y-4">
-                <VerificationItem
-                  label="Major"
-                  value={student.major}
-                  status={student.verification.major || "pending"}
-                  onVerify={() => handleVerification("major", "verified")}
-                  onReject={() => handleVerification("major", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Academic Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <VerificationItem
+                      label="Major"
+                      value={student.major}
+                      status={student.verification.major}
+                      onVerify={() => handleVerification("major", "verified")}
+                      onReject={() => handleVerification("major", "rejected")}
+                      isUpdating={isUpdating}
+                    />
 
-                <VerificationItem
-                  label="Student ID"
-                  value={student.studentId}
-                  status={student.verification.student_id || "pending"}
-                  onVerify={() => handleVerification("student_id", "verified")}
-                  onReject={() => handleVerification("student_id", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                    <VerificationItem
+                      label="Student ID"
+                      value={student.studentId}
+                      status={student.verification.student_id}
+                      onVerify={() => handleVerification("student_id", "verified")}
+                      onReject={() => handleVerification("student_id", "rejected")}
+                      isUpdating={isUpdating}
+                    />
 
-                <VerificationItem
-                  label="Enrollment Year"
-                  value={student.enrollmentYear}
-                  status={student.verification.enrollment_year || "pending"}
-                  onVerify={() => handleVerification("enrollment_year", "verified")}
-                  onReject={() => handleVerification("enrollment_year", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                    <VerificationItem
+                      label="Enrollment Year"
+                      value={student.enrollmentYear}
+                      status={student.verification.enrollment_year}
+                      onVerify={() => handleVerification("enrollment_year", "verified")}
+                      onReject={() => handleVerification("enrollment_year", "rejected")}
+                      isUpdating={isUpdating}
+                    />
 
-                <VerificationItem
-                  label="Expected Graduation Year"
-                  value={student.expectedGraduationYear}
-                  status={student.verification.expected_graduation_year || "pending"}
-                  onVerify={() => handleVerification("expected_graduation_year", "verified")}
-                  onReject={() => handleVerification("expected_graduation_year", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                    <VerificationItem
+                      label="Expected Graduation Year"
+                      value={student.expectedGraduationYear}
+                      status={student.verification.expected_graduation_year}
+                      onVerify={() => handleVerification("expected_graduation_year", "verified")}
+                      onReject={() => handleVerification("expected_graduation_year", "rejected")}
+                      isUpdating={isUpdating}
+                    />
 
-                <VerificationItem
-                  label="Passport Image"
-                  value={student.passportImage ?? ""}
-                  status={student.verification.passport_image || "pending"}
-                  onVerify={() => handleVerification("passport_image", "verified")}
-                  onReject={() => handleVerification("passport_image", "rejected")}
-                  isUpdating={isUpdating}
-                />
+                    <VerificationItem
+                      label="Passport Image"
+                      value={student.passportImage ?? ""}
+                      status={student.verification.passport_image}
+                      onVerify={() => handleVerification("passport_image", "verified")}
+                      onReject={() => handleVerification("passport_image", "rejected")}
+                      isUpdating={isUpdating}
+                    />
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="education">
@@ -392,45 +514,33 @@ export default function StudentVerificationPage() {
                     {(student.education || []).map((edu, index) => (
                       <Card key={edu._id} className="mb-4">
                         <CardHeader className="flex flex-row items-center justify-between">
-                          <CardTitle className="text-lg">
-                            {edu.education_details.degree?.current_value || "Education"}
-                          </CardTitle>
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-                              onClick={() => handleVerification(`education.${index}`, "rejected")}
-                              disabled={isUpdating}
-                            >
-                              <X className="mr-1 h-3 w-3" />
-                              Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600"
-                              onClick={() => handleVerification(`education.${index}`, "verified")}
-                              disabled={isUpdating}
-                            >
-                              <Check className="mr-1 h-3 w-3" />
-                              Verify
-                            </Button>
+                          <div className="flex items-center space-x-4">
+                            <CardTitle className="text-lg">
+                              {edu.education_details.institution?.current_value || "Education"}
+                            </CardTitle>
                           </div>
+                          {renderVerificationButton(`education.${index}`, edu.is_verified)}
                         </CardHeader>
                         <CardContent>
-                          <div className="space-y-2">
-                            {Object.entries(edu.education_details).map(([key, value]) => {
-                              const verifiableValue = value as { current_value: string | null; last_verified_value: string | null };
-                              return (
-                                <div key={key} className="flex items-center justify-between py-2">
-                                  <div>
-                                    <span className="text-muted-foreground">{key}:</span>
-                                    <span className="ml-2">{verifiableValue.current_value || ""}</span>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {Object.entries(edu.education_details)
+                              .filter(([key]) => {
+                                const allowedFields = ['gpa', 'year', 'major', 'minor', 'relevant_courses', 'honors'];
+                                return allowedFields.includes(key);
+                              })
+                              .map(([key, value]) => {
+                                const verifiableValue = value as { current_value: string | null; last_verified_value: string | null };
+                                if (!verifiableValue.current_value) return null;
+                                
+                                return (
+                                  <div key={key} className="flex items-center justify-between py-2">
+                                    <div>
+                                      <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
+                                      <span className="ml-2">{verifiableValue.current_value}</span>
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
                           </div>
                         </CardContent>
                       </Card>
@@ -448,41 +558,23 @@ export default function StudentVerificationPage() {
                     {(student.positions || []).map((position, index) => (
                       <Card key={position._id} className="mb-4">
                         <CardHeader className="flex flex-row items-center justify-between">
-                          <CardTitle className="text-lg">
-                            {position.position_details.title?.current_value || "Position"}
-                          </CardTitle>
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-                              onClick={() => handleVerification(`positions.${index}`, "rejected")}
-                              disabled={isUpdating}
-                            >
-                              <X className="mr-1 h-3 w-3" />
-                              Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600"
-                              onClick={() => handleVerification(`positions.${index}`, "verified")}
-                              disabled={isUpdating}
-                            >
-                              <Check className="mr-1 h-3 w-3" />
-                              Verify
-                            </Button>
+                          <div className="flex items-center space-x-4">
+                            <CardTitle className="text-lg">
+                              {position.position_details.title?.current_value || "Position"}
+                            </CardTitle>
                           </div>
+                          {renderVerificationButton(`positions.${index}`, position.is_verified)}
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
                             {Object.entries(position.position_details).map(([key, value]) => {
                               const verifiableValue = value as { current_value: string | null; last_verified_value: string | null };
+                              if (!verifiableValue.current_value) return null;
                               return (
                                 <div key={key} className="flex items-center justify-between py-2">
                                   <div>
-                                    <span className="text-muted-foreground">{key}:</span>
-                                    <span className="ml-2">{verifiableValue.current_value || ""}</span>
+                                    <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
+                                    <span className="ml-2">{verifiableValue.current_value}</span>
                                   </div>
                                 </div>
                               );
@@ -504,41 +596,23 @@ export default function StudentVerificationPage() {
                     {(student.projects || []).map((project, index) => (
                       <Card key={project._id} className="mb-4">
                         <CardHeader className="flex flex-row items-center justify-between">
-                          <CardTitle className="text-lg">
-                            {project.project_details.name?.current_value || "Project"}
-                          </CardTitle>
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-                              onClick={() => handleVerification(`projects.${index}`, "rejected")}
-                              disabled={isUpdating}
-                            >
-                              <X className="mr-1 h-3 w-3" />
-                              Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600"
-                              onClick={() => handleVerification(`projects.${index}`, "verified")}
-                              disabled={isUpdating}
-                            >
-                              <Check className="mr-1 h-3 w-3" />
-                              Verify
-                            </Button>
+                          <div className="flex items-center space-x-4">
+                            <CardTitle className="text-lg">
+                              {project.project_details.name?.current_value || "Project"}
+                            </CardTitle>
                           </div>
+                          {renderVerificationButton(`projects.${index}`, project.is_verified)}
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
                             {Object.entries(project.project_details).map(([key, value]) => {
                               const verifiableValue = value as { current_value: string | null; last_verified_value: string | null };
+                              if (!verifiableValue.current_value) return null;
                               return (
                                 <div key={key} className="flex items-center justify-between py-2">
                                   <div>
-                                    <span className="text-muted-foreground">{key}:</span>
-                                    <span className="ml-2">{verifiableValue.current_value || ""}</span>
+                                    <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
+                                    <span className="ml-2">{verifiableValue.current_value}</span>
                                   </div>
                                 </div>
                               );
@@ -560,41 +634,23 @@ export default function StudentVerificationPage() {
                     {(student.experience || []).map((exp, index) => (
                       <Card key={exp._id} className="mb-4">
                         <CardHeader className="flex flex-row items-center justify-between">
-                          <CardTitle className="text-lg">
-                            {exp.experience_details.position?.current_value || "Experience"}
-                          </CardTitle>
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-                              onClick={() => handleVerification(`experience.${index}`, "rejected")}
-                              disabled={isUpdating}
-                            >
-                              <X className="mr-1 h-3 w-3" />
-                              Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600"
-                              onClick={() => handleVerification(`experience.${index}`, "verified")}
-                              disabled={isUpdating}
-                            >
-                              <Check className="mr-1 h-3 w-3" />
-                              Verify
-                            </Button>
+                          <div className="flex items-center space-x-4">
+                            <CardTitle className="text-lg">
+                              {exp.experience_details.position?.current_value || "Experience"}
+                            </CardTitle>
                           </div>
+                          {renderVerificationButton(`experience.${index}`, exp.is_verified)}
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
                             {Object.entries(exp.experience_details).map(([key, value]) => {
                               const verifiableValue = value as { current_value: string | null; last_verified_value: string | null };
+                              if (!verifiableValue.current_value) return null;
                               return (
                                 <div key={key} className="flex items-center justify-between py-2">
                                   <div>
-                                    <span className="text-muted-foreground">{key}:</span>
-                                    <span className="ml-2">{verifiableValue.current_value || ""}</span>
+                                    <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
+                                    <span className="ml-2">{verifiableValue.current_value}</span>
                                   </div>
                                 </div>
                               );

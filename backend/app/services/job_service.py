@@ -129,11 +129,9 @@ class JobService:
         if filters:
             if 'status' in filters:
                 search_query['status'] = filters['status']
-            if 'cycleType' in filters:
+            if 'cycleId' in filters:
                 # Get cycle IDs of specified type
-                cycles = mongo.db.placement_cycles.find({'type': filters['cycleType']})
-                cycle_ids = [str(cycle['_id']) for cycle in cycles]
-                search_query['cycleId'] = {'$in': cycle_ids}
+                search_query['cycleId'] = filters['cycleId']
             if 'eligibleBranches' in filters:
                 search_query['eligibility.branches'] = {'$in': filters['eligibleBranches']}
         
@@ -645,11 +643,11 @@ class JobService:
                 student_id = ObjectId(student_id)
                 
             pipeline = [
-                {'$match': {'studentId': student_id}},
+                {'$match': {'student_id': student_id}},
                 {'$sort': {'createdAt': -1}},
                 {'$lookup': {
                     'from': 'jobs',
-                    'localField': 'jobId',
+                    'localField': 'job_id',
                     'foreignField': '_id',
                     'as': 'job'
                 }},

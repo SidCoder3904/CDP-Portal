@@ -8,6 +8,8 @@ from bson.objectid import ObjectId
 from bson.json_util import dumps
 from flask import Response
 
+from app.services.student_service import StudentService
+
 jobs_bp = Blueprint('jobs', __name__)
 
 
@@ -152,6 +154,9 @@ def get_all_jobs():
     if status:
         filters['status'] = status
     
+    student_cycle = StudentService.get_student_eligible_cycles(current_user.get('id'))
+    filters['cycleId'] = student_cycle
+
     # Get jobs with pagination
     jobs, total = JobService.search_jobs(query_text, filters, page, per_page)
     

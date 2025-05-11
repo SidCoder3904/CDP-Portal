@@ -1,3 +1,4 @@
+from venv import logger
 from app import mongo
 from bson.objectid import ObjectId
 from datetime import datetime
@@ -520,11 +521,23 @@ class StudentService:
             if isinstance(verified_by, str):
                 verified_by = ObjectId(verified_by)
 
+            # Get the current education record
+            education = mongo.db.education.find_one({'_id': education_id})
+            if not education:
+                return False
+
             update_data = {
                 "is_verified": status == "verified",
                 "verified_by": verified_by,
                 "verified_at": datetime.utcnow()
             }
+
+            # If verifying, update last_verified_value for all fields
+            if status == "verified":
+                education_details = education.get("education_details", {})
+                for field in education_details:
+                    if isinstance(education_details[field], dict) and "current_value" in education_details[field]:
+                        update_data[f"education_details.{field}.last_verified_value"] = education_details[field]["current_value"]
 
             result = mongo.db.education.update_one(
                 {'_id': education_id},
@@ -687,11 +700,23 @@ class StudentService:
             if isinstance(verified_by, str):
                 verified_by = ObjectId(verified_by)
 
+            # Get the current experience record
+            experience = mongo.db.experience.find_one({'_id': experience_id})
+            if not experience:
+                return False
+
             update_data = {
                 "is_verified": status == "verified",
                 "verified_by": verified_by,
                 "verified_at": datetime.utcnow()
             }
+
+            # If verifying, update last_verified_value for all fields
+            if status == "verified":
+                experience_details = experience.get("experience_details", {})
+                for field in experience_details:
+                    if isinstance(experience_details[field], dict) and "current_value" in experience_details[field]:
+                        update_data[f"experience_details.{field}.last_verified_value"] = experience_details[field]["current_value"]
 
             result = mongo.db.experience.update_one(
                 {'_id': experience_id},
@@ -850,11 +875,23 @@ class StudentService:
             if isinstance(verified_by, str):
                 verified_by = ObjectId(verified_by)
 
+            # Get the current position record
+            position = mongo.db.positions.find_one({'_id': position_id})
+            if not position:
+                return False
+
             update_data = {
                 "is_verified": status == "verified",
                 "verified_by": verified_by,
                 "verified_at": datetime.utcnow()
             }
+
+            # If verifying, update last_verified_value for all fields
+            if status == "verified":
+                position_details = position.get("position_details", {})
+                for field in position_details:
+                    if isinstance(position_details[field], dict) and "current_value" in position_details[field]:
+                        update_data[f"position_details.{field}.last_verified_value"] = position_details[field]["current_value"]
 
             result = mongo.db.positions.update_one(
                 {'_id': position_id},
@@ -1021,11 +1058,23 @@ class StudentService:
             if isinstance(verified_by, str):
                 verified_by = ObjectId(verified_by)
 
+            # Get the current project record
+            project = mongo.db.projects.find_one({'_id': project_id})
+            if not project:
+                return False
+
             update_data = {
                 "is_verified": status == "verified",
                 "verified_by": verified_by,
                 "verified_at": datetime.utcnow()
             }
+
+            # If verifying, update last_verified_value for all fields
+            if status == "verified":
+                project_details = project.get("project_details", {})
+                for field in project_details:
+                    if isinstance(project_details[field], dict) and "current_value" in project_details[field]:
+                        update_data[f"project_details.{field}.last_verified_value"] = project_details[field]["current_value"]
 
             result = mongo.db.projects.update_one(
                 {'_id': project_id},
@@ -1365,3 +1414,145 @@ class StudentService:
         except Exception as e:
             print(f"Error verifying all fields: {str(e)}")
             return None
+
+    @staticmethod
+    def get_students_by_cycle(cycle_id, batch, eligible_programs):
+        """
+        Get students eligible for a specific placement cycle based on batch and programs
+        
+        Args:
+            cycle_id: ID of the placement cycle
+            batch: Batch year to filter by
+            eligible_programs: List of eligible programs (e.g., ['btech', 'mtech'])
+            
+        Returns:
+            List of formatted student documents for the cycle
+        """
+        try:
+            # Match students with the given batch
+            students = list(mongo.db.student.find({'enrollmentYear': batch}))
+
+            logger.info(f"Students in batch {batch}: {students}")
+            # Process students to match program eligibility
+            eligible_students = []
+            
+            for student in students:
+                # Check program eligibility based on email
+                email = student.get('email', '')
+                program_identifier = None
+                
+                if '@' in email:
+                    program_identifier = email.split('@')[0][6].lower()
+                
+                # Match program identifier with eligible programs
+                is_eligible = False
+                student_program = ""
+                
+                if 'btech' in eligible_programs and program_identifier == 'b':
+                    is_eligible = True
+                    student_program = "B.Tech"
+                elif 'mtech' in eligible_programs and program_identifier == 'm':
+                    is_eligible = True
+                    student_program = "M.Tech"
+                elif 'phd' in eligible_programs and program_identifier == 'p':
+                    is_eligible = True
+                    student_program = "PhD"
+                
+                if not is_eligible:
+                    continue
+                
+                # Format student for response
+                formatted_student = {
+                    "id": str(student.get("_id", "")),
+                    "name": student.get("name", ""),
+                    "rollNo": student.get("student_id", ""),
+                    "branch": student.get("major", ""),
+                    "program": student_program,
+                    "cgpa": float(student.get("cgpa", 0)),
+                    "status": student.get("status", "Registered"),
+                    "jobsApplied": 0,
+                    "jobsSelected": 0,
+                    "jobsRejected": 0,
+                    "jobsInProgress": 0
+                }
+                
+                # Get job application statistics for this student
+                student_id = str(student.get("_id", ""))
+                
+                # Get all jobs in this cycle
+                jobs = list(mongo.db.jobs.find({"cycleId": cycle_id}))
+                job_ids = [str(job["_id"]) for job in jobs]
+                
+                # Get student's applications for jobs in this cycle
+                if job_ids:
+                    applications = list(mongo.db.applications.find({
+                        "studentId": student_id,
+                        "jobId": {"$in": job_ids}
+                    }))
+                    
+                    if applications:
+                        formatted_student["jobsApplied"] = len(applications)
+                        formatted_student["jobsSelected"] = len([a for a in applications if a.get("status") == "selected"])
+                        formatted_student["jobsRejected"] = len([a for a in applications if a.get("status") == "rejected"])
+                        formatted_student["jobsInProgress"] = len([a for a in applications if a.get("status") not in ["selected", "rejected"]])
+                
+                eligible_students.append(formatted_student)
+            
+            return eligible_students
+        
+        except Exception as e:
+            print(f"Error getting students for cycle: {str(e)}")
+            return []
+
+    @staticmethod
+    def get_student_eligible_cycles(student_id):
+        """
+        Find all placement cycles that a student is eligible for based on their enrollment year and program
+        
+        Args:
+            student_id: ID of the student
+            
+        Returns:
+            List of eligible placement cycles with details
+        """
+        try:
+            # Get student details
+            if isinstance(student_id, str):
+                student_id = ObjectId(student_id)
+            
+            student = mongo.db.student.find_one({'user_id': student_id})
+            if not student:
+                return []
+            
+            enrollment_year = student.get('enrollmentYear')
+            email = student.get('email', '')
+            
+            # Determine program type from email
+            program_identifier = None
+            program_type = None
+            
+            if '@' in email:
+                program_identifier = email.split('@')[0][6].lower()
+                
+                if program_identifier == 'b':
+                    program_type = 'btech'
+                elif program_identifier == 'm':
+                    program_type = 'mtech'
+                elif program_identifier == 'p':
+                    program_type = 'phd'
+            
+            if not enrollment_year or not program_type:
+                return []
+            
+            # Find active placement cycles matching the student's batch and program
+            cycle = mongo.db.placement_cycles.find_one({
+                'batch': enrollment_year,
+                'eligiblePrograms': program_type,
+                'status': 'active'  # Only include active cycles
+            })
+
+            return f"{cycle.get('_id', '')}"
+
+        except Exception as e:
+            print(f"Error finding eligible cycles for student: {str(e)}")
+            return []
