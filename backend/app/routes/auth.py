@@ -11,9 +11,12 @@ auth_bp = Blueprint('auth', __name__)
 def request_otp():
     print("Request OTP")
     data = request.get_json()
-    user = AuthService.authenticate_user(data.get('email'), data.get('password'))
+    email = data.get('email')
+    
+    # Check if user exists
+    user = AuthService.get_user_by_email(email)
     if not user:
-        return jsonify({"message": "Invalid credentials"}), 401
+        return jsonify({"message": "User not found"}), 404
     
     otp = AuthService.generate_otp(user['_id'])
 
@@ -52,7 +55,6 @@ def login_with_otp():
         'user': {
             'id': str(user['_id']),
             'email': user['email'],
-            # 'name': user['name'],
             'role': user['role']
         }
     }), 200
