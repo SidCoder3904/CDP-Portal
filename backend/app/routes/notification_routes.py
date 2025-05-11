@@ -6,6 +6,24 @@ from ..utils.auth import admin_required, student_required
 notification_bp = Blueprint('notifications', __name__)
 notification_service = NotificationService()
 
+@notification_bp.route('/api/notifications/student', methods=['GET'])
+@cross_origin()
+@student_required
+def get_student_notifications():
+    """Get notifications for a student based on their email"""
+    try:
+        # Get email from the authenticated user
+        email = request.user.get('email')
+        if not email:
+            return jsonify({'error': 'User email not found'}), 400
+
+        result = notification_service.get_student_notifications(email)
+        if 'error' in result:
+            return jsonify(result), 404
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @notification_bp.route('/api/notifications', methods=['GET'])
 @student_required
 def get_notifications():

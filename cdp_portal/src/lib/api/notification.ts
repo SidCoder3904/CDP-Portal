@@ -92,33 +92,33 @@ export function useNotificationApi() {
   const createNotification = async (data: Omit<Notification, "_id" | "created_at" | "updated_at">): Promise<Notification> => {
     const response = await fetchWithAuth('/api/admin/notifications', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+        headers: {
+          'Content-Type': 'application/json',
+        },
       body: JSON.stringify(data),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
       throw new Error(error.message || "Failed to create notification")
-    }
-
+      }
+      
     return response.json()
   }
 
   const updateNotification = async (notificationId: string, data: Partial<Notification>): Promise<Notification> => {
     const response = await fetchWithAuth(`/api/admin/notifications/${notificationId}`, {
       method: 'PUT',
-      headers: {
+        headers: {
         'Content-Type': 'application/json',
-      },
+        },
       body: JSON.stringify(data),
-    })
+      })
 
-    if (!response.ok) {
-      const error = await response.json()
+      if (!response.ok) {
+        const error = await response.json()
       throw new Error(error.message || "Failed to update notification")
-    }
+      }
 
     return response.json()
   }

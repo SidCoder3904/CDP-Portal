@@ -105,9 +105,9 @@ export function NotificationListAdmin({ notifications, loading, onNotificationCh
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" onClick={() => handleEdit(notification)}>
-                    <Pencil className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
+                <Pencil className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>

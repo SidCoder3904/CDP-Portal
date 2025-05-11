@@ -15,6 +15,57 @@ class NotificationService:
         
         return notifications
 
+    def get_student_notifications(self, email: str) -> dict:
+        """Get notifications for a student based on their email (batch and program)"""
+        try:
+            # Extract batch and program from email
+            batch = email[:4]  # First 4 characters are batch year
+            program_match = email.split('cs')[1][0]  # Get the character after 'cs'
+            program = 'btech' if program_match == 'b' else 'mtech'
+
+            print(f"Looking for cycle with batch: {batch} and program: {program}")
+
+            # First get all active cycles
+            active_cycles = list(mongo.db.placement_cycles.find({"status": "active"}))
+            
+            # Convert ObjectId to string and print cycle details for debugging
+            for cycle in active_cycles:
+                cycle['_id'] = str(cycle['_id'])
+                print(f"Found cycle: {cycle}")
+
+            # Find cycle matching student's batch and program
+            matching_cycle = None
+            for cycle in active_cycles:
+                if cycle.get('batch') == batch and program in cycle.get('eligiblePrograms', []):
+                    matching_cycle = cycle
+                    break
+
+            if not matching_cycle:
+                return {
+                    "error": "No active placement cycle found for your batch and program",
+                    "notifications": []
+                }
+
+            # Get notifications for the matching cycle
+            notifications = list(mongo.db.notifications.find(
+                {"placement_cycle_id": matching_cycle['_id']}
+            ).sort("created_at", -1))
+
+            # Convert ObjectId to string for JSON serialization
+            for notification in notifications:
+                notification['_id'] = str(notification['_id'])
+            
+            return {
+                "cycle": matching_cycle,
+                "notifications": notifications
+            }
+        except Exception as e:
+            print(f"Error in get_student_notifications: {str(e)}")
+            return {
+                "error": f"Error processing request: {str(e)}",
+                "notifications": []
+            }
+
     def create_notification(self, data: dict) -> dict:
         """Create a new notification"""
         notification = {

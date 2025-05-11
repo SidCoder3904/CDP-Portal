@@ -131,14 +131,16 @@ export default function CycleNotificationsPage({ params }: { params: { cycleId: 
                 <h2 className="text-2xl font-bold text-template">
                   Recent Notifications
                 </h2>
-                <AddNotificationButton />
+                <AddNotificationButton placementCycleId={""} />
               </div>
               <div>
-                <NotificationListAdmin notifications={notifications} loading={notifLoading} />
+                <NotificationListAdmin notifications={notifications} loading={notifLoading} onNotificationChange={function (): void {
+                  throw new Error("Function not implemented.");
+                } } />
               </div>
             </div>
             <div>
-              <CommentSectionAdmin />
+              <CommentSectionAdmin placementCycleId={""} />
             </div>
           </div>
         </div>
