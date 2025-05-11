@@ -19,9 +19,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, Filter, Loader2, AlertCircle } from "lucide-react";
+import { PlusCircle, Search, Filter, Loader2, AlertCircle, X } from "lucide-react";
 import { useApi } from "@/lib/api";
 import { useEffect, useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Cycle {
   id: string;
@@ -42,36 +43,92 @@ export default function CyclesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [selectedCycles, setSelectedCycles] = useState<string[]>([]);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const fetchCycles = async () => {
+    setIsLoading(true);
+    try {
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (statusFilter !== "all") queryParams.append("status", statusFilter);
+      if (typeFilter !== "all") queryParams.append("type", typeFilter);
+      
+      // Use useApi hook's fetchWithAuth method
+      const response = await fetchWithAuth(`/api/placement-cycles?${queryParams.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch cycles: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setCycles(data);
+    } catch (err) {
+      console.error("Error fetching cycles:", err);
+      setError(err instanceof Error ? err : new Error("An unknown error occurred"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchCycles = async () => {
-      setIsLoading(true);
-      try {
-        // Build query parameters
-        const queryParams = new URLSearchParams();
-        if (statusFilter !== "all") queryParams.append("status", statusFilter);
-        if (typeFilter !== "all") queryParams.append("type", typeFilter);
-        
-        // Use useApi hook's fetchWithAuth method
-        // Remove the /api prefix from the URL
-        const response = await fetchWithAuth(`/api/placement-cycles?${queryParams.toString()}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch cycles: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        setCycles(data);
-      } catch (err) {
-        console.error("Error fetching cycles:", err);
-        setError(err instanceof Error ? err : new Error("An unknown error occurred"));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchCycles();
-  }, [ statusFilter, typeFilter]);
+  }, [statusFilter, typeFilter]);
+
+  const toggleCycleSelection = (cycleId: string) => {
+    if (selectedCycles.includes(cycleId)) {
+      setSelectedCycles(selectedCycles.filter(id => id !== cycleId));
+    } else {
+      setSelectedCycles([...selectedCycles, cycleId]);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCycles.length === filteredCycles.length) {
+      setSelectedCycles([]);
+    } else {
+      setSelectedCycles(filteredCycles.map(cycle => cycle.id));
+    }
+  };
+
+  const markCyclesInactive = async () => {
+    setIsUpdating(true);
+    try {
+      const updatePromises = selectedCycles.map(cycleId => 
+        fetchWithAuth(`/api/placement-cycles/${cycleId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: 'inactive'
+          })
+        })
+      );
+      
+      await Promise.all(updatePromises);
+      
+      // Refresh the cycles data
+      await fetchCycles();
+      
+      // Clear selection
+      setSelectedCycles([]);
+    } catch (err) {
+      console.error("Error updating cycles:", err);
+      setError(err instanceof Error ? err : new Error("Failed to update cycles"));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric'
+    });
+  };
 
   // Filter cycles based on search term
   const filteredCycles = cycles.filter(cycle => 
@@ -89,12 +146,24 @@ export default function CyclesPage() {
             Manage all placement and internship cycles
           </p>
         </div>
-        <Link href="/admin/placement_cycles/new">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Cycle
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          {selectedCycles.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={markCyclesInactive}
+              disabled={isUpdating}
+            >
+              {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
+              Mark Inactive ({selectedCycles.length})
+            </Button>
+          )}
+          <Link href="/admin/placement_cycles/new">
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Cycle
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 items-end">
@@ -118,6 +187,7 @@ export default function CyclesPage() {
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
               <SelectItem value="upcoming">Upcoming</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
             </SelectContent>
@@ -160,6 +230,12 @@ export default function CyclesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={selectedCycles.length === filteredCycles.length && filteredCycles.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Duration</TableHead>
@@ -171,6 +247,12 @@ export default function CyclesPage() {
             <TableBody>
               {filteredCycles.map((cycle) => (
                 <TableRow key={cycle.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedCycles.includes(cycle.id)}
+                      onCheckedChange={() => toggleCycleSelection(cycle.id)}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">
                     <Link
                       href={`/admin/placement_cycles/${cycle.id}`}
@@ -181,7 +263,7 @@ export default function CyclesPage() {
                   </TableCell>
                   <TableCell>{cycle.type}</TableCell>
                   <TableCell>
-                    {cycle.startDate} - {cycle.endDate}
+                    {formatDate(cycle.startDate)} - {formatDate(cycle.endDate)}
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -196,8 +278,8 @@ export default function CyclesPage() {
                       {cycle.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{cycle.jobs}</TableCell>
-                  <TableCell>{cycle.students}</TableCell>
+                  <TableCell>{cycle.jobs || 0}</TableCell>
+                  <TableCell>{cycle.students || 0}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

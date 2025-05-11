@@ -7,8 +7,6 @@ import JobDetails from "@/components/job_details";
 import { useJobsApi, JobListing, JobApplication } from "@/lib/api/jobs";
 import { Icons } from "@/components/icons";
 
-
-
 export default function JobListings() {
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -19,11 +17,11 @@ export default function JobListings() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
-  
+
   const jobsApi = useJobsApi();
-  
+
   // Create a Set of job IDs that the student has applied to
-  const appliedJobs = new Set(applications.map(app => app.jobId));
+  const appliedJobs = new Set(applications.map((app) => app.jobId));
 
   useEffect(() => {
     async function fetchData() {
@@ -31,14 +29,14 @@ export default function JobListings() {
         setIsLoading(true);
         const [jobsData, applicationsData] = await Promise.all([
           jobsApi.getJobs(),
-          jobsApi.getMyApplications()
+          jobsApi.getMyApplications(),
         ]);
 
         console.log(jobsData);
-        
+
         setJobs(jobsData);
         setApplications(applicationsData);
-        
+
         if (jobsData.length > 0 && !activeJobId) {
           setActiveJobId(jobsData[0]._id);
         }
@@ -48,7 +46,7 @@ export default function JobListings() {
         setIsLoading(false);
       }
     }
-    
+
     fetchData();
   }, []);
 
@@ -62,26 +60,25 @@ export default function JobListings() {
   const handleJobClick = (jobId: string) => {
     setActiveJobId(jobId);
   };
-  
+
   const handleApplyForJob = async (jobId: string, resumeId: string) => {
     try {
       console.log(`Applying for job ${jobId} with resume ${resumeId}`);
       setIsApplying(true);
-      
+
       if (!resumeId || resumeId === "None" || resumeId === "undefined") {
         throw new Error("Invalid resume ID");
       }
-      
+
       const result = await jobsApi.applyForJob(jobId, resumeId);
       console.log("Application result:", result);
-      
+
       // Update applications list
       const newApplications = await jobsApi.getMyApplications();
       setApplications(newApplications);
-      
+
       // Update UI to show the job as applied
       appliedJobs.add(jobId);
-      
     } catch (error) {
       console.error("Failed to apply for job:", error);
     } finally {
@@ -121,7 +118,9 @@ export default function JobListings() {
               job={jobs.find((job) => job._id === activeJobId)!}
               activeTab={activeTab[activeJobId]}
               handleTabClick={(tab) => handleTabClick(activeJobId, tab)}
-              onApply={(jobId: string, resumeId: string) => handleApplyForJob(jobId, resumeId)}
+              onApply={(jobId: string, resumeId: string) =>
+                handleApplyForJob(jobId, resumeId)
+              }
               isApplied={appliedJobs.has(activeJobId)}
               isApplying={isApplying}
             />

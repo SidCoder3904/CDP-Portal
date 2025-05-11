@@ -14,15 +14,33 @@ placement_cycles_bp = Blueprint('placement_cycles', __name__)
 
 def format_placement_cycle(raw_cycle):
     """Format a raw placement cycle into the expected frontend format"""
+   
+    
+    cycle_id = str(raw_cycle.get("_id", ""))
+    
+    # Calculate jobs count if not present
+    jobs_count = raw_cycle.get("jobs", 0)
+    if not jobs_count:
+        # Use PlacementService to get jobs by cycle ID
+        jobs = PlacementService.get_jobs_by_filters({"cycleId": cycle_id})
+        jobs_count = len(jobs) if jobs else 0
+    
+    # Calculate students count if not present
+    students_count = raw_cycle.get("students", 0)
+    if not students_count:
+        # Use PlacementService to get eligible students
+        students = PlacementService.get_eligible_students(cycle_id)
+        students_count = len(students) if students else 0
+    
     return {
-        "id": str(raw_cycle.get("_id", "")),
+        "id": cycle_id,
         "name": raw_cycle.get("name", ""),
         "type": raw_cycle.get("type", ""),
         "startDate": raw_cycle.get("startDate", "").isoformat() if raw_cycle.get("startDate") else "",
         "endDate": raw_cycle.get("endDate", "").isoformat() if raw_cycle.get("endDate") else "",
         "status": raw_cycle.get("status", ""),
-        "jobs": raw_cycle.get("jobs", 0),
-        "students": raw_cycle.get("students", 0),
+        "jobs": jobs_count,
+        "students": students_count,
         "description": raw_cycle.get("description", ""),
         "batch": raw_cycle.get("batch", ""),
         "eligiblePrograms": raw_cycle.get("eligiblePrograms", []),
