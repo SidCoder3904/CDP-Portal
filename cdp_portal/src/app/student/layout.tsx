@@ -48,13 +48,13 @@ export default function StudentLayout({
     <div className="min-h-screen flex flex-col">
       <Navbar
         menuItems={[
-          { label: "Notifications", href: "/student/" },
+          { label: "Notifications", href: "/student" },
           { label: "My Profile", href: "/student/profile" },
           { label: "Job Openings", href: "/student/job_openings" },
           { label: "Notices", href: "/student/notices" },
         ]}
       />
-      <main className="flex-grow max-w-7xl mx-auto w-full">{children}</main>
+      <main className="flex-grow max-w-7xl w-full">{children}</main>
       <LoginFooter />
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,61 +31,42 @@ export default function Navbar({ menuItems }: NavbarProps) {
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
-  // Set mounted state after component mounts
+  // Avoid hydration mismatch for auth-based UI
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Update active index based on current pathname
+  // Update activeIndex on route change
   useEffect(() => {
-    const currentIndex = menuItems.findIndex(item => pathname === item.href);
-    if (currentIndex !== -1) {
-      setActiveIndex(currentIndex);
+    const idx = menuItems.findIndex(item => item.href === pathname);
+    if (idx !== -1) {
+      setActiveIndex(idx);
     }
   }, [pathname, menuItems]);
 
-  const setTabRef = (index: number) => (el: HTMLDivElement | null) => {
-    tabRefs.current[index] = el;
-  };
-
+  // Measure hover underline
   useEffect(() => {
     if (hoveredIndex !== null) {
-      const hoveredElement = tabRefs.current[hoveredIndex];
-      if (hoveredElement) {
-        const { offsetLeft, offsetWidth } = hoveredElement;
-        setHoverStyle({
-          left: `${offsetLeft}px`,
-          width: `${offsetWidth}px`,
-        });
+      const el = tabRefs.current[hoveredIndex];
+      if (el) {
+        const { offsetLeft, offsetWidth } = el;
+        setHoverStyle({ left: `${offsetLeft}px`, width: `${offsetWidth}px` });
       }
     }
   }, [hoveredIndex]);
 
-  useEffect(() => {
-    const activeElement = tabRefs.current[activeIndex];
-    if (activeElement) {
-      const { offsetLeft, offsetWidth } = activeElement;
-      setActiveStyle({
-        left: `${offsetLeft}px`,
-        width: `${offsetWidth}px`,
-      });
+  // Measure active underline after layout
+  useLayoutEffect(() => {
+    const el = tabRefs.current[activeIndex];
+    if (el) {
+      const { offsetLeft, offsetWidth } = el;
+      setActiveStyle({ left: `${offsetLeft}px`, width: `${offsetWidth}px` });
     }
-  }, [activeIndex]);
+  }, [activeIndex, menuItems]);
 
-  useEffect(() => {
-    if (mounted) {
-      requestAnimationFrame(() => {
-        const firstTab = tabRefs.current[0];
-        if (firstTab) {
-          const { offsetLeft, offsetWidth } = firstTab;
-          setActiveStyle({
-            left: `${offsetLeft}px`,
-            width: `${offsetWidth}px`,
-          });
-        }
-      });
-    }
-  }, [mounted]);
+  const setTabRef = (i: number) => (el: HTMLDivElement | null) => {
+    tabRefs.current[i] = el;
+  };
 
   return (
     <div className="flex flex-col w-full bg-white">
@@ -108,13 +89,13 @@ export default function Navbar({ menuItems }: NavbarProps) {
               </div>
             </div>
           </div>
-          
+
           {mounted && isAuthenticated && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  {user?.email?.split('@')[0]}
+                  {user?.email?.split("@")[0]}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -147,10 +128,7 @@ export default function Navbar({ menuItems }: NavbarProps) {
             <div className="relative">
               <div
                 className="absolute h-[30px] transition-all duration-300 ease-out bg-white/10 rounded-[6px] flex items-center"
-                style={{
-                  ...hoverStyle,
-                  opacity: hoveredIndex !== null ? 1 : 0,
-                }}
+                style={{ ...hoverStyle, opacity: hoveredIndex !== null ? 1 : 0 }}
               />
               <div
                 className="absolute bottom-[-6px] h-[2px] bg-white transition-all duration-300 ease-out"
@@ -158,20 +136,16 @@ export default function Navbar({ menuItems }: NavbarProps) {
               />
 
               <div className="relative flex space-x-[6px] items-center">
-                {menuItems.map((item, index) => {
-                  if (!item.href) {
-                    console.error(`Missing href for menu item: ${item.label}`);
-                    return null;
-                  }
+                {menuItems.map((item, idx) => {
                   const isActive = pathname === item.href;
                   return (
-                    <Link key={index} href={item.href} passHref>
+                    <Link key={idx} href={item.href} passHref>
                       <div
-                        ref={setTabRef(index)}
+                        ref={setTabRef(idx)}
                         className={`px-3 py-2 cursor-pointer transition-colors duration-300 h-[30px] ${
                           isActive ? "text-white" : "text-white/80"
                         }`}
-                        onMouseEnter={() => setHoveredIndex(index)}
+                        onMouseEnter={() => setHoveredIndex(idx)}
                         onMouseLeave={() => setHoveredIndex(null)}
                       >
                         <div className="text-sm font-medium leading-5 whitespace-nowrap flex items-center justify-center h-full">
