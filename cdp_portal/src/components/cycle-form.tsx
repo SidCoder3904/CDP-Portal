@@ -104,7 +104,7 @@ export function CycleForm() {
       }
       
       // Navigate back to the cycles page
-      router.push("/admin/placement_cycles/cycles");
+      router.push("/admin/placement_cycles");
     } catch (error) {
       console.error("Error creating placement cycle:", error);
       setError(error instanceof Error ? error.message : "Failed to create placement cycle");
@@ -311,7 +311,7 @@ export function CycleForm() {
           <Button
             variant="outline"
             type="button"
-            onClick={() => router.push("/admin/placement_cycles/cycles")}
+            onClick={() => router.push("/admin/placement_cycles")}
             disabled={isSubmitting}
           >
             Cancel

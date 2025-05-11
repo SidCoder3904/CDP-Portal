@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Filter, Download, Loader2 } from "lucide-react";
+import { Search, Filter, Download, Loader2, CheckCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,14 +37,35 @@ interface JobApplicantsProps {
   jobId: string;
 }
 
+interface Applicant {
+  _id: { $oid: string } | string;
+  applicationId: { $oid: string } | string;
+  name: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  major: string;
+  studentId: string;
+  enrollmentYear: string;
+  expectedGraduationYear: string;
+  passportImage: string;
+  cgpa: string | number;
+  status?: string;
+  currentStage?: string;
+  appliedOn?: string;
+}
+
 export function JobApplicants({ jobId }: JobApplicantsProps) {
-  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [selectedApplications, setSelectedApplications] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [students, setApplications] = useState<any>([]);
+  const [students, setApplications] = useState<Applicant[]>([]);
 
   const jobsApi = useJobsApi();
   const { fetchWithAuth } = useApi();
@@ -55,10 +76,9 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
         setIsLoading(true);
         const applicationData = await jobsApi.getJobApplications(jobId);
         console.log(applicationData);
-        setApplications(applicationData);
+        setApplications(applicationData as unknown as Applicant[]);
       } catch (error) {
         console.error("Failed to fetch data:", error);
-
       } finally {
         setIsLoading(false);
       }
@@ -68,31 +88,29 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
   }, [jobId]);
 
   const toggleSelectAll = () => {
-    if (selectedStudents.length === students.length) {
-      setSelectedStudents([]);
+    if (selectedApplications.length === students.length) {
+      setSelectedApplications([]);
     } else {
-      setSelectedStudents(students.map((student:any) => student.id));
+      setSelectedApplications(students.map((student) => {
+        // Get the application ID
+        const appId = typeof student.applicationId === 'string' ? student.applicationId : student.applicationId.$oid;
+        return appId;
+      }));
     }
   };
 
-  const toggleSelectStudent = (id: string) => {
-    if (selectedStudents.includes(id)) {
-      setSelectedStudents(
-        selectedStudents.filter((studentId) => studentId !== id)
+  const toggleSelectStudent = (appId: string) => {
+    if (selectedApplications.includes(appId)) {
+      setSelectedApplications(
+        selectedApplications.filter((id) => id !== appId)
       );
     } else {
-      setSelectedStudents([...selectedStudents, id]);
+      setSelectedApplications([...selectedApplications, appId]);
     }
-  };
-
-  const updateStatus = (status: string) => {
-    // In a real app, this would update the status in the database
-    console.log(`Updating status to ${status} for students:`, selectedStudents);
-    setSelectedStatus(null);
   };
 
   // Filter students based on search term and status
-  const filteredStudents = students.filter((student:any) => {
+  const filteredStudents = students.filter((student) => {
     const matchesSearch = 
       student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,7 +132,7 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
       const filters = {
         jobId: jobId,
         // If students are selected, include only those
-        studentIds: selectedStudents.length > 0 ? selectedStudents : undefined,
+        studentIds: selectedApplications.length > 0 ? selectedApplications : undefined,
         status: statusFilter !== "all" ? statusFilter : undefined
       };
       
@@ -174,102 +192,62 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
     }
   };
 
+  // Update application status for selected students
+  const updateApplicationStatus = async (status: string, currentStage: string = status) => {
+    try {
+      setIsUpdatingStatus(true);
+      
+      // Call the API to update status for each selected application
+      // Status represents overall application state (selected, rejected, etc.)
+      // while currentStage represents the specific hiring workflow step
+      const promises = selectedApplications.map(appId => 
+        jobsApi.updateApplicationStatus(appId, status, currentStage)
+      );
+      
+      await Promise.all(promises);
+      
+      // Refresh the data
+      const applicationData = await jobsApi.getJobApplications(jobId);
+      setApplications(applicationData as unknown as Applicant[]);
+      
+      // Clear selection
+      setSelectedApplications([]);
+      setSelectedStatus(null);
+      
+    } catch (error) {
+      console.error("Failed to update application status:", error);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="text-sm text-muted-foreground">
-          {selectedStudents.length > 0 ? (
-            <span>{selectedStudents.length} students selected</span>
+          {selectedApplications.length > 0 ? (
+            <span>{selectedApplications.length} students selected</span>
           ) : (
             <span>Total {students.length} applicants</span>
           )}
         </div>
 
-        {selectedStudents.length > 0 && (
+        {selectedApplications.length > 0 && (
           <div className="flex gap-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Update Status
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Update Application Status</DialogTitle>
-                  <DialogDescription>
-                    Change the status for {selectedStudents.length} selected
-                    students.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <Select onValueChange={setSelectedStatus}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select new status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="shortlisted">Shortlisted</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                      <SelectItem value="on-hold">On Hold</SelectItem>
-                      <SelectItem value="selected">Selected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedStatus(null)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      selectedStatus && updateStatus(selectedStatus)
-                    }
-                    disabled={!selectedStatus}
-                  >
-                    Update
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Move to Stage
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Update Hiring Stage</DialogTitle>
-                  <DialogDescription>
-                    Move {selectedStudents.length} selected students to a
-                    different stage.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select new stage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="resume">
-                        Resume Shortlisting
-                      </SelectItem>
-                      <SelectItem value="online">Online Assessment</SelectItem>
-                      <SelectItem value="technical">
-                        Technical Interview
-                      </SelectItem>
-                      <SelectItem value="hr">HR Interview</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline">Cancel</Button>
-                  <Button>Update</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button 
+              variant="default" 
+              size="sm"
+              onClick={() => updateApplicationStatus('selected', 'selected')}
+              disabled={isUpdatingStatus}
+            >
+              {isUpdatingStatus ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle className="mr-2 h-4 w-4" />
+              )}
+              Select Candidate
+            </Button>
+            
           </div>
         )}
       </div>
@@ -324,7 +302,7 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
               <TableHead className="w-[40px]">
                 <Checkbox
                   checked={
-                    selectedStudents.length === students.length &&
+                    selectedApplications.length === students.length &&
                     students.length > 0
                   }
                   onCheckedChange={toggleSelectAll}
@@ -333,11 +311,10 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
               <TableHead>Name</TableHead>
               <TableHead>Roll No</TableHead>
               <TableHead>Branch</TableHead>
-              <TableHead>Program</TableHead>
               <TableHead>CGPA</TableHead>
-              <TableHead>Current Stage</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Applied On</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Hiring Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -354,36 +331,40 @@ export function JobApplicants({ jobId }: JobApplicantsProps) {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredStudents.map((student:any) => (
-                <TableRow key={student.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedStudents.includes(student.id)}
-                      onCheckedChange={() => toggleSelectStudent(student.id)}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{student.name}</TableCell>
-                  <TableCell>{student.studentId}</TableCell>
-                  <TableCell>{student.major}</TableCell>
-                  <TableCell>{student.program}</TableCell>
-                  <TableCell>{student.cgpa}</TableCell>
-                  <TableCell>{student.currentStage}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        student.status === "Shortlisted"
-                          ? "default"
-                          : student.status === "Rejected"
-                          ? "destructive"
-                          : "outline"
-                      }
-                    >
-                      {student.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{student.appliedOn}</TableCell>
-                </TableRow>
-              ))
+              filteredStudents.map((student) => {
+                // Get the application ID
+                const appId = typeof student.applicationId === 'string' ? student.applicationId : student.applicationId.$oid;
+                
+                return (
+                  <TableRow key={appId}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedApplications.includes(appId)}
+                        onCheckedChange={() => toggleSelectStudent(appId)}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">{student.name}</TableCell>
+                    <TableCell>{student.studentId}</TableCell>
+                    <TableCell>{student.major}</TableCell>
+                    <TableCell>{student.cgpa}</TableCell>
+                    <TableCell>{student.email}</TableCell>
+                    <TableCell>{student.phone}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          student.status === "Shortlisted"
+                            ? "default"
+                            : student.status === "Rejected"
+                            ? "destructive"
+                            : "outline"
+                        }
+                      >
+                        {student.status || "Applied"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

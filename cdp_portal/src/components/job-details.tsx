@@ -10,11 +10,13 @@ interface JobDetailsProps {
     deadline: string;
     status: string;
     jobDescription: string;
-    hiringFlow: { step: string; description: string }[];
+    accommodation: boolean;
     eligibility: {
       branches: string[];
-      programs: string[];
-      cgpaCriteria: Record<string, Record<string, string>>;
+      cgpa: string;
+      gender: string;
+      uniformCgpa: boolean;
+      cgpaCriteria?: Record<string, Record<string, string>>;
     };
   };
 }
@@ -29,19 +31,6 @@ export function JobDetails({ job }: JobDetailsProps) {
           </CardHeader>
           <CardContent>
             <p className="text-sm">{job.jobDescription}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Hiring Process</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc pl-5 space-y-2 text-sm">
-              {job.hiringFlow.map((step, index) => (
-                <li key={index}><strong>{step.step}:</strong> {step.description}</li>
-              ))}
-            </ul>
           </CardContent>
         </Card>
       </div>
@@ -63,22 +52,51 @@ export function JobDetails({ job }: JobDetailsProps) {
               </div>
             </div>
 
+            <div>
+              <h3 className="text-sm font-medium mb-2">Minimum CGPA</h3>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline">
+                  {job.eligibility.cgpa}
+                </Badge>
+              </div>
+            </div>
 
             <div>
-              <h3 className="text-sm font-medium mb-2">Minimum CGPA Criteria</h3>
+              <h3 className="text-sm font-medium mb-2">Gender Eligibility</h3>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline">
+                  {job.eligibility.gender}
+                </Badge>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium mb-2">Additional Details</h3>
               <div className="space-y-2">
-                {Object.entries(job.eligibility.cgpaCriteria).map(([branch, programs]) => (
-                  <div key={branch}>
-                    <p className="font-medium">{branch.toUpperCase()}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(programs).map(([program, cgpa]) => (
-                        <Badge key={program} variant="outline">
-                          {program.toUpperCase()}: {cgpa}
-                        </Badge>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">
+                    Accommodation: {job.accommodation ? "Provided" : "Not Provided"}
+                  </Badge>
+                </div>
+                {!job.eligibility.uniformCgpa && job.eligibility.cgpaCriteria && (
+                  <div>
+                    <p className="text-sm font-medium mt-2">Branch-specific CGPA Criteria:</p>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {Object.entries(job.eligibility.cgpaCriteria).map(([branch, programs]) => (
+                        <div key={branch}>
+                          <p className="font-medium">{branch.toUpperCase()}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {Object.entries(programs).map(([program, cgpa]) => (
+                              <Badge key={program} variant="outline">
+                                {program.toUpperCase()}: {cgpa}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </CardContent>

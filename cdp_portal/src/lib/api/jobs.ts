@@ -151,11 +151,29 @@ export function useJobsApi() {
     return response.json();
   };
 
+  const updateApplicationStatus = async (applicationId: string, status: string, currentStage: string): Promise<JobApplication> => {
+    const response = await fetchWithAuth(`/api/jobs/applications/${applicationId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status, currentStage })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update application status');
+    }
+    
+    return response.json();
+  };
+
   return {
     getJobs,
     getJobById,
     applyForJob,
     getMyApplications,
-    getJobApplications
+    getJobApplications,
+    updateApplicationStatus
   };
 } 
