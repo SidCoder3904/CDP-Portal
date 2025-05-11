@@ -3,11 +3,13 @@ from flask import Flask
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from flask_mail import Mail
 from app.config import Config
 import os
 
 
 mongo = PyMongo()
+mail = Mail()
 
 
 def create_app(config_class=Config):
@@ -19,6 +21,7 @@ def create_app(config_class=Config):
     # Initialize extensions
     mongo.init_app(app)
     JWTManager(app)
+    mail.init_app(app)
     
     # Configure CORS
     CORS(app, supports_credentials=True, resources={

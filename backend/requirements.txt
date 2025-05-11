@@ -18,3 +18,4 @@ flask_cors
 requests
 gunicorn
 cloudinary
+Flask-Mail==0.9.1

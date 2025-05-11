@@ -1,6 +1,7 @@
 from datetime import datetime
 from app import mongo
 from bson import ObjectId
+from app.services.email_service import EmailService
 
 class NotificationService:
     def get_notifications(self, placement_cycle_id: str) -> list:
@@ -68,6 +69,9 @@ class NotificationService:
 
     def create_notification(self, data: dict) -> dict:
         """Create a new notification"""
+        print("\n=== Creating New Notification ===")
+        print(f"Data received: {data}")
+        
         notification = {
             "title": data['title'],
             "message": data['message'],
@@ -80,10 +84,35 @@ class NotificationService:
         
         result = mongo.db.notifications.insert_one(notification)
         notification['_id'] = str(result.inserted_id)
+        print(f"Notification created successfully with ID: {notification['_id']}")
+
+        # Send email notification for new notification
+        try:
+            print("\n=== Attempting to Send Email ===")
+            EmailService.send_notice_notification(
+                cycle_id=data['placement_cycle_id'],
+                notice_type="add",
+                notice_title=data['title'],
+                notice_content=data['message']
+            )
+            print("Email service called successfully")
+        except Exception as e:
+            print(f"❌ Error in email service: {str(e)}")
+            print("Continuing without email notification")
+
         return notification
 
     def update_notification(self, notification_id: str, data: dict):
         """Update an existing notification"""
+        print("\n=== Updating Notification ===")
+        print(f"Notification ID: {notification_id}")
+        print(f"Update data: {data}")
+        
+        # Get the original notification to get the placement cycle ID
+        original_notification = mongo.db.notifications.find_one({"_id": ObjectId(notification_id)})
+        if not original_notification:
+            raise Exception("Notification not found")
+
         update_data = {
             "title": data['title'],
             "message": data['message'],
@@ -102,13 +131,53 @@ class NotificationService:
         # Get the updated notification
         updated_notification = mongo.db.notifications.find_one({"_id": ObjectId(notification_id)})
         updated_notification['_id'] = str(updated_notification['_id'])
+        print("Notification updated successfully")
+
+        # Send email notification for updated notification
+        try:
+            print("\n=== Attempting to Send Email ===")
+            EmailService.send_notice_notification(
+                cycle_id=original_notification['placement_cycle_id'],
+                notice_type="update",
+                notice_title=data['title'],
+                notice_content=data['message']
+            )
+            print("Email service called successfully")
+        except Exception as e:
+            print(f"❌ Error in email service: {str(e)}")
+            print("Continuing without email notification")
+
         return updated_notification
 
     def delete_notification(self, notification_id: str):
         """Delete a notification"""
+        print("\n=== Deleting Notification ===")
+        print(f"Notification ID: {notification_id}")
+        
+        # Get the notification before deleting to get its details
+        notification = mongo.db.notifications.find_one({"_id": ObjectId(notification_id)})
+        if not notification:
+            raise Exception("Notification not found")
+
         result = mongo.db.notifications.delete_one({"_id": ObjectId(notification_id)})
         if result.deleted_count == 0:
             raise Exception("Notification not found")
+        
+        print("Notification deleted successfully")
+
+        # Send email notification for deleted notification
+        try:
+            print("\n=== Attempting to Send Email ===")
+            EmailService.send_notice_notification(
+                cycle_id=notification['placement_cycle_id'],
+                notice_type="delete",
+                notice_title=notification['title'],
+                notice_content=notification['message']
+            )
+            print("Email service called successfully")
+        except Exception as e:
+            print(f"❌ Error in email service: {str(e)}")
+            print("Continuing without email notification")
 
     def mark_as_read(self, notification_id: str) -> dict:
         """Mark a notification as read"""

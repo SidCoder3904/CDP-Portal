@@ -1556,3 +1556,75 @@ class StudentService:
         except Exception as e:
             print(f"Error finding eligible cycles for student: {str(e)}")
             return []
+
+    @staticmethod
+    def get_student_emails_by_cycle(cycle_id):
+        """
+        Get all student emails for a placement cycle
+        
+        Args:
+            cycle_id: ID of the placement cycle
+            
+        Returns:
+            List of student emails
+        """
+        try:
+            print(f"\n=== Getting Student Emails for Cycle {cycle_id} ===")
+            
+            # Get the placement cycle
+            cycle = mongo.db.placement_cycles.find_one({'_id': ObjectId(cycle_id)})
+            if not cycle:
+                print("❌ Placement cycle not found")
+                return []
+                
+            print(f"Found cycle: {cycle}")
+            print(f"Cycle eligible programs: {cycle.get('eligiblePrograms', [])}")
+            
+            # Get all users with role 'student' in the cycle's batch
+            batch = cycle['batch']
+            print(f"Looking for students in batch: {batch}")
+            
+            # Get users with role 'student' and matching batch from email
+            users = list(mongo.db.users.find({
+                'role': 'student',
+                'email': {'$regex': f'^{batch}cs'}  # Match emails starting with batch year and 'cs'
+            }))
+            
+            print(f"Found {len(users)} students in batch {batch}")
+            print("Student details:")
+            for user in users:
+                print(f"- Email: {user.get('email')}")
+            
+            # Filter students by program eligibility
+            eligible_students = []
+            for user in users:
+                email = user.get('email', '')
+                if '@' in email:
+                    program_identifier = email.split('@')[0][6].lower()  # Get the character after 'cs'
+                    print(f"\nChecking eligibility for {email}:")
+                    print(f"Program identifier: {program_identifier}")
+                    
+                    # Map single letter to full program name
+                    program_map = {
+                        'b': 'btech',
+                        'm': 'mtech',
+                        'p': 'phd'
+                    }
+                    program_type = program_map.get(program_identifier)
+                    print(f"Mapped program type: {program_type}")
+                    print(f"Is in eligible programs? {program_type in cycle.get('eligiblePrograms', [])}")
+                    
+                    if program_type and program_type in cycle.get('eligiblePrograms', []):
+                        eligible_students.append(email)
+                        print(f"✅ {email} is eligible")
+                    else:
+                        print(f"❌ {email} is not eligible")
+            
+            print(f"\nFound {len(eligible_students)} eligible students")
+            print(f"Eligible emails: {eligible_students}")
+            
+            return eligible_students
+            
+        except Exception as e:
+            print(f"❌ Error getting student emails: {str(e)}")
+            return []
