@@ -53,7 +53,7 @@ def create_notification():
         return jsonify({'error': 'Missing required fields'}), 400
     
     notification = notification_service.create_notification(data)
-    return jsonify(notification), 201
+    return jsonify(notification), 201 
 
 @notification_bp.route('/api/admin/notifications', methods=['POST'])
 @cross_origin()

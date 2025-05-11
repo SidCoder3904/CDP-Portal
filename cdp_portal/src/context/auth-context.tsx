@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  requestOtp: (email: string, password: string) => Promise<string>;
+  requestOtp: (email: string) => Promise<string>;
   loginWithOtp: (userId: string, otp: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Request OTP function
-  const requestOtp = async (email: string, password: string): Promise<string> => {
+  const requestOtp = async (email: string): Promise<string> => {
     setIsLoading(true);
     
     try {
@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email }),
       });
       
       if (!response.ok) {

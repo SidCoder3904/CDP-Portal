@@ -3,9 +3,8 @@ from flask import Blueprint, current_app, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.student_service import StudentService
 from app.services.job_service import JobService
-from app.utils.auth import student_required
-from app.utils.validators import validate_student_profile, validate_education
-# from app.utils.validators import validate_experience, validate_position, validate_project, validate_resume
+from app.utils.auth import student_required, admin_required
+from app.utils.validators import validate_student_profile, validate_education, validate_register
 from werkzeug.utils import secure_filename
 import os
 from bson.objectid import ObjectId
@@ -14,13 +13,154 @@ import json
 from datetime import datetime
 from app.utils.cloudinary_config import upload_file, delete_file, generate_public_id, upload_profile_picture
 from app.services.document_service import DocumentService
-
+from app.services.auth_service import AuthService
+import pandas as pd
+from werkzeug.security import generate_password_hash
 
 students_bp = Blueprint('students', __name__)
 
 # Helper function to convert MongoDB ObjectId to string in JSON responses
 def json_response(data):
     return json.loads(dumps(data))
+
+# Admin Routes for Student Management
+@students_bp.route('/create', methods=['POST'])
+@jwt_required()
+@admin_required
+def create_student():
+    """Create a new student account manually"""
+    data = request.get_json()
+    
+    # Validate input
+    # errors = validate_register(data)
+    # if errors:
+    #     return jsonify({"errors": errors}), 400
+    
+    # Set default password
+    data['password'] = '123456789'
+    data['role'] = 'student'
+    
+    # Create user account
+    user_id = AuthService.create_user(data)
+    if not user_id:
+        return jsonify({"message": "Failed to create user account"}), 500
+    
+    # Create student profile
+    student_data = {
+        "user_id": ObjectId(user_id),
+        "name": data.get('name'),
+        "email": data.get('email'),
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    student_id = StudentService.create_student(student_data)
+    if not student_id:
+        return jsonify({"message": "Failed to create student profile"}), 500
+    
+    return jsonify({
+        "message": "Student account created successfully",
+        "user_id": str(user_id),
+        "student_id": str(student_id)
+    }), 201
+
+@students_bp.route('/bulk-create', methods=['POST'])
+@jwt_required()
+@admin_required
+def bulk_create_students():
+    """Create multiple student accounts from a CSV/Excel file"""
+    if 'file' not in request.files:
+        return jsonify({"message": "No file provided"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"message": "No file selected"}), 400
+    
+    if not file.filename.endswith(('.csv', '.xlsx')):
+        return jsonify({"message": "Only CSV and Excel files are allowed"}), 400
+    
+    try:
+        # Read the file
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(file)
+        else:
+            df = pd.read_excel(file)
+        
+        # Validate required columns
+        required_columns = ['name', 'email']
+        if not all(col in df.columns for col in required_columns):
+            return jsonify({"message": "File must contain 'name' and 'email' columns"}), 400
+        
+        results = {
+            "success": [],
+            "failed": []
+        }
+        
+        # Process each row
+        for _, row in df.iterrows():
+            try:
+                # Create user data
+                user_data = {
+                    "name": row['name'],
+                    "email": row['email'],
+                    "password": '123456789',
+                    "role": 'student'
+                }
+                
+                # Validate data
+                errors = validate_register(user_data)
+                if errors:
+                    results["failed"].append({
+                        "email": row['email'],
+                        "reason": str(errors)
+                    })
+                    continue
+                
+                # Create user account
+                user_id = AuthService.create_user(user_data)
+                if not user_id:
+                    results["failed"].append({
+                        "email": row['email'],
+                        "reason": "Failed to create user account"
+                    })
+                    continue
+                
+                # Create student profile
+                student_data = {
+                    "user_id": ObjectId(user_id),
+                    "name": row['name'],
+                    "email": row['email'],
+                    "created_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow()
+                }
+                
+                student_id = StudentService.create_student(student_data)
+                if not student_id:
+                    results["failed"].append({
+                        "email": row['email'],
+                        "reason": "Failed to create student profile"
+                    })
+                    continue
+                
+                results["success"].append({
+                    "email": row['email'],
+                    "user_id": str(user_id),
+                    "student_id": str(student_id)
+                })
+                
+            except Exception as e:
+                results["failed"].append({
+                    "email": row['email'],
+                    "reason": str(e)
+                })
+        
+        return jsonify({
+            "message": f"Processed {len(results['success'])} students successfully, {len(results['failed'])} failed",
+            "results": results
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"message": f"Failed to process file: {str(e)}"}), 500
 
 # Basic Profile Routes
 @students_bp.route('/me', methods=['GET'])

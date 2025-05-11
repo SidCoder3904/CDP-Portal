@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -19,7 +18,6 @@ import { useAuth } from "@/context/auth-context";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -46,7 +44,7 @@ export default function AdminLogin() {
     setSuccess("");
 
     try {
-      const userId = await requestOtp(email, password);
+      const userId = await requestOtp(email);
       setSuccess("OTP sent to your email!");
       setUserId(userId);
     } catch (err) {
@@ -85,7 +83,7 @@ export default function AdminLogin() {
             <CardHeader>
               <CardTitle className="text-gray-900">Admin Login</CardTitle>
               <CardDescription>
-                Sign in with your admin credentials
+                Sign in with your admin email address
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -102,18 +100,6 @@ export default function AdminLogin() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full"
-                    />
-                    <Label htmlFor="password" className="text-gray-700">
-                      Password
-                    </Label>
-                    <Input
-                      id="password"
-                      placeholder="Enter your password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
                       required
                       className="w-full"
                     />

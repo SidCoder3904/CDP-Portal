@@ -7,6 +7,7 @@ from app.utils.validators import validate_placement_cycle, validate_job
 from bson.json_util import dumps
 import json
 from app.services.student_service import StudentService
+from app.services.email_service import EmailService
 
 
 placement_cycles_bp = Blueprint('placement_cycles', __name__)
@@ -174,7 +175,6 @@ def create_job(cycle_id):
     if errors:
         return jsonify({"errors": errors}), 400
     
-
     # Check if cycle exists
     cycle = PlacementService.get_placement_cycle_by_id(cycle_id)
     if not cycle:
@@ -185,6 +185,30 @@ def create_job(cycle_id):
     
     job_id = PlacementService.create_job(cycle_id,data)
     job = PlacementService.get_job_by_id(job_id)
+    
+    # Send email notification to all eligible students
+    try:
+        print("\n=== Sending Job Creation Email Notifications ===")
+        EmailService.send_notice_notification(
+            cycle_id=cycle_id,
+            notice_type="add",
+            notice_title=f"New Job Posted: {data['company']} - {data['role']}",
+            notice_content=f"""
+            A new job has been posted in your placement cycle:
+
+            Company: {data['company']}
+            Role: {data['role']}
+            Package: {data['package']}
+            Location: {data['location']}
+            Deadline: {data['deadline']}
+
+            Please check the portal for more details and to apply.
+            """
+        )
+        print("✅ Email notifications sent successfully")
+    except Exception as e:
+        print(f"❌ Error sending email notifications: {str(e)}")
+        print("Continuing without email notification")
     
     return dumps(job), 201
 
