@@ -367,6 +367,7 @@ class JobService:
                 {'$unwind': '$student'},
                 {'$project': {
                     '_id': '$student.user_id',
+                    'applicationId': '$_id',
                     'name': '$student.name',
                     'email': '$student.email',
                     'phone': '$student.phone',
@@ -378,7 +379,9 @@ class JobService:
                     'enrollmentYear': '$student.enrollmentYear',
                     'expectedGraduationYear': '$student.expectedGraduationYear',
                     'passportImage': '$student.passportImage',
-                    'cgpa':'$student.cgpa'
+                    'cgpa':'$student.cgpa',
+                    'status': 1,
+                    'currentStage': '$current_stage'
                 }}
             ]
             

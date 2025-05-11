@@ -61,7 +61,7 @@ export default function JobPage({ params }: JobPageProps) {
         <p className="text-muted-foreground">
           The requested job does not exist.
         </p>
-        <Link href={`/admin/placement_cycles/cycles/${cycleId}`}>
+        <Link href={`/admin/placement_cycles/${cycleId}`}>
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Cycle
@@ -74,7 +74,7 @@ export default function JobPage({ params }: JobPageProps) {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <Link href={`/admin/placement_cycles/cycles/${cycleId}`}>
+        <Link href={`/admin/placement_cycles/${cycleId}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -92,7 +92,7 @@ export default function JobPage({ params }: JobPageProps) {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{job.package} LPA</div>
+            <div className="text-2xl font-bold">{job.package}</div>
             <p className="text-xs text-muted-foreground">Annual compensation</p>
           </CardContent>
         </Card>

@@ -99,7 +99,7 @@ function CycleDetail({ id }: { id: string }) {
         <p className="text-muted-foreground mb-4">
           There was an error loading the cycle data: {error.message}
         </p>
-        <Link href="/admin/placement_cycles/cycles" className="inline-block">
+        <Link href="/admin/placement_cycles" className="inline-block">
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Cycles
@@ -116,7 +116,7 @@ function CycleDetail({ id }: { id: string }) {
         <p className="text-muted-foreground">
           The requested cycle does not exist.
         </p>
-        <Link href="/admin/placement_cycles/cycles" className="mt-4 inline-block">
+        <Link href="/admin/placement_cycles" className="mt-4 inline-block">
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Cycles
@@ -129,7 +129,7 @@ function CycleDetail({ id }: { id: string }) {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <Link href="/admin/placement_cycles/cycles">
+        <Link href="/admin/placement_cycles">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -143,7 +143,7 @@ function CycleDetail({ id }: { id: string }) {
       <div className="flex flex-wrap gap-4 mb-6">
         <Badge className="text-sm py-1">
           <Calendar className="mr-1 h-4 w-4" />
-          {cycle.startDate} - {cycle.endDate}
+          {new Date(cycle.startDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})} - {new Date(cycle.endDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}
         </Badge>
         <Badge
           variant={cycle.status === "Active" ? "default" : "outline"}
@@ -196,11 +196,7 @@ function CycleDetail({ id }: { id: string }) {
             </TabsTrigger>
           </TabsList>
           <div className="flex gap-2">
-            <Button variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Export Data
-            </Button>
-            <Link href={`/admin/placement_cycles/cycles/${id}/jobs/new`}>
+            <Link href={`/admin/placement_cycles/${id}/jobs/new`}>
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Job
@@ -230,7 +226,7 @@ export default function CyclePage() {
           <AlertCircle className="h-5 w-5" />
           <h1 className="text-xl font-bold">Missing Cycle ID</h1>
         </div>
-        <Link href="/admin/placement_cycles/cycles" className="inline-block">
+        <Link href="/admin/placement_cycles" className="inline-block">
           <Button>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Cycles

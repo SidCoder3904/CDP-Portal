@@ -126,7 +126,7 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
 
   // Fix the default onSuccess parameter
   const defaultOnSuccess = () => {
-    router.push(`/admin/placement_cycles/cycles/${cycleId}`);
+    router.push(`/admin/placement_cycles/${cycleId}`);
   };
   
   // Use the provided onSuccess or the default one
@@ -757,7 +757,7 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
           <Button
             variant="outline"
             type="button"
-            onClick={() => router.push(`/admin/placement_cycles/cycles/${cycleId}`)}
+            onClick={() => router.push(`/admin/placement_cycles/${cycleId}`)}
           >
             Cancel
           </Button>
