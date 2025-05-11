@@ -143,7 +143,7 @@ function CycleDetail({ id }: { id: string }) {
       <div className="flex flex-wrap gap-4 mb-6">
         <Badge className="text-sm py-1">
           <Calendar className="mr-1 h-4 w-4" />
-          {cycle.startDate} - {cycle.endDate}
+          {new Date(cycle.startDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})} - {new Date(cycle.endDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}
         </Badge>
         <Badge
           variant={cycle.status === "Active" ? "default" : "outline"}
