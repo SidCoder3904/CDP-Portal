@@ -99,7 +99,7 @@ class NotificationService:
         except Exception as e:
             print(f"❌ Error in email service: {str(e)}")
             print("Continuing without email notification")
-
+        
         return notification
 
     def update_notification(self, notification_id: str, data: dict):

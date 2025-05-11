@@ -7,12 +7,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useCommentApi, Comment } from "@/lib/api/comment"
+import { useAuth } from "@/context/auth-context"
 
 interface CommentSectionProps {
   placementCycleId: string
 }
 
 export function CommentSectionAdmin({ placementCycleId }: CommentSectionProps) {
+  const { user } = useAuth()
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +49,7 @@ export function CommentSectionAdmin({ placementCycleId }: CommentSectionProps) {
     try {
       await createComment({
         content: newComment.trim(),
-        user: 'Admin',
+        user: user?.name || 'Admin',
         user_type: 'admin',
         placement_cycle_id: placementCycleId
       })

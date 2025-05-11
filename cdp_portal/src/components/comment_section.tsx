@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useCommentApi, Comment } from "@/lib/api/comment"
 import { useAuth } from "@/context/auth-context"
+import { useStudentApi } from "@/lib/api/students"
 
 interface CommentSectionProps {
   placementCycleId: string
@@ -18,7 +19,22 @@ export function CommentSection({ placementCycleId }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [studentName, setStudentName] = useState<string>("")
   const { getComments, createComment } = useCommentApi()
+  const { getMyProfile } = useStudentApi()
+
+  const fetchStudentProfile = async () => {
+    if (user?.id) {
+      try {
+        const profile = await getMyProfile()
+        if (profile?.name) {
+          setStudentName(profile.name)
+        }
+      } catch (err) {
+        console.error('Error fetching student profile:', err)
+      }
+    }
+  }
 
   const fetchComments = async () => {
     try {
@@ -41,7 +57,8 @@ export function CommentSection({ placementCycleId }: CommentSectionProps) {
 
   useEffect(() => {
     fetchComments()
-  }, [placementCycleId])
+    fetchStudentProfile()
+  }, [placementCycleId, user?.id])
 
   const handlePostComment = async () => {
     if (!newComment.trim()) return
@@ -49,7 +66,7 @@ export function CommentSection({ placementCycleId }: CommentSectionProps) {
     try {
       await createComment({
         content: newComment.trim(),
-        user: user?.name || 'Student',
+        user: studentName || user?.name || 'Student',
         user_type: 'student',
         placement_cycle_id: placementCycleId
       })
