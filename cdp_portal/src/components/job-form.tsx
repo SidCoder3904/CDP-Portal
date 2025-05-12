@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,8 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Upload } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import { FileUploader } from "@/components/file-uploader";
+import { ImageCropModal } from "@/components/image-crop-model";
 
 interface JobFormProps {
   cycleId: string;
@@ -82,6 +84,8 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [isImageCropModalOpen, setIsImageCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { token } = useAuth();
 
   
@@ -145,6 +149,10 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
           step: step.name,
           description: step.description,
         })),
+        logo: values.companyImage,
+        jobDescriptionFile: values.jobDescriptionFile,
+        companyImagePublicId: values.companyImagePublicId,
+        jobDescriptionFilePublicId: values.jobDescriptionFilePublicId,
       };
             
       // Call the API to create the job
@@ -186,19 +194,32 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
     { id: "Female", label: "Female" },
   ];
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageSelection = (file: File) => {
+    const imageUrl = URL.createObjectURL(file);
+    setSelectedImage(imageUrl);
+    setIsImageCropModalOpen(true);
+  };
+
+  const handleCropComplete = async (croppedImageUrl: string) => {
     try {
       setIsUploadingImage(true);
       setError(null);
+
+      // Convert cropped image URL to a File object
+      const response = await fetch(croppedImageUrl);
+      const croppedImageBlob = await response.blob();
+      const imageFile = new File([croppedImageBlob], "company-logo.jpg", {
+        type: "image/jpeg",
+      });
 
       // Generate a temporary ID using timestamp
       const tempCompanyId = `temp_${Date.now()}`;
 
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', imageFile);
       formData.append('company_id', tempCompanyId);
 
-      const response = await fetch(`${API_BASE_URL}/api/jobs/upload-company-image`, {
+      const apiResponse = await fetch(`${API_BASE_URL}/api/jobs/upload-company-image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -206,14 +227,17 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
         body: formData,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
         throw new Error(errorData.error || "Failed to upload image");
       }
 
-      const data = await response.json();
+      const data = await apiResponse.json();
       form.setValue('companyImage', data.imageUrl);
       form.setValue('companyImagePublicId', data.publicId);
+      
+      setIsImageCropModalOpen(false);
+      setSelectedImage(null);
     } catch (error) {
       console.error("Error uploading image:", error);
       setError(error instanceof Error ? error.message : "Failed to upload image");
@@ -256,382 +280,220 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <FormField
-              control={form.control}
-              name="company"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Company Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Google" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-2">
-              <Label>Company Image</Label>
-              <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center">
-                {form.watch('companyImage') ? (
-                  <div className="relative w-full">
-                    <img
-                      src={form.watch('companyImage')}
-                      alt="Company"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => {
-                        form.setValue('companyImage', '');
-                        form.setValue('companyImagePublicId', '');
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm font-medium">
-                      Drag or drop the company image here, or click to browse
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Supports JPG, PNG (Max 5MB)
-                    </p>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          handleImageUpload(file);
-                        }
-                      }}
-                      id="company-image-upload"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      type="button"
-                      onClick={() => document.getElementById('company-image-upload')?.click()}
-                      disabled={isUploadingImage}
-                    >
-                      {isUploadingImage ? "Uploading..." : "Upload Image"}
-                    </Button>
-                  </>
-                )}
-              </div>
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
             </div>
-
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job Role</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Software Engineer" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
               <FormField
                 control={form.control}
-                name="package"
+                name="company"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Package</FormLabel>
+                    <FormLabel>Company Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. ₹15 LPA" {...field} />
+                      <Input placeholder="e.g. Google" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Bangalore" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="deadline"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Application Deadline</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="jobDescription"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter detailed job description..."
-                      className="min-h-[120px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="accommodation"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Accommodation Provided</FormLabel>
-                    <FormDescription>
-                      Check if accommodation is provided for this role
-                    </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-2">
-              <Label>Job Description Document</Label>
-              <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center">
-                {form.watch('jobDescriptionFile') ? (
-                  <div className="relative w-full">
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <svg
-                          className="w-8 h-8 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                          />
-                        </svg>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            Job Description PDF
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {form.watch('jobDescriptionFile')?.split('/').pop()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(form.watch('jobDescriptionFile'), '_blank')}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            form.setValue('jobDescriptionFile', '');
-                            form.setValue('jobDescriptionFilePublicId', '');
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm font-medium">
-                      Drag and drop your JD file here, or click to browse
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Supports PDF (Max 5MB)
-                    </p>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          handleFileUpload(file);
-                        }
-                      }}
-                      id="jd-file-upload"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      type="button"
-                      onClick={() => document.getElementById('jd-file-upload')?.click()}
-                      disabled={isUploadingFile}
-                    >
-                      {isUploadingFile ? "Uploading..." : "Upload File"}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Eligibility Criteria</CardTitle>
-                <CardDescription>
-                  Define who can apply for this job
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="eligibility.branches"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="mb-4">
-                        <FormLabel>Eligible Branches</FormLabel>
-                        <FormDescription>
-                          Select the branches eligible for this job
-                        </FormDescription>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {branches.map((branch) => (
-                          <FormItem
-                            key={branch.id}
-                            className="flex flex-row items-start space-x-3 space-y-0"
-                          >
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(branch.id)}
-                                onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([...field.value, branch.id])
-                                    : field.onChange(
-                                        field.value?.filter(
-                                          (value) => value !== branch.id
-                                        )
-                                      );
-                                }}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              {branch.label}
-                            </FormLabel>
-                          </FormItem>
-                        ))}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                
-                <FormField
-                  control={form.control}
-                  name="eligibility.cgpa"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Minimum CGPA</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
+              <div className="space-y-2">
+                <Label>Company Image</Label>
+                <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center">
+                  {form.watch('companyImage') ? (
+                    <div className="relative w-full">
+                      <img
+                        src={form.watch('companyImage')}
+                        alt="Company"
+                        className="w-full h-48 object-contain rounded-lg"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          form.setValue('companyImage', '');
+                          form.setValue('companyImagePublicId', '');
+                        }}
                       >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select minimum CGPA" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="6.0">6.0</SelectItem>
-                          <SelectItem value="6.5">6.5</SelectItem>
-                          <SelectItem value="7.0">7.0</SelectItem>
-                          <SelectItem value="7.5">7.5</SelectItem>
-                          <SelectItem value="8.0">8.0</SelectItem>
-                          <SelectItem value="8.5">8.5</SelectItem>
-                          <SelectItem value="9.0">9.0</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <FileUploader
+                      onFileUpload={handleImageSelection}
+                      acceptedFileTypes={{ "image/*": [".jpeg", ".jpg", ".png"] }}
+                      maxSize={5 * 1024 * 1024} // 5MB
+                    />
+                  )}
+                </div>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job Role</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Software Engineer" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="package"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Package</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. ₹15 LPA" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
-                  name="eligibility.uniformCgpa"
+                  name="location"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <Input placeholder="e.g. Bangalore" {...field} />
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Use same CGPA for all branches</FormLabel>
-                        <FormDescription>
-                          When checked, a single CGPA value will be applied to all branches
-                        </FormDescription>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
 
-                {form.watch("eligibility.uniformCgpa") ? (
+              <FormField
+                control={form.control}
+                name="deadline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Application Deadline</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="jobDescription"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter detailed job description..."
+                        className="min-h-[120px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="accommodation"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Accommodation Provided</FormLabel>
+                      <FormDescription>
+                        Check if accommodation is provided for this role
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+            </div>
+
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Eligibility Criteria</CardTitle>
+                  <CardDescription>
+                    Define who can apply for this job
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="eligibility.branches"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="mb-4">
+                          <FormLabel>Eligible Branches</FormLabel>
+                          <FormDescription>
+                            Select the branches eligible for this job
+                          </FormDescription>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {branches.map((branch) => (
+                            <FormItem
+                              key={branch.id}
+                              className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value?.includes(branch.id)}
+                                  onCheckedChange={(checked) => {
+                                    return checked
+                                      ? field.onChange([...field.value, branch.id])
+                                      : field.onChange(
+                                          field.value?.filter(
+                                            (value) => value !== branch.id
+                                          )
+                                        );
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                {branch.label}
+                              </FormLabel>
+                            </FormItem>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  
                   <FormField
                     control={form.control}
                     name="eligibility.cgpa"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Minimum CGPA (All Branches)</FormLabel>
+                        <FormLabel>Minimum CGPA</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
@@ -655,117 +517,179 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                       </FormItem>
                     )}
                   />
-                ) : (
-                  // Existing branch-specific CGPA criteria UI
-                  <div className="space-y-4">
-                <FormLabel>CGPA Criteria</FormLabel>
-                <FormDescription>
-                  Set CGPA requirements for each branch
-                </FormDescription>
-                
-                {form.watch("eligibility.branches").map((branchId) => {
-                  const branch = branches.find(b => b.id === branchId);
                   
-                  return (
-                    <div key={branchId} className="space-y-2">
-                      <div className="flex items-center gap-4">
-                        <span className="w-1/3">{branch?.label}:</span>
-                        <FormField
-                          control={form.control}
-                          name={`eligibility.cgpaCriteria.${branchId}`}
-                          render={({ field }) => (
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value || "7.0"}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select CGPA" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="6.0">6.0</SelectItem>
-                                <SelectItem value="6.5">6.5</SelectItem>
-                                <SelectItem value="7.0">7.0</SelectItem>
-                                <SelectItem value="7.5">7.5</SelectItem>
-                                <SelectItem value="8.0">8.0</SelectItem>
-                                <SelectItem value="8.5">8.5</SelectItem>
-                                <SelectItem value="9.0">9.0</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-                )}
-
-                
-
-                <FormField
-                  control={form.control}
-                  name="eligibility.gender"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Gender Eligibility</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                  <FormField
+                    control={form.control}
+                    name="eligibility.uniformCgpa"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select gender eligibility" />
-                          </SelectTrigger>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {genders.map((gender) => (
-                            <SelectItem key={gender.id} value={gender.id}>
-                              {gender.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Use same CGPA for all branches</FormLabel>
+                          <FormDescription>
+                            When checked, a single CGPA value will be applied to all branches
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  {form.watch("eligibility.uniformCgpa") ? (
+                    <FormField
+                      control={form.control}
+                      name="eligibility.cgpa"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Minimum CGPA (All Branches)</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select minimum CGPA" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="6.0">6.0</SelectItem>
+                              <SelectItem value="6.5">6.5</SelectItem>
+                              <SelectItem value="7.0">7.0</SelectItem>
+                              <SelectItem value="7.5">7.5</SelectItem>
+                              <SelectItem value="8.0">8.0</SelectItem>
+                              <SelectItem value="8.5">8.5</SelectItem>
+                              <SelectItem value="9.0">9.0</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    // Existing branch-specific CGPA criteria UI
+                    <div className="space-y-4">
+                  <FormLabel>CGPA Criteria</FormLabel>
+                  <FormDescription>
+                    Set CGPA requirements for each branch
+                  </FormDescription>
+                  
+                  {form.watch("eligibility.branches").map((branchId) => {
+                    const branch = branches.find(b => b.id === branchId);
+                    
+                    return (
+                      <div key={branchId} className="space-y-2">
+                        <div className="flex items-center gap-4">
+                          <span className="w-1/3">{branch?.label}:</span>
+                          <FormField
+                            control={form.control}
+                            name={`eligibility.cgpaCriteria.${branchId}`}
+                            render={({ field }) => (
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value || "7.0"}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select CGPA" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="6.0">6.0</SelectItem>
+                                  <SelectItem value="6.5">6.5</SelectItem>
+                                  <SelectItem value="7.0">7.0</SelectItem>
+                                  <SelectItem value="7.5">7.5</SelectItem>
+                                  <SelectItem value="8.0">8.0</SelectItem>
+                                  <SelectItem value="8.5">8.5</SelectItem>
+                                  <SelectItem value="9.0">9.0</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
                   )}
-                />
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Hiring Workflow</CardTitle>
-                <CardDescription>
-                  Define the stages in your hiring process
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <HiringWorkflow
-                  steps={workflowSteps}
-                  setSteps={setWorkflowSteps}
-                />
-              </CardContent>
-            </Card>
+                  
+
+                  <FormField
+                    control={form.control}
+                    name="eligibility.gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Gender Eligibility</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select gender eligibility" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {genders.map((gender) => (
+                              <SelectItem key={gender.id} value={gender.id}>
+                                {gender.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Hiring Workflow</CardTitle>
+                  <CardDescription>
+                    Define the stages in your hiring process
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <HiringWorkflow
+                    steps={workflowSteps}
+                    setSteps={setWorkflowSteps}
+                  />
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
 
-        <Separator />
+          <Separator />
 
-        <div className="flex justify-end gap-4">
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() => router.push(`/admin/placement_cycles/${cycleId}`)}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Job"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+          <div className="flex justify-end gap-4">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => router.push(`/admin/placement_cycles/${cycleId}`)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Job"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+
+      {selectedImage && (
+        <ImageCropModal
+          isOpen={isImageCropModalOpen}
+          onClose={() => setIsImageCropModalOpen(false)}
+          imageSrc={selectedImage}
+          onCropComplete={handleCropComplete}
+        />
+      )}
+    </>
   );
 }

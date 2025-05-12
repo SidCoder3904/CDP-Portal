@@ -84,13 +84,17 @@ export default function JobDetails({
     <div className="bg-white rounded-lg shadow-md p-4">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
-            {job.logo && (
+          <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
+            {job.logo ? (
               <img
-                src={job.logo || "company.png"}
+                src={job.logo}
                 alt={`${job.company} logo`}
-                className="w-full h-full object-contain"
+                className="max-w-full max-h-full object-contain"
               />
+            ) : (
+              <div className="text-gray-400 text-xl font-semibold">
+                {job.company?.charAt(0)}
+              </div>
             )}
           </div>
           <div>

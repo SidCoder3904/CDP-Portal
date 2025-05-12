@@ -205,9 +205,9 @@ def create_job(cycle_id):
             Please check the portal for more details and to apply.
             """
         )
-        print("✅ Email notifications sent successfully")
+        print("[SUCCESS] Email notifications sent successfully")
     except Exception as e:
-        print(f"❌ Error sending email notifications: {str(e)}")
+        print(f"[ERROR] Error sending email notifications: {str(e)}")
         print("Continuing without email notification")
     
     return dumps(job), 201
