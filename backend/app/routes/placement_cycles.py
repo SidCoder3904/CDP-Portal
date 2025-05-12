@@ -28,9 +28,14 @@ def format_placement_cycle(raw_cycle):
     # Calculate students count if not present
     students_count = raw_cycle.get("students", 0)
     if not students_count:
-        # Use PlacementService to get eligible students
-        students = PlacementService.get_eligible_students(cycle_id)
-        students_count = len(students) if students else 0
+        # Get batch and eligible programs from cycle
+        batch = raw_cycle.get('batch')
+        eligible_programs = raw_cycle.get('eligiblePrograms', [])
+        
+        if batch and eligible_programs:
+            # Use the same method as get_cycle_students endpoint
+            students = StudentService.get_students_by_cycle(cycle_id, batch, eligible_programs)
+            students_count = len(students) if students else 0
     
     return {
         "id": cycle_id,

@@ -192,7 +192,7 @@ export default function CyclesPage() {
               <SelectItem value="completed">Completed</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
+          {/* <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
@@ -201,7 +201,7 @@ export default function CyclesPage() {
               <SelectItem value="placement">Placement</SelectItem>
               <SelectItem value="internship">Internship</SelectItem>
             </SelectContent>
-          </Select>
+          </Select> */}
           <Button variant="outline" size="icon">
             <Filter className="h-4 w-4" />
           </Button>

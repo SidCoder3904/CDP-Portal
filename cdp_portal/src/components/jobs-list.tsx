@@ -90,6 +90,26 @@ export function JobsList({ cycleId }: JobsListProps) {
     setStatusFilter(value);
   };
 
+  // Check if a deadline has passed
+  const isDeadlinePassed = (deadline: string): boolean => {
+    if (!deadline) return false;
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    // Reset time part for accurate date comparison
+    today.setHours(0, 0, 0, 0);
+    return deadlineDate < today;
+  };
+
+  // Format the deadline for display
+  const formatDeadline = (deadline: string): string => {
+    if (!deadline) return 'No deadline';
+    return new Date(deadline).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-end">
@@ -136,14 +156,16 @@ export function JobsList({ cycleId }: JobsListProps) {
                 <TableHead>Location</TableHead>
                 <TableHead>Deadline</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Applicants</TableHead>
-                <TableHead>Selected</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {jobs.map((job) => {
                 // Handle both string and object ID formats
                 const jobId = typeof job._id === 'string' ? job._id : job._id.$oid;
+                
+                // Determine display status based on deadline
+                const deadlinePassed = isDeadlinePassed(job.deadline);
+                const displayStatus = deadlinePassed ? "closed" : job.status;
                 
                 return (
                   <TableRow key={jobId}>
@@ -158,22 +180,23 @@ export function JobsList({ cycleId }: JobsListProps) {
                     <TableCell>{job.role}</TableCell>
                     <TableCell>{job.package}</TableCell>
                     <TableCell>{job.location}</TableCell>
-                    <TableCell>{job.deadline}</TableCell>
+                    <TableCell>
+                      {formatDeadline(job.deadline)}
+                      {deadlinePassed && <span className="text-red-500 ml-1"></span>}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={
-                          job.status === "open" || job.status === "Open" 
+                          displayStatus === "open" || displayStatus === "Open" 
                             ? "default"
-                            : job.status === "closed" || job.status === "Closed"
+                            : displayStatus === "closed" || displayStatus === "Closed"
                             ? "secondary"
                             : "outline"
                         }
                       >
-                        {job.status}
+                        {deadlinePassed ? "Closed" : job.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{job.applicants || 0}</TableCell>
-                    <TableCell>{job.selected || 0}</TableCell>
                   </TableRow>
                 );
               })}
