@@ -45,7 +45,8 @@ interface JobFormProps {
   onSuccess?: () => void;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 
 const formSchema = z.object({
   company: z.string().min(1, "Company name is required"),
@@ -63,14 +64,16 @@ const formSchema = z.object({
     cgpaCriteria: z.record(z.string()).optional(),
     cgpa: z.string().min(1, "CGPA is required"),
     gender: z.enum(["All", "Male", "Female"]),
-    branches: z.array(z.string()).min(1, "At least one branch must be selected"),
+    branches: z
+      .array(z.string())
+      .min(1, "At least one branch must be selected"),
   }),
   hiringFlow: z
     .array(
       z.object({
         step: z.string().min(1, "Step is required"),
         description: z.string().min(1, "Description is required"),
-      }),
+      })
     )
     .min(1, "At least one hiring step is required"),
   jobDescription: z.string().min(1, "Job description is required"),
@@ -88,7 +91,6 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { token } = useAuth();
 
-  
   const [workflowSteps, setWorkflowSteps] = useState([
     {
       id: 1,
@@ -120,7 +122,7 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
         gender: "All",
         branches: [],
       },
-      hiringFlow: workflowSteps.map(step => ({
+      hiringFlow: workflowSteps.map((step) => ({
         step: step.name,
         description: step.description,
       })),
@@ -132,7 +134,7 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
   const defaultOnSuccess = () => {
     router.push(`/admin/placement_cycles/${cycleId}`);
   };
-  
+
   // Use the provided onSuccess or the default one
   const handleSuccess = onSuccess || defaultOnSuccess;
 
@@ -140,12 +142,12 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
     try {
       setIsSubmitting(true);
       setError(null);
-      
+
       // Format the data for the API
       const formattedData = {
         ...values,
         cycle: cycleId,
-        hiringFlow: workflowSteps.map(step => ({
+        hiringFlow: workflowSteps.map((step) => ({
           step: step.name,
           description: step.description,
         })),
@@ -154,22 +156,25 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
         companyImagePublicId: values.companyImagePublicId,
         jobDescriptionFilePublicId: values.jobDescriptionFilePublicId,
       };
-            
+
       // Call the API to create the job
-      const response = await fetch(`${API_BASE_URL}/api/placement-cycles/${cycleId}/jobs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formattedData),
-      });
-      
+      const response = await fetch(
+        `${API_BASE_URL}/api/placement-cycles/${cycleId}/jobs`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(formattedData),
+        }
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to create job");
       }
-      
+
       // Call the success callback
       handleSuccess();
     } catch (error) {
@@ -181,11 +186,12 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
   }
 
   const branches = [
-    { id: "cs", label: "Computer Science" },
-    { id: "ec", label: "Electronics" },
-    { id: "ee", label: "Electrical" },
-    { id: "me", label: "Mechanical" },
-    { id: "ce", label: "Civil" },
+    { id: "CSE", label: "Computer Science" },
+    { id: "EE", label: "Electrical" },
+    { id: "ME", label: "Mechanical" },
+    { id: "CE", label: "Civil" },
+    { id: "MM", label: "Metallurgical" },
+    { id: "CH", label: "Chemical" },
   ];
 
   const genders = [
@@ -216,16 +222,19 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
       const tempCompanyId = `temp_${Date.now()}`;
 
       const formData = new FormData();
-      formData.append('image', imageFile);
-      formData.append('company_id', tempCompanyId);
+      formData.append("image", imageFile);
+      formData.append("company_id", tempCompanyId);
 
-      const apiResponse = await fetch(`${API_BASE_URL}/api/jobs/upload-company-image`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData,
-      });
+      const apiResponse = await fetch(
+        `${API_BASE_URL}/api/jobs/upload-company-image`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
 
       if (!apiResponse.ok) {
         const errorData = await apiResponse.json();
@@ -233,14 +242,16 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
       }
 
       const data = await apiResponse.json();
-      form.setValue('companyImage', data.imageUrl);
-      form.setValue('companyImagePublicId', data.publicId);
-      
+      form.setValue("companyImage", data.imageUrl);
+      form.setValue("companyImagePublicId", data.publicId);
+
       setIsImageCropModalOpen(false);
       setSelectedImage(null);
     } catch (error) {
       console.error("Error uploading image:", error);
-      setError(error instanceof Error ? error.message : "Failed to upload image");
+      setError(
+        error instanceof Error ? error.message : "Failed to upload image"
+      );
     } finally {
       setIsUploadingImage(false);
     }
@@ -252,16 +263,19 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
       setError(null);
 
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('job_id', cycleId);
+      formData.append("file", file);
+      formData.append("job_id", cycleId);
 
-      const response = await fetch(`${API_BASE_URL}/api/jobs/upload-job-description`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/jobs/upload-job-description`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -269,11 +283,13 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
       }
 
       const data = await response.json();
-      form.setValue('jobDescriptionFile', data.fileUrl);
-      form.setValue('jobDescriptionFilePublicId', data.publicId);
+      form.setValue("jobDescriptionFile", data.fileUrl);
+      form.setValue("jobDescriptionFilePublicId", data.publicId);
     } catch (error) {
       console.error("Error uploading file:", error);
-      setError(error instanceof Error ? error.message : "Failed to upload file");
+      setError(
+        error instanceof Error ? error.message : "Failed to upload file"
+      );
     } finally {
       setIsUploadingFile(false);
     }
@@ -288,7 +304,7 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
               {error}
             </div>
           )}
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-6">
               <FormField
@@ -308,10 +324,10 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
               <div className="space-y-2">
                 <Label>Company Image</Label>
                 <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-2 text-center">
-                  {form.watch('companyImage') ? (
+                  {form.watch("companyImage") ? (
                     <div className="relative w-full">
                       <img
-                        src={form.watch('companyImage')}
+                        src={form.watch("companyImage")}
                         alt="Company"
                         className="w-full h-48 object-contain rounded-lg"
                       />
@@ -320,8 +336,8 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                         size="sm"
                         className="absolute top-2 right-2"
                         onClick={() => {
-                          form.setValue('companyImage', '');
-                          form.setValue('companyImagePublicId', '');
+                          form.setValue("companyImage", "");
+                          form.setValue("companyImagePublicId", "");
                         }}
                       >
                         Remove
@@ -330,7 +346,9 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                   ) : (
                     <FileUploader
                       onFileUpload={handleImageSelection}
-                      acceptedFileTypes={{ "image/*": [".jpeg", ".jpg", ".png"] }}
+                      acceptedFileTypes={{
+                        "image/*": [".jpeg", ".jpg", ".png"],
+                      }}
                       maxSize={5 * 1024 * 1024} // 5MB
                     />
                   )}
@@ -433,7 +451,6 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                   </FormItem>
                 )}
               />
-
             </div>
 
             <div className="space-y-6">
@@ -467,7 +484,10 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                                   checked={field.value?.includes(branch.id)}
                                   onCheckedChange={(checked) => {
                                     return checked
-                                      ? field.onChange([...field.value, branch.id])
+                                      ? field.onChange([
+                                          ...field.value,
+                                          branch.id,
+                                        ])
                                       : field.onChange(
                                           field.value?.filter(
                                             (value) => value !== branch.id
@@ -487,7 +507,6 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                     )}
                   />
 
-                  
                   <FormField
                     control={form.control}
                     name="eligibility.cgpa"
@@ -517,7 +536,7 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="eligibility.uniformCgpa"
@@ -532,7 +551,8 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                         <div className="space-y-1 leading-none">
                           <FormLabel>Use same CGPA for all branches</FormLabel>
                           <FormDescription>
-                            When checked, a single CGPA value will be applied to all branches
+                            When checked, a single CGPA value will be applied to
+                            all branches
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -572,51 +592,49 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
                   ) : (
                     // Existing branch-specific CGPA criteria UI
                     <div className="space-y-4">
-                  <FormLabel>CGPA Criteria</FormLabel>
-                  <FormDescription>
-                    Set CGPA requirements for each branch
-                  </FormDescription>
-                  
-                  {form.watch("eligibility.branches").map((branchId) => {
-                    const branch = branches.find(b => b.id === branchId);
-                    
-                    return (
-                      <div key={branchId} className="space-y-2">
-                        <div className="flex items-center gap-4">
-                          <span className="w-1/3">{branch?.label}:</span>
-                          <FormField
-                            control={form.control}
-                            name={`eligibility.cgpaCriteria.${branchId}`}
-                            render={({ field }) => (
-                              <Select
-                                onValueChange={field.onChange}
-                                value={field.value || "7.0"}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select CGPA" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="6.0">6.0</SelectItem>
-                                  <SelectItem value="6.5">6.5</SelectItem>
-                                  <SelectItem value="7.0">7.0</SelectItem>
-                                  <SelectItem value="7.5">7.5</SelectItem>
-                                  <SelectItem value="8.0">8.0</SelectItem>
-                                  <SelectItem value="8.5">8.5</SelectItem>
-                                  <SelectItem value="9.0">9.0</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                  )}
+                      <FormLabel>CGPA Criteria</FormLabel>
+                      <FormDescription>
+                        Set CGPA requirements for each branch
+                      </FormDescription>
 
-                  
+                      {form.watch("eligibility.branches").map((branchId) => {
+                        const branch = branches.find((b) => b.id === branchId);
+
+                        return (
+                          <div key={branchId} className="space-y-2">
+                            <div className="flex items-center gap-4">
+                              <span className="w-1/3">{branch?.label}:</span>
+                              <FormField
+                                control={form.control}
+                                name={`eligibility.cgpaCriteria.${branchId}`}
+                                render={({ field }) => (
+                                  <Select
+                                    onValueChange={field.onChange}
+                                    value={field.value || "7.0"}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Select CGPA" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="6.0">6.0</SelectItem>
+                                      <SelectItem value="6.5">6.5</SelectItem>
+                                      <SelectItem value="7.0">7.0</SelectItem>
+                                      <SelectItem value="7.5">7.5</SelectItem>
+                                      <SelectItem value="8.0">8.0</SelectItem>
+                                      <SelectItem value="8.5">8.5</SelectItem>
+                                      <SelectItem value="9.0">9.0</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   <FormField
                     control={form.control}
