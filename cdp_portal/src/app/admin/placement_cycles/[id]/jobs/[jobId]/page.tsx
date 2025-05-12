@@ -38,6 +38,26 @@ export default function JobPage({ params }: JobPageProps) {
 
   const jobsApi = useJobsApi();
 
+  // Check if deadline has passed
+  const isDeadlinePassed = (deadline: string): boolean => {
+    if (!deadline) return false;
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    // Reset time part for accurate date comparison
+    today.setHours(0, 0, 0, 0);
+    return deadlineDate < today;
+  };
+
+  // Format the deadline for display
+  const formatDeadline = (deadline: string): string => {
+    if (!deadline) return "No deadline";
+    return new Date(deadline).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -83,6 +103,11 @@ export default function JobPage({ params }: JobPageProps) {
     );
   }
 
+  // Determine if deadline has passed
+  const deadlinePassed = isDeadlinePassed(job.deadline);
+  // Set display status based on deadline
+  const displayStatus = deadlinePassed ? "closed" : job.status;
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center gap-2 mb-6">
@@ -118,9 +143,12 @@ export default function JobPage({ params }: JobPageProps) {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{job.deadline}</div>
+            <div className="text-2xl font-bold">
+              {formatDeadline(job.deadline)}
+            </div>
             <p className="text-xs text-muted-foreground">
               Application closing date
+              {deadlinePassed && <span className="text-red-500 ml-1"></span>}
             </p>
           </CardContent>
         </Card>
@@ -132,10 +160,12 @@ export default function JobPage({ params }: JobPageProps) {
           {job.location}
         </Badge>
         <Badge
-          variant={job.status === "open" ? "default" : "outline"}
+          variant={displayStatus === "open" ? "default" : "secondary"}
           className="text-sm py-1 bg-template"
         >
-          {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+          {deadlinePassed
+            ? "Closed"
+            : displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
         </Badge>
       </div>
 

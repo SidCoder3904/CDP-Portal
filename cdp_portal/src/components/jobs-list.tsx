@@ -90,6 +90,26 @@ export function JobsList({ cycleId }: JobsListProps) {
     setStatusFilter(value);
   };
 
+  // Check if a deadline has passed
+  const isDeadlinePassed = (deadline: string): boolean => {
+    if (!deadline) return false;
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    // Reset time part for accurate date comparison
+    today.setHours(0, 0, 0, 0);
+    return deadlineDate < today;
+  };
+
+  // Format the deadline for display
+  const formatDeadline = (deadline: string): string => {
+    if (!deadline) return 'No deadline';
+    return new Date(deadline).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-end">
@@ -136,46 +156,47 @@ export function JobsList({ cycleId }: JobsListProps) {
                 <TableHead>Location</TableHead>
                 <TableHead>Deadline</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Applicants</TableHead>
-                <TableHead>Selected</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {jobs.map((job) => {
-                const jobId =
-                  typeof job._id === "string" ? job._id : job._id.$oid;
-
+                // Handle both string and object ID formats
+                const jobId = typeof job._id === 'string' ? job._id : job._id.$oid;
+                
+                // Determine display status based on deadline
+                const deadlinePassed = isDeadlinePassed(job.deadline);
+                const displayStatus = deadlinePassed ? "closed" : job.status;
+                
                 return (
-                  <TableRow
-                    key={jobId}
-                    className="hover:bg-muted transition-colors cursor-pointer"
-                  >
-                    <Link
-                      href={`/admin/placement_cycles/${cycleId}/jobs/${jobId}`}
-                      className="contents"
-                    >
-                      <TableCell className="font-bold">{job.company}</TableCell>
-                      <TableCell>{job.role}</TableCell>
-                      <TableCell>{job.package}</TableCell>
-                      <TableCell>{job.location}</TableCell>
-                      <TableCell>{job.deadline}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            job.status.toLowerCase() === "open"
-                              ? "default"
-                              : job.status.toLowerCase() === "closed"
-                              ? "secondary"
-                              : "outline"
-                          }
-                          className="bg-template"
-                        >
-                          {job.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{job.applicants || 0}</TableCell>
-                      <TableCell>{job.selected || 0}</TableCell>
-                    </Link>
+                  <TableRow key={jobId}>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/admin/placement_cycles/${cycleId}/jobs/${jobId}`}
+                        className="hover:underline"
+                      >
+                        {job.company}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{job.role}</TableCell>
+                    <TableCell>{job.package}</TableCell>
+                    <TableCell>{job.location}</TableCell>
+                    <TableCell>
+                      {formatDeadline(job.deadline)}
+                      {deadlinePassed && <span className="text-red-500 ml-1"></span>}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          displayStatus === "open" || displayStatus === "Open" 
+                            ? "default"
+                            : displayStatus === "closed" || displayStatus === "Closed"
+                            ? "secondary"
+                            : "outline"
+                        }
+                      >
+                        {deadlinePassed ? "Closed" : job.status}
+                      </Badge>
+                    </TableCell>
                   </TableRow>
                 );
               })}

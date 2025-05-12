@@ -49,10 +49,23 @@ export default function JobDetails({
     return `${Math.floor(diffDays / 30)} months ago`;
   };
 
+  // Check if deadline has passed
+  const isDeadlinePassed = (deadline?: string) => {
+    if (!deadline) return false;
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return deadlineDate < today;
+  };
+
+  const deadlinePassed = isDeadlinePassed(job.deadline);
+  // If deadline passed, override the status to closed
+  const displayStatus = deadlinePassed ? "closed" : job.status;
+
   const postedDate = job.createdAt ? formatDate(job.createdAt) : "";
 
   const handleApplyClick = () => {
-    if (isApplied || isApplying || !job.isEligible) {
+    if (isApplied || isApplying || !job.isEligible || deadlinePassed) {
       return;
     }
     setIsResumeDialogOpen(true);
@@ -107,7 +120,7 @@ export default function JobDetails({
               {/* Only show the badge if the job is eligible */}
               {
                 <Badge variant={"default"} className="text-xs bg-template">
-                  {job.status}
+                  {displayStatus}
                 </Badge>
               }
             </p>
@@ -117,13 +130,13 @@ export default function JobDetails({
           <Button
             onClick={handleApplyClick}
             disabled={
-              job.status === "closed" ||
+              displayStatus === "closed" ||
               !job.isEligible ||
               isApplied ||
               isApplying
             }
             className={`${
-              job.status === "closed"
+              displayStatus === "closed"
                 ? "bg-gray-500 hover:bg-gray-500 cursor-not-allowed"
                 : !job.isEligible
                 ? "bg-red-500 hover:bg-red-500 cursor-not-allowed"
@@ -132,7 +145,7 @@ export default function JobDetails({
                 : "bg-[#002147] hover:bg-[#003167]"
             }`}
           >
-            {job.status === "closed" ? (
+            {displayStatus === "closed" ? (
               "Applications Closed"
             ) : !job.isEligible ? (
               "Not Eligible"
@@ -197,7 +210,8 @@ export default function JobDetails({
                   <div className="p-3 bg-gray-50 rounded-md">
                     <p className="font-medium">Application Deadline</p>
                     <p className="text-gray-700">
-                      {formatDeadline(job.deadline)}
+                      {formatDeadline(job.deadline)} 
+                      {deadlinePassed && <span className="text-red-500 ml-1">(expired)</span>}
                     </p>
                   </div>
                 )}
