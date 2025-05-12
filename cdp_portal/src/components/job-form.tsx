@@ -142,19 +142,22 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
     try {
       setIsSubmitting(true);
       setError(null);
+      
+      // Explicitly get the latest form values before formatting
+      const currentFormValues = form.getValues();
 
-      // Format the data for the API
+      // Format the data for the API using the latest values
       const formattedData = {
-        ...values,
+        ...currentFormValues, // Use latest values
         cycle: cycleId,
         hiringFlow: workflowSteps.map((step) => ({
           step: step.name,
           description: step.description,
         })),
-        logo: values.companyImage,
-        jobDescriptionFile: values.jobDescriptionFile,
-        companyImagePublicId: values.companyImagePublicId,
-        jobDescriptionFilePublicId: values.jobDescriptionFilePublicId,
+        logo: currentFormValues.companyImage, // Ensure latest logo URL is used
+        jobDescriptionFile: currentFormValues.jobDescriptionFile,
+        companyImagePublicId: currentFormValues.companyImagePublicId, // Ensure latest public ID is used
+        jobDescriptionFilePublicId: currentFormValues.jobDescriptionFilePublicId,
       };
 
       // Call the API to create the job
@@ -206,14 +209,16 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
     setIsImageCropModalOpen(true);
   };
 
-  const handleCropComplete = async (croppedImageUrl: string) => {
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
     try {
       setIsUploadingImage(true);
       setError(null);
 
-      // Convert cropped image URL to a File object
-      const response = await fetch(croppedImageUrl);
-      const croppedImageBlob = await response.blob();
+      // No need to fetch the blob URL anymore
+      // const response = await fetch(croppedImageUrl);
+      // const croppedImageBlob = await response.blob();
+
+      // Create the File object directly from the Blob
       const imageFile = new File([croppedImageBlob], "company-logo.jpg", {
         type: "image/jpeg",
       });
@@ -246,7 +251,7 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
       form.setValue("companyImagePublicId", data.publicId);
 
       setIsImageCropModalOpen(false);
-      setSelectedImage(null);
+      setSelectedImage(null); // Clear the temporary preview URL
     } catch (error) {
       console.error("Error uploading image:", error);
       setError(
@@ -703,7 +708,10 @@ export function JobForm({ cycleId, onSuccess }: JobFormProps) {
       {selectedImage && (
         <ImageCropModal
           isOpen={isImageCropModalOpen}
-          onClose={() => setIsImageCropModalOpen(false)}
+          onClose={() => {
+            setIsImageCropModalOpen(false);
+            setSelectedImage(null); // Also clear preview URL on manual close
+          }}
           imageSrc={selectedImage}
           onCropComplete={handleCropComplete}
         />
