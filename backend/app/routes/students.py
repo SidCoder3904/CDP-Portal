@@ -14,6 +14,7 @@ from datetime import datetime
 from app.utils.cloudinary_config import upload_file, delete_file, generate_public_id, upload_profile_picture
 from app.services.document_service import DocumentService
 from app.services.auth_service import AuthService
+from app.services.email_service import EmailService
 import pandas as pd
 from werkzeug.security import generate_password_hash
 
@@ -57,6 +58,16 @@ def create_student():
     student_id = StudentService.create_student(student_data)
     if not student_id:
         return jsonify({"message": "Failed to create student profile"}), 500
+    
+    # Send registration email
+    try:
+        EmailService.send_registration_notification(
+            student_email=data.get('email'),
+            student_name=data.get('name')
+        )
+    except Exception as e:
+        print(f"Failed to send registration email: {str(e)}")
+        # Don't return error since account was created successfully
     
     return jsonify({
         "message": "Student account created successfully",
@@ -141,6 +152,16 @@ def bulk_create_students():
                         "reason": "Failed to create student profile"
                     })
                     continue
+                
+                # Send registration email
+                try:
+                    EmailService.send_registration_notification(
+                        student_email=row['email'],
+                        student_name=row['name']
+                    )
+                except Exception as e:
+                    print(f"Failed to send registration email to {row['email']}: {str(e)}")
+                    # Don't add to failed list since account was created successfully
                 
                 results["success"].append({
                     "email": row['email'],

@@ -417,6 +417,15 @@ export default function StudentVerificationPage() {
                       onReject={() => handleVerification("address", "rejected")}
                       isUpdating={isUpdating}
                     />
+
+                    <VerificationItem
+                      label="Passport Image"
+                      value="Profile Photo"
+                      status={student.verification.passportImage || "pending"}
+                      onVerify={() => handleVerification("passport_image", "verified")}
+                      onReject={() => handleVerification("passport_image", "rejected")}
+                      isUpdating={isUpdating}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>
