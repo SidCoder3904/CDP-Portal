@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,7 +20,8 @@ interface Column {
 }
 
 interface Template {
-  id: string
+  id?: string
+  _id?: string
   name: string
   description: string
   columns: Column[]
@@ -39,15 +40,32 @@ const availableFields = [
   { id: "offer_date", label: "Offer Date", type: "date" },
 ]
 
-export function TemplateBuilder({ onSave }: { onSave: (template: Template) => void }) {
+export function TemplateBuilder({ 
+  onSave,
+  initialTemplate
+}: { 
+  onSave: (template: Template) => void
+  initialTemplate?: Template
+}) {
   const [template, setTemplate] = useState<Template>({
-    id: "",
     name: "",
     description: "",
     columns: [],
   })
 
   const [showFormulaField, setShowFormulaField] = useState<string | null>(null)
+
+  // Load initial template data if provided
+  useEffect(() => {
+    if (initialTemplate) {
+      setTemplate(initialTemplate)
+    }
+  }, [initialTemplate])
+
+  // Check if a field is already in the template
+  const isFieldAlreadyAdded = (fieldId: string) => {
+    return template.columns.some(column => column.id === fieldId)
+  }
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return
@@ -60,6 +78,11 @@ export function TemplateBuilder({ onSave }: { onSave: (template: Template) => vo
   }
 
   const addColumn = (field: (typeof availableFields)[0]) => {
+    // Prevent adding duplicate fields
+    if (isFieldAlreadyAdded(field.id)) {
+      return
+    }
+    
     const newColumn: Column = {
       id: field.id,
       header: field.label,
@@ -88,7 +111,13 @@ export function TemplateBuilder({ onSave }: { onSave: (template: Template) => vo
 
   const handleSave = () => {
     if (!template.name) return
-    onSave({ ...template, id: crypto.randomUUID() })
+    
+    // If editing, preserve the original ID
+    const templateToSave = initialTemplate 
+      ? { ...template } 
+      : { ...template, id: crypto.randomUUID() }
+      
+    onSave(templateToSave)
   }
 
   return (
@@ -125,12 +154,22 @@ export function TemplateBuilder({ onSave }: { onSave: (template: Template) => vo
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {availableFields.map((field) => (
-              <Button key={field.id} variant="outline" className="justify-start" onClick={() => addColumn(field)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {field.label}
-              </Button>
-            ))}
+            {availableFields.map((field) => {
+              const isAdded = isFieldAlreadyAdded(field.id)
+              return (
+                <Button 
+                  key={field.id} 
+                  variant="outline" 
+                  className={`justify-start ${isAdded ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  onClick={() => addColumn(field)}
+                  disabled={isAdded}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {field.label}
+                  {isAdded && <span className="ml-1 text-xs">(added)</span>}
+                </Button>
+              )
+            })}
           </div>
         </CardContent>
       </Card>

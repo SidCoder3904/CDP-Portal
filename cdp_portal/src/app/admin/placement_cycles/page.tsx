@@ -19,7 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Search, Filter, Loader2, AlertCircle, X } from "lucide-react";
+import {
+  PlusCircle,
+  Search,
+  Filter,
+  Loader2,
+  AlertCircle,
+  X,
+} from "lucide-react";
 import { useApi } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -53,19 +60,23 @@ export default function CyclesPage() {
       const queryParams = new URLSearchParams();
       if (statusFilter !== "all") queryParams.append("status", statusFilter);
       if (typeFilter !== "all") queryParams.append("type", typeFilter);
-      
+
       // Use useApi hook's fetchWithAuth method
-      const response = await fetchWithAuth(`/api/placement-cycles?${queryParams.toString()}`);
-      
+      const response = await fetchWithAuth(
+        `/api/placement-cycles?${queryParams.toString()}`
+      );
+
       if (!response.ok) {
         throw new Error(`Failed to fetch cycles: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setCycles(data);
     } catch (err) {
       console.error("Error fetching cycles:", err);
-      setError(err instanceof Error ? err : new Error("An unknown error occurred"));
+      setError(
+        err instanceof Error ? err : new Error("An unknown error occurred")
+      );
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +88,7 @@ export default function CyclesPage() {
 
   const toggleCycleSelection = (cycleId: string) => {
     if (selectedCycles.includes(cycleId)) {
-      setSelectedCycles(selectedCycles.filter(id => id !== cycleId));
+      setSelectedCycles(selectedCycles.filter((id) => id !== cycleId));
     } else {
       setSelectedCycles([...selectedCycles, cycleId]);
     }
@@ -87,35 +98,37 @@ export default function CyclesPage() {
     if (selectedCycles.length === filteredCycles.length) {
       setSelectedCycles([]);
     } else {
-      setSelectedCycles(filteredCycles.map(cycle => cycle.id));
+      setSelectedCycles(filteredCycles.map((cycle) => cycle.id));
     }
   };
 
   const markCyclesInactive = async () => {
     setIsUpdating(true);
     try {
-      const updatePromises = selectedCycles.map(cycleId => 
+      const updatePromises = selectedCycles.map((cycleId) =>
         fetchWithAuth(`/api/placement-cycles/${cycleId}`, {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            status: 'inactive'
-          })
+            status: "inactive",
+          }),
         })
       );
-      
+
       await Promise.all(updatePromises);
-      
+
       // Refresh the cycles data
       await fetchCycles();
-      
+
       // Clear selection
       setSelectedCycles([]);
     } catch (err) {
       console.error("Error updating cycles:", err);
-      setError(err instanceof Error ? err : new Error("Failed to update cycles"));
+      setError(
+        err instanceof Error ? err : new Error("Failed to update cycles")
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -123,15 +136,15 @@ export default function CyclesPage() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
   // Filter cycles based on search term
-  const filteredCycles = cycles.filter(cycle => 
+  const filteredCycles = cycles.filter((cycle) =>
     cycle.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -139,7 +152,7 @@ export default function CyclesPage() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight text-template">
             Placement Cycles
           </h1>
           <p className="text-muted-foreground">
@@ -148,12 +161,16 @@ export default function CyclesPage() {
         </div>
         <div className="flex gap-2">
           {selectedCycles.length > 0 && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={markCyclesInactive}
               disabled={isUpdating}
             >
-              {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
+              {isUpdating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <X className="mr-2 h-4 w-4" />
+              )}
               Mark Inactive ({selectedCycles.length})
             </Button>
           )}
@@ -192,7 +209,7 @@ export default function CyclesPage() {
               <SelectItem value="completed">Completed</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
+          {/* <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
@@ -201,7 +218,7 @@ export default function CyclesPage() {
               <SelectItem value="placement">Placement</SelectItem>
               <SelectItem value="internship">Internship</SelectItem>
             </SelectContent>
-          </Select>
+          </Select> */}
           <Button variant="outline" size="icon">
             <Filter className="h-4 w-4" />
           </Button>
@@ -216,10 +233,10 @@ export default function CyclesPage() {
         <div className="flex flex-col items-center justify-center p-8 border rounded-lg">
           <AlertCircle className="h-10 w-10 text-red-500 mb-4" />
           <h3 className="text-lg font-semibold mb-2">Error Loading Cycles</h3>
-          <p className="text-muted-foreground text-center mb-4">{error.message}</p>
-          <Button onClick={() => window.location.reload()}>
-            Try Again
-          </Button>
+          <p className="text-muted-foreground text-center mb-4">
+            {error.message}
+          </p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
         </div>
       ) : filteredCycles.length === 0 ? (
         <div className="text-center p-8 border rounded-lg">
@@ -232,7 +249,10 @@ export default function CyclesPage() {
               <TableRow>
                 <TableHead className="w-[40px]">
                   <Checkbox
-                    checked={selectedCycles.length === filteredCycles.length && filteredCycles.length > 0}
+                    checked={
+                      selectedCycles.length === filteredCycles.length &&
+                      filteredCycles.length > 0
+                    }
                     onCheckedChange={toggleSelectAll}
                   />
                 </TableHead>
@@ -246,40 +266,46 @@ export default function CyclesPage() {
             </TableHeader>
             <TableBody>
               {filteredCycles.map((cycle) => (
-                <TableRow key={cycle.id}>
-                  <TableCell>
+                <TableRow
+                  key={cycle.id}
+                  className="hover:bg-muted transition-colors cursor-pointer"
+                >
+                  {/* Non-clickable checkbox cell */}
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedCycles.includes(cycle.id)}
                       onCheckedChange={() => toggleCycleSelection(cycle.id)}
                     />
                   </TableCell>
-                  <TableCell className="font-medium">
-                    <Link
-                      href={`/admin/placement_cycles/${cycle.id}`}
-                      className="hover:underline"
-                    >
-                      {cycle.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{cycle.type}</TableCell>
-                  <TableCell>
-                    {formatDate(cycle.startDate)} - {formatDate(cycle.endDate)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        cycle.status.toLowerCase() === "active"
-                          ? "default"
-                          : cycle.status.toLowerCase() === "completed"
-                          ? "secondary"
-                          : "outline"
-                      }
-                    >
-                      {cycle.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{cycle.jobs || 0}</TableCell>
-                  <TableCell>{cycle.students || 0}</TableCell>
+
+                  {/* Clickable cells */}
+                  <Link
+                    href={`/admin/placement_cycles/${cycle.id}`}
+                    className="contents"
+                  >
+                    <TableCell className="font-bold">{cycle.name}</TableCell>
+                    <TableCell>{cycle.type}</TableCell>
+                    <TableCell>
+                      {formatDate(cycle.startDate)} -{" "}
+                      {formatDate(cycle.endDate)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          cycle.status.toLowerCase() === "active"
+                            ? "default"
+                            : cycle.status.toLowerCase() === "completed"
+                            ? "secondary"
+                            : "outline"
+                        }
+                        className="bg-template"
+                      >
+                        {cycle.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{cycle.jobs || 0}</TableCell>
+                    <TableCell>{cycle.students || 0}</TableCell>
+                  </Link>
                 </TableRow>
               ))}
             </TableBody>

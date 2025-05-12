@@ -650,9 +650,9 @@ export default function AdminNotices() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 space-y-6">
+    <div className="w-full py-16 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 className="text-2xl font-bold flex items-center gap-2 text-template">
           <Calendar className="h-6 w-6" />
           Manage Notices
         </h1>
@@ -682,7 +682,7 @@ export default function AdminNotices() {
                   <FileText className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="space-y-1">
-                  <p className="font-medium">
+                  <p className="font-medium text-template">
                     {notice.title || "Untitled Notice"}
                   </p>
                   {notice.description && (

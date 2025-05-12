@@ -1,34 +1,41 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, ArrowRight, Check, X, AlertCircle } from "lucide-react"
-import { useAdminApi, type StudentDetail } from "@/lib/api/admin"
-import { Icons } from "@/components/icons"
-import React from "react"
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, ArrowRight, Check, X, AlertCircle } from "lucide-react";
+import { useAdminApi, type StudentDetail } from "@/lib/api/admin";
+import { Icons } from "@/components/icons";
+import React from "react";
 
 interface VerificationItemProps {
-  label: string
-  value: string
-  status: "verified" | "rejected" | "pending"
-  onVerify: () => void
-  onReject: () => void
-  isUpdating: boolean
+  label: string;
+  value: string;
+  status: "verified" | "rejected" | "pending";
+  onVerify: () => void;
+  onReject: () => void;
+  isUpdating: boolean;
 }
 
-function VerificationItem({ label, value, status, onVerify, onReject, isUpdating }: VerificationItemProps) {
+function VerificationItem({
+  label,
+  value,
+  status,
+  onVerify,
+  onReject,
+  isUpdating,
+}: VerificationItemProps) {
   const handleToggle = () => {
     if (status === "verified") {
-      onReject()
+      onReject();
     } else {
-      onVerify()
+      onVerify();
     }
-  }
+  };
 
   return (
     <div className="flex items-center justify-between py-2">
@@ -42,122 +49,140 @@ function VerificationItem({ label, value, status, onVerify, onReject, isUpdating
         {isUpdating && <Icons.spinner className="h-4 w-4 animate-spin" />}
         <Badge
           variant={status === "verified" ? "default" : "destructive"}
-          className="cursor-pointer hover:opacity-80 transition-opacity"
+          className={
+            "cursor-pointer hover:opacity-80 transition-opacity " +
+            (status === "verified" ? "bg-template" : "bg-destructive")
+          }
           onClick={handleToggle}
         >
           {status === "verified" ? "Verified" : "Not Verified"}
         </Badge>
       </div>
     </div>
-  )
+  );
 }
 
 export default function StudentVerificationPage() {
-  const router = useRouter()
-  const params = useParams()
-  const studentId = params?.id as string || ""
-  const adminApi = useAdminApi()
+  const router = useRouter();
+  const params = useParams();
+  const studentId = (params?.id as string) || "";
+  const adminApi = useAdminApi();
 
-  const [student, setStudent] = useState<StudentDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [studentIds, setStudentIds] = useState<string[]>([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [updatingField, setUpdatingField] = useState<string | null>(null)
+  const [student, setStudent] = useState<StudentDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [studentIds, setStudentIds] = useState<string[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updatingField, setUpdatingField] = useState<string | null>(null);
 
   // Helper function to render verification button
   const renderVerificationButton = (field: string, isVerified: boolean) => (
     <div className="flex items-center space-x-2">
-      {updatingField === field && <Icons.spinner className="h-4 w-4 animate-spin" />}
+      {updatingField === field && (
+        <Icons.spinner className="h-4 w-4 animate-spin" />
+      )}
       <Badge
         variant={isVerified ? "default" : "destructive"}
-        className="cursor-pointer hover:opacity-80 transition-opacity"
-        onClick={() => handleVerification(field, isVerified ? "rejected" : "verified")}
+        className={
+          "cursor-pointer hover:opacity-80 transition-opacity " +
+          (isVerified ? "bg-template" : "bg-destructive")
+        }
+        onClick={() =>
+          handleVerification(field, isVerified ? "rejected" : "verified")
+        }
       >
         {isVerified ? "Verified" : "Not Verified"}
       </Badge>
     </div>
-  )
+  );
 
   // Fetch student IDs for navigation
   useEffect(() => {
     async function fetchStudentIds() {
       try {
-        const { students } = await adminApi.getStudents({ perPage: 100 })
-        const ids = students.map((s) => s._id)
-        setStudentIds(ids)
-        setCurrentIndex(ids.indexOf(studentId))
+        const { students } = await adminApi.getStudents({ perPage: 100 });
+        const ids = students.map((s) => s._id);
+        setStudentIds(ids);
+        setCurrentIndex(ids.indexOf(studentId));
       } catch (err) {
-        console.error("Failed to fetch student IDs:", err)
+        console.error("Failed to fetch student IDs:", err);
       }
     }
 
-    fetchStudentIds()
-  }, [])
+    fetchStudentIds();
+  }, []);
 
   // Fetch student details
   useEffect(() => {
     async function fetchStudentDetails() {
       try {
-        setLoading(true)
-        setError(null)
-        const studentData = await adminApi.getStudentById(studentId)
-        console.log("[Frontend] Received student data:", studentData)
-        console.log("[Frontend] Education data:", studentData.education)
-        console.log("[Frontend] Positions data:", studentData.positions)
-        console.log("[Frontend] Projects data:", studentData.projects)
-        console.log("[Frontend] Experience data:", studentData.experience)
-        setStudent(studentData)
+        setLoading(true);
+        setError(null);
+        const studentData = await adminApi.getStudentById(studentId);
+        console.log("[Frontend] Received student data:", studentData);
+        console.log("[Frontend] Education data:", studentData.education);
+        console.log("[Frontend] Positions data:", studentData.positions);
+        console.log("[Frontend] Projects data:", studentData.projects);
+        console.log("[Frontend] Experience data:", studentData.experience);
+        setStudent(studentData);
       } catch (err) {
-        console.error("[Frontend] Failed to fetch student details:", err)
-        setError("Failed to load student details. Please try again later.")
+        console.error("[Frontend] Failed to fetch student details:", err);
+        setError("Failed to load student details. Please try again later.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
     if (studentId) {
-      fetchStudentDetails()
+      fetchStudentDetails();
     }
-  }, [studentId])
+  }, [studentId]);
 
   const navigateToStudent = (direction: "next" | "prev") => {
-    if (!studentIds.length) return
+    if (!studentIds.length) return;
 
-    let newIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1
+    let newIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
 
     // Handle wrapping around
-    if (newIndex < 0) newIndex = studentIds.length - 1
-    if (newIndex >= studentIds.length) newIndex = 0
+    if (newIndex < 0) newIndex = studentIds.length - 1;
+    if (newIndex >= studentIds.length) newIndex = 0;
 
-    router.push(`/admin/verification/${studentIds[newIndex]}`)
-  }
+    router.push(`/admin/verification/${studentIds[newIndex]}`);
+  };
 
-  const handleVerification = async (field: string, status: "verified" | "rejected") => {
-    if (!student) return
+  const handleVerification = async (
+    field: string,
+    status: "verified" | "rejected"
+  ) => {
+    if (!student) return;
 
     try {
-      setUpdatingField(field)
-      console.log(`[Frontend] Making verification API call for field: ${field}, status: ${status}`)
-      await adminApi.updateVerificationStatus(studentId, field, status)
-      
+      setUpdatingField(field);
+      console.log(
+        `[Frontend] Making verification API call for field: ${field}, status: ${status}`
+      );
+      await adminApi.updateVerificationStatus(studentId, field, status);
+
       // Fetch the latest student data to ensure all fields are up to date
-      const updatedStudent = await adminApi.getStudentById(studentId)
-      setStudent(updatedStudent)
+      const updatedStudent = await adminApi.getStudentById(studentId);
+      setStudent(updatedStudent);
     } catch (err) {
-      console.error(`[Frontend] Failed to update ${field} verification status:`, err)
+      console.error(
+        `[Frontend] Failed to update ${field} verification status:`,
+        err
+      );
     } finally {
-      setUpdatingField(null)
+      setUpdatingField(null);
     }
-  }
+  };
 
   const handleVerifyAll = async () => {
-    if (!student) return
+    if (!student) return;
 
     try {
-      setIsUpdating(true)
-      
+      setIsUpdating(true);
+
       // Verify all basic info fields
       const basicFields = [
         "name",
@@ -170,71 +195,91 @@ export default function StudentVerificationPage() {
         "student_id",
         "enrollment_year",
         "expected_graduation_year",
-        "passport_image"
-      ]
-      
+        "passport_image",
+      ];
+
       for (const field of basicFields) {
-        await adminApi.updateVerificationStatus(studentId, field, "verified")
+        await adminApi.updateVerificationStatus(studentId, field, "verified");
       }
 
       // Verify all education items
       if (student.education) {
         for (let i = 0; i < student.education.length; i++) {
-          await adminApi.updateVerificationStatus(studentId, `education.${i}`, "verified")
+          await adminApi.updateVerificationStatus(
+            studentId,
+            `education.${i}`,
+            "verified"
+          );
         }
       }
 
       // Verify all experience items
       if (student.experience) {
         for (let i = 0; i < student.experience.length; i++) {
-          await adminApi.updateVerificationStatus(studentId, `experience.${i}`, "verified")
+          await adminApi.updateVerificationStatus(
+            studentId,
+            `experience.${i}`,
+            "verified"
+          );
         }
       }
 
       // Verify all positions items
       if (student.positions) {
         for (let i = 0; i < student.positions.length; i++) {
-          await adminApi.updateVerificationStatus(studentId, `positions.${i}`, "verified")
+          await adminApi.updateVerificationStatus(
+            studentId,
+            `positions.${i}`,
+            "verified"
+          );
         }
       }
 
       // Verify all projects items
       if (student.projects) {
         for (let i = 0; i < student.projects.length; i++) {
-          await adminApi.updateVerificationStatus(studentId, `projects.${i}`, "verified")
+          await adminApi.updateVerificationStatus(
+            studentId,
+            `projects.${i}`,
+            "verified"
+          );
         }
       }
 
       // Fetch updated student data
-      const updatedStudent = await adminApi.getStudentById(studentId)
-      setStudent(updatedStudent)
+      const updatedStudent = await adminApi.getStudentById(studentId);
+      setStudent(updatedStudent);
     } catch (err) {
-      console.error("Failed to verify all fields:", err)
+      console.error("Failed to verify all fields:", err);
     } finally {
-      setIsUpdating(false)
+      setIsUpdating(false);
     }
-  }
+  };
 
-  const isFullyVerified = student && 
+  const isFullyVerified =
+    student &&
     // Check basic info fields
     Object.entries(student.verification)
-      .filter(([key]) => !['education', 'experience', 'positions', 'projects'].includes(key))
+      .filter(
+        ([key]) =>
+          !["education", "experience", "positions", "projects"].includes(key)
+      )
       .every(([_, value]) => value === "verified") &&
     // Check education items
-    (student.education || []).every(edu => edu.is_verified) &&
+    (student.education || []).every((edu) => edu.is_verified) &&
     // Check experience items
-    (student.experience || []).every(exp => exp.is_verified) &&
+    (student.experience || []).every((exp) => exp.is_verified) &&
     // Check positions items
-    (student.positions || []).every(pos => pos.is_verified) &&
+    (student.positions || []).every((pos) => pos.is_verified) &&
     // Check projects items
-    (student.projects || []).every(proj => proj.is_verified)
+    (student.projects || []).every((proj) => proj.is_verified);
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -249,7 +294,7 @@ export default function StudentVerificationPage() {
           Back to Students List
         </Button>
       </div>
-    )
+    );
   }
 
   if (!student) {
@@ -261,18 +306,22 @@ export default function StudentVerificationPage() {
           Back to Students List
         </Button>
       </div>
-    )
+    );
   }
 
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={() => router.push("/admin/verification")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to List
+          <Button
+            variant="outline"
+            onClick={() => router.push("/admin/verification")}
+          >
+            <ArrowLeft className=" h-2 w-2" />
           </Button>
-          <h1 className="text-2xl font-bold">Student Verification</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-template py-4">
+            Student Verification
+          </h1>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -301,7 +350,7 @@ export default function StudentVerificationPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Student Profile</CardTitle>
+            <CardTitle className="text-template">Student Profile</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center space-y-4">
@@ -317,7 +366,9 @@ export default function StudentVerificationPage() {
               </Avatar>
 
               <div className="text-center">
-                <h2 className="text-xl font-bold">{student.name}</h2>
+                <h2 className="text-xl text-template font-bold">
+                  {student.name}
+                </h2>
                 <p className="text-muted-foreground">{student.student_id}</p>
               </div>
 
@@ -329,12 +380,19 @@ export default function StudentVerificationPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">CGPA:</span>
                   <span className="font-medium">
-                    {typeof student.cgpa === 'number' ? student.cgpa.toFixed(2) : 'N/A'}
+                    {typeof student.cgpa === "number"
+                      ? student.cgpa.toFixed(2)
+                      : "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Verification Status:</span>
-                  <Badge variant={isFullyVerified ? "default" : "destructive"}>
+                  <span className="text-muted-foreground">
+                    Verification Status:
+                  </span>
+                  <Badge
+                    variant={isFullyVerified ? "default" : "destructive"}
+                    className="bg-template"
+                  >
                     {isFullyVerified ? "Verified" : "Pending"}
                   </Badge>
                 </div>
@@ -344,10 +402,7 @@ export default function StudentVerificationPage() {
         </Card>
 
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Verification Details</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <Tabs defaultValue="personal">
               <TabsList className="mb-4">
                 <TabsTrigger value="personal">Personal Info</TabsTrigger>
@@ -361,7 +416,9 @@ export default function StudentVerificationPage() {
               <TabsContent value="personal" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Personal Information</CardTitle>
+                    <CardTitle className="text-template">
+                      Personal Information
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <VerificationItem
@@ -395,8 +452,12 @@ export default function StudentVerificationPage() {
                       label="Date of Birth"
                       value={student.dateOfBirth}
                       status={student.verification.dateOfBirth || "pending"}
-                      onVerify={() => handleVerification("date_of_birth", "verified")}
-                      onReject={() => handleVerification("date_of_birth", "rejected")}
+                      onVerify={() =>
+                        handleVerification("date_of_birth", "verified")
+                      }
+                      onReject={() =>
+                        handleVerification("date_of_birth", "rejected")
+                      }
                       isUpdating={isUpdating}
                     />
 
@@ -422,8 +483,12 @@ export default function StudentVerificationPage() {
                       label="Passport Image"
                       value="Profile Photo"
                       status={student.verification.passportImage || "pending"}
-                      onVerify={() => handleVerification("passport_image", "verified")}
-                      onReject={() => handleVerification("passport_image", "rejected")}
+                      onVerify={() =>
+                        handleVerification("passport_image", "verified")
+                      }
+                      onReject={() =>
+                        handleVerification("passport_image", "rejected")
+                      }
                       isUpdating={isUpdating}
                     />
                   </CardContent>
@@ -433,7 +498,9 @@ export default function StudentVerificationPage() {
               <TabsContent value="academic" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Academic Information</CardTitle>
+                    <CardTitle className="text-template">
+                      Academic Information
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <VerificationItem
@@ -449,8 +516,12 @@ export default function StudentVerificationPage() {
                       label="Student ID"
                       value={student.studentId}
                       status={student.verification.studentId || "pending"}
-                      onVerify={() => handleVerification("student_id", "verified")}
-                      onReject={() => handleVerification("student_id", "rejected")}
+                      onVerify={() =>
+                        handleVerification("student_id", "verified")
+                      }
+                      onReject={() =>
+                        handleVerification("student_id", "rejected")
+                      }
                       isUpdating={isUpdating}
                     />
 
@@ -458,20 +529,35 @@ export default function StudentVerificationPage() {
                       label="Enrollment Year"
                       value={student.enrollmentYear}
                       status={student.verification.enrollmentYear || "pending"}
-                      onVerify={() => handleVerification("enrollment_year", "verified")}
-                      onReject={() => handleVerification("enrollment_year", "rejected")}
+                      onVerify={() =>
+                        handleVerification("enrollment_year", "verified")
+                      }
+                      onReject={() =>
+                        handleVerification("enrollment_year", "rejected")
+                      }
                       isUpdating={isUpdating}
                     />
 
                     <VerificationItem
                       label="Expected Graduation Year"
                       value={student.expectedGraduationYear}
-                      status={student.verification.expectedGraduationYear || "pending"}
-                      onVerify={() => handleVerification("expected_graduation_year", "verified")}
-                      onReject={() => handleVerification("expected_graduation_year", "rejected")}
+                      status={
+                        student.verification.expectedGraduationYear || "pending"
+                      }
+                      onVerify={() =>
+                        handleVerification(
+                          "expected_graduation_year",
+                          "verified"
+                        )
+                      }
+                      onReject={() =>
+                        handleVerification(
+                          "expected_graduation_year",
+                          "rejected"
+                        )
+                      }
                       isUpdating={isUpdating}
                     />
-
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -479,7 +565,9 @@ export default function StudentVerificationPage() {
               <TabsContent value="education">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Education Verification</CardTitle>
+                    <CardTitle className="text-template">
+                      Education Details
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {(student.education || []).map((edu, index) => (
@@ -487,27 +575,48 @@ export default function StudentVerificationPage() {
                         <CardHeader className="flex flex-row items-center justify-between">
                           <div className="flex items-center space-x-4">
                             <CardTitle className="text-lg">
-                              {edu.education_details.institution?.current_value || "Education"}
+                              {edu.education_details.institution
+                                ?.current_value || "Education"}
                             </CardTitle>
                           </div>
-                          {renderVerificationButton(`education.${index}`, edu.is_verified)}
+                          {renderVerificationButton(
+                            `education.${index}`,
+                            edu.is_verified
+                          )}
                         </CardHeader>
                         <CardContent>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {Object.entries(edu.education_details)
                               .filter(([key]) => {
-                                const allowedFields = ['gpa', 'year', 'major', 'minor', 'relevant_courses', 'honors'];
+                                const allowedFields = [
+                                  "gpa",
+                                  "year",
+                                  "major",
+                                  "minor",
+                                  "relevant_courses",
+                                  "honors",
+                                ];
                                 return allowedFields.includes(key);
                               })
                               .map(([key, value]) => {
-                                const verifiableValue = value as { current_value: string | null; last_verified_value: string | null };
+                                const verifiableValue = value as {
+                                  current_value: string | null;
+                                  last_verified_value: string | null;
+                                };
                                 if (!verifiableValue.current_value) return null;
-                                
+
                                 return (
-                                  <div key={key} className="flex items-center justify-between py-2">
+                                  <div
+                                    key={key}
+                                    className="flex items-center justify-between py-2"
+                                  >
                                     <div>
-                                      <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
-                                      <span className="ml-2">{verifiableValue.current_value}</span>
+                                      <span className="text-muted-foreground capitalize">
+                                        {key.replace(/_/g, " ")}:
+                                      </span>
+                                      <span className="ml-2">
+                                        {verifiableValue.current_value}
+                                      </span>
                                     </div>
                                   </div>
                                 );
@@ -523,7 +632,9 @@ export default function StudentVerificationPage() {
               <TabsContent value="positions">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Positions Verification</CardTitle>
+                    <CardTitle className="text-template">
+                      Positions of Responsibilities
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {(student.positions || []).map((position, index) => (
@@ -531,25 +642,41 @@ export default function StudentVerificationPage() {
                         <CardHeader className="flex flex-row items-center justify-between">
                           <div className="flex items-center space-x-4">
                             <CardTitle className="text-lg">
-                              {position.position_details.title?.current_value || "Position"}
+                              {position.position_details.title?.current_value ||
+                                "Position"}
                             </CardTitle>
                           </div>
-                          {renderVerificationButton(`positions.${index}`, position.is_verified)}
+                          {renderVerificationButton(
+                            `positions.${index}`,
+                            position.is_verified
+                          )}
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
-                            {Object.entries(position.position_details).map(([key, value]) => {
-                              const verifiableValue = value as { current_value: string | null; last_verified_value: string | null };
-                              if (!verifiableValue.current_value) return null;
-                              return (
-                                <div key={key} className="flex items-center justify-between py-2">
-                                  <div>
-                                    <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
-                                    <span className="ml-2">{verifiableValue.current_value}</span>
+                            {Object.entries(position.position_details).map(
+                              ([key, value]) => {
+                                const verifiableValue = value as {
+                                  current_value: string | null;
+                                  last_verified_value: string | null;
+                                };
+                                if (!verifiableValue.current_value) return null;
+                                return (
+                                  <div
+                                    key={key}
+                                    className="flex items-center justify-between py-2"
+                                  >
+                                    <div>
+                                      <span className="text-muted-foreground capitalize">
+                                        {key.replace(/_/g, " ")}:
+                                      </span>
+                                      <span className="ml-2">
+                                        {verifiableValue.current_value}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              }
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -561,7 +688,9 @@ export default function StudentVerificationPage() {
               <TabsContent value="projects">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Projects Verification</CardTitle>
+                    <CardTitle className="text-template">
+                      Projects Verification
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {(student.projects || []).map((project, index) => (
@@ -569,25 +698,41 @@ export default function StudentVerificationPage() {
                         <CardHeader className="flex flex-row items-center justify-between">
                           <div className="flex items-center space-x-4">
                             <CardTitle className="text-lg">
-                              {project.project_details.name?.current_value || "Project"}
+                              {project.project_details.name?.current_value ||
+                                "Project"}
                             </CardTitle>
                           </div>
-                          {renderVerificationButton(`projects.${index}`, project.is_verified)}
+                          {renderVerificationButton(
+                            `projects.${index}`,
+                            project.is_verified
+                          )}
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
-                            {Object.entries(project.project_details).map(([key, value]) => {
-                              const verifiableValue = value as { current_value: string | null; last_verified_value: string | null };
-                              if (!verifiableValue.current_value) return null;
-                              return (
-                                <div key={key} className="flex items-center justify-between py-2">
-                                  <div>
-                                    <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
-                                    <span className="ml-2">{verifiableValue.current_value}</span>
+                            {Object.entries(project.project_details).map(
+                              ([key, value]) => {
+                                const verifiableValue = value as {
+                                  current_value: string | null;
+                                  last_verified_value: string | null;
+                                };
+                                if (!verifiableValue.current_value) return null;
+                                return (
+                                  <div
+                                    key={key}
+                                    className="flex items-center justify-between py-2"
+                                  >
+                                    <div>
+                                      <span className="text-muted-foreground capitalize">
+                                        {key.replace(/_/g, " ")}:
+                                      </span>
+                                      <span className="ml-2">
+                                        {verifiableValue.current_value}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              }
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -599,7 +744,9 @@ export default function StudentVerificationPage() {
               <TabsContent value="experience">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Experience Verification</CardTitle>
+                    <CardTitle className="text-template">
+                      Experience Verification
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {(student.experience || []).map((exp, index) => (
@@ -607,25 +754,41 @@ export default function StudentVerificationPage() {
                         <CardHeader className="flex flex-row items-center justify-between">
                           <div className="flex items-center space-x-4">
                             <CardTitle className="text-lg">
-                              {exp.experience_details.position?.current_value || "Experience"}
+                              {exp.experience_details.position?.current_value ||
+                                "Experience"}
                             </CardTitle>
                           </div>
-                          {renderVerificationButton(`experience.${index}`, exp.is_verified)}
+                          {renderVerificationButton(
+                            `experience.${index}`,
+                            exp.is_verified
+                          )}
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
-                            {Object.entries(exp.experience_details).map(([key, value]) => {
-                              const verifiableValue = value as { current_value: string | null; last_verified_value: string | null };
-                              if (!verifiableValue.current_value) return null;
-                              return (
-                                <div key={key} className="flex items-center justify-between py-2">
-                                  <div>
-                                    <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
-                                    <span className="ml-2">{verifiableValue.current_value}</span>
+                            {Object.entries(exp.experience_details).map(
+                              ([key, value]) => {
+                                const verifiableValue = value as {
+                                  current_value: string | null;
+                                  last_verified_value: string | null;
+                                };
+                                if (!verifiableValue.current_value) return null;
+                                return (
+                                  <div
+                                    key={key}
+                                    className="flex items-center justify-between py-2"
+                                  >
+                                    <div>
+                                      <span className="text-muted-foreground capitalize">
+                                        {key.replace(/_/g, " ")}:
+                                      </span>
+                                      <span className="ml-2">
+                                        {verifiableValue.current_value}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              }
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -636,7 +799,11 @@ export default function StudentVerificationPage() {
             </Tabs>
 
             <div className="mt-6 flex justify-end">
-              <Button className="w-full" disabled={isFullyVerified || isUpdating} onClick={handleVerifyAll}>
+              <Button
+                className="w-full"
+                disabled={isFullyVerified || isUpdating}
+                onClick={handleVerifyAll}
+              >
                 {isUpdating ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -653,6 +820,5 @@ export default function StudentVerificationPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
-

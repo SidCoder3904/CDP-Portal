@@ -11,6 +11,7 @@ import {
   Clock,
   MapPin,
   DollarSign,
+  Loader2,
 } from "lucide-react";
 import { JobApplicants } from "@/components/job-applicants";
 import { JobDetails } from "@/components/job-details";
@@ -31,11 +32,31 @@ export default function JobPage({ params }: JobPageProps) {
   // Instead of destructuring immediately, access properties when needed
   const cycleId = params.id;
   const jobId = params.jobId;
-  
+
   const [job, setJob] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const jobsApi = useJobsApi();
+
+  // Check if deadline has passed
+  const isDeadlinePassed = (deadline: string): boolean => {
+    if (!deadline) return false;
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    // Reset time part for accurate date comparison
+    today.setHours(0, 0, 0, 0);
+    return deadlineDate < today;
+  };
+
+  // Format the deadline for display
+  const formatDeadline = (deadline: string): string => {
+    if (!deadline) return "No deadline";
+    return new Date(deadline).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -54,6 +75,17 @@ export default function JobPage({ params }: JobPageProps) {
     fetchData();
   }, [jobId]);
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Loading job details...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!job) {
     return (
       <div className="container mx-auto py-6">
@@ -71,6 +103,11 @@ export default function JobPage({ params }: JobPageProps) {
     );
   }
 
+  // Determine if deadline has passed
+  const deadlinePassed = isDeadlinePassed(job.deadline);
+  // Set display status based on deadline
+  const displayStatus = deadlinePassed ? "closed" : job.status;
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center gap-2 mb-6">
@@ -80,8 +117,12 @@ export default function JobPage({ params }: JobPageProps) {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{job.role}</h1>
-          <p className="text-muted-foreground">{job.company} • {job.location}</p>
+          <h1 className="text-3xl font-bold tracking-tight text-template">
+            {job.role}
+          </h1>
+          <p className="text-muted-foreground">
+            {job.company} • {job.location}
+          </p>
         </div>
       </div>
 
@@ -102,22 +143,29 @@ export default function JobPage({ params }: JobPageProps) {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{job.deadline}</div>
-            <p className="text-xs text-muted-foreground">Application closing date</p>
+            <div className="text-2xl font-bold">
+              {formatDeadline(job.deadline)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Application closing date
+              {deadlinePassed && <span className="text-red-500 ml-1"></span>}
+            </p>
           </CardContent>
         </Card>
       </div>
 
       <div className="flex flex-wrap gap-4 mb-6">
-        <Badge className="text-sm py-1">
+        <Badge className="text-sm py-1 bg-template">
           <MapPin className="mr-1 h-4 w-4" />
           {job.location}
         </Badge>
         <Badge
-          variant={job.status === "open" ? "default" : "outline"}
-          className="text-sm py-1"
+          variant={displayStatus === "open" ? "default" : "secondary"}
+          className="text-sm py-1 bg-template"
         >
-          {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+          {deadlinePassed
+            ? "Closed"
+            : displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
         </Badge>
       </div>
 

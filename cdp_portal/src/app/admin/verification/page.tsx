@@ -1,126 +1,152 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Search, Filter, AlertCircle } from "lucide-react"
-import { useAdminApi, type StudentListItem, type StudentFilters } from "@/lib/api/admin"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Search, Filter, AlertCircle } from "lucide-react";
+import {
+  useAdminApi,
+  type StudentListItem,
+  type StudentFilters,
+} from "@/lib/api/admin";
 
 interface VerificationStatus {
-  [key: string]: string
+  [key: string]: string;
 }
 
 interface EducationItem {
-  is_verified: boolean
+  is_verified: boolean;
 }
 
 interface ExperienceItem {
-  is_verified: boolean
+  is_verified: boolean;
 }
 
 interface PositionItem {
-  is_verified: boolean
+  is_verified: boolean;
 }
 
 interface ProjectItem {
-  is_verified: boolean
+  is_verified: boolean;
 }
 
 // Add helper function to check if student is fully verified
 const isStudentFullyVerified = (student: StudentListItem) => {
   // For now, just check if the student has isVerified flag
   // This will be updated when the API returns full verification data
-  return student.isVerified
-}
+  return student.isVerified;
+};
 
 export default function StudentsListPage() {
-  const router = useRouter()
-  const adminApi = useAdminApi()
+  const router = useRouter();
+  const adminApi = useAdminApi();
 
-  const [students, setStudents] = useState<StudentListItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [totalStudents, setTotalStudents] = useState(0)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [perPage] = useState(20)
+  const [students, setStudents] = useState<StudentListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage] = useState(20);
 
   const [filterInputs, setFilterInputs] = useState({
     branch: "all",
     minCgpa: "any",
     rollNumber: "",
-  })
+  });
 
   const [appliedFilters, setAppliedFilters] = useState({
     branch: "all",
     minCgpa: "any",
     rollNumber: "",
-  })
+  });
 
   useEffect(() => {
     async function fetchStudents() {
       try {
-        setLoading(true)
-        setError(null)
+        setLoading(true);
+        setError(null);
 
-        const { students: fetchedStudents, total } = await adminApi.getStudents({
-          ...appliedFilters,
-          page: currentPage,
-        })
+        const { students: fetchedStudents, total } = await adminApi.getStudents(
+          {
+            ...appliedFilters,
+            page: currentPage,
+          }
+        );
 
-        setStudents(fetchedStudents)
-        setTotalStudents(total)
+        setStudents(fetchedStudents);
+        setTotalStudents(total);
       } catch (err) {
-        console.error("Failed to fetch students:", err)
-        setError("Failed to load students. Please try again later.")
+        console.error("Failed to fetch students:", err);
+        setError("Failed to load students. Please try again later.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    fetchStudents()
-  }, [appliedFilters, currentPage])
+    fetchStudents();
+  }, [appliedFilters, currentPage]);
 
   const handleFilterInputChange = (key: string, value: string) => {
-    setFilterInputs((prev) => ({ ...prev, [key]: value }))
-  }
+    setFilterInputs((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleApplyFilters = () => {
-    setAppliedFilters(filterInputs)
-    setCurrentPage(1) // Reset to first page when applying new filters
-  }
+    setAppliedFilters(filterInputs);
+    setCurrentPage(1); // Reset to first page when applying new filters
+  };
 
   const handleResetFilters = () => {
     const resetFilters = {
       branch: "all",
       minCgpa: "any",
       rollNumber: "",
-    }
-    setFilterInputs(resetFilters)
-    setAppliedFilters(resetFilters)
-    setCurrentPage(1)
-  }
+    };
+    setFilterInputs(resetFilters);
+    setAppliedFilters(resetFilters);
+    setCurrentPage(1);
+  };
 
   const navigateToStudentDetails = (student_id: string) => {
-    router.push(`/admin/verification/${student_id}`)
-  }
+    router.push(`/admin/verification/${student_id}`);
+  };
 
-  const totalPages = Math.ceil(totalStudents / perPage)
+  const totalPages = Math.ceil(totalStudents / perPage);
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">Student Management</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-template py-4">
+        Student Verification
+      </h1>
 
       <Card className="mb-6">
-        <CardContent className="pt-6">
+        <CardContent className="pt-3">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">Branch</label>
-              <Select value={filterInputs.branch} onValueChange={(value) => handleFilterInputChange("branch", value)}>
+              <Select
+                value={filterInputs.branch}
+                onValueChange={(value) =>
+                  handleFilterInputChange("branch", value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Branches" />
                 </SelectTrigger>
@@ -144,20 +170,28 @@ export default function StudentsListPage() {
                 min="0"
                 max="10"
                 placeholder="Enter minimum CGPA"
-                value={filterInputs.minCgpa === 'any' ? '' : filterInputs.minCgpa}
-                onChange={(e) => handleFilterInputChange("minCgpa", e.target.value || 'any')}
+                value={
+                  filterInputs.minCgpa === "any" ? "" : filterInputs.minCgpa
+                }
+                onChange={(e) =>
+                  handleFilterInputChange("minCgpa", e.target.value || "any")
+                }
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-1 block">Roll Number</label>
+              <label className="text-sm font-medium mb-1 block">
+                Roll Number
+              </label>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by roll number"
                   className="pl-8"
                   value={filterInputs.rollNumber}
-                  onChange={(e) => handleFilterInputChange("rollNumber", e.target.value)}
+                  onChange={(e) =>
+                    handleFilterInputChange("rollNumber", e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -203,22 +237,22 @@ export default function StudentsListPage() {
                     <TableHead>Roll Number</TableHead>
                     <TableHead>CGPA</TableHead>
                     <TableHead>Branch</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {students.length > 0 ? (
                     students.map((student) => (
-                      <TableRow key={student._id}>
-                        <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableRow
+                        key={student._id}
+                        onClick={() => navigateToStudentDetails(student._id)}
+                        className="hover:bg-muted transition-colors cursor-pointer"
+                      >
+                        <TableCell className="font-bold">
+                          {student.name}
+                        </TableCell>
                         <TableCell>{student.studentId}</TableCell>
                         <TableCell>{student.cgpa}</TableCell>
                         <TableCell>{student.major}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="outline" size="sm" onClick={() => navigateToStudentDetails(student._id)}>
-                            View Details
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -234,14 +268,17 @@ export default function StudentsListPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-4 border-t">
                   <div className="text-sm text-muted-foreground">
-                    Showing {(currentPage - 1) * perPage + 1} to {Math.min(currentPage * perPage, totalStudents)} of{" "}
+                    Showing {(currentPage - 1) * perPage + 1} to{" "}
+                    {Math.min(currentPage * perPage, totalStudents)} of{" "}
                     {totalStudents} students
                   </div>
                   <div className="flex space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
                       disabled={currentPage === 1}
                     >
                       Previous
@@ -249,7 +286,9 @@ export default function StudentsListPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
                       disabled={currentPage === totalPages}
                     >
                       Next
@@ -262,6 +301,5 @@ export default function StudentsListPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

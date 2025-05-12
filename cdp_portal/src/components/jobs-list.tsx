@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Filter } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useApi } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 interface JobsListProps {
   cycleId: string;
@@ -47,6 +48,7 @@ export function JobsList({ cycleId }: JobsListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -55,18 +57,18 @@ export function JobsList({ cycleId }: JobsListProps) {
         const queryParams = new URLSearchParams();
         if (statusFilter !== "all") queryParams.append("status", statusFilter);
         if (searchTerm.trim()) queryParams.append("company", searchTerm.trim());
-  
+
         // Using fetchWithAuth instead of direct fetch
         // Note: removing /api/ prefix to match backend routes
         const response = await fetchWithAuth(
           `/api/placement-cycles/${cycleId}/jobs?${queryParams.toString()}`
         );
-  
+
         if (!response.ok) {
           const error = await response.json();
           throw new Error(error.message || "Failed to fetch jobs");
         }
-  
+
         const data = await response.json();
         console.log("Fetched jobs:", data);
         setJobs(data);
@@ -76,10 +78,10 @@ export function JobsList({ cycleId }: JobsListProps) {
         setIsLoading(false);
       }
     };
-  
+
     fetchJobs();
   }, [cycleId, searchTerm, statusFilter]);
-  
+
   // Handler for updating the search term
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -88,6 +90,26 @@ export function JobsList({ cycleId }: JobsListProps) {
   // Handler for updating the status filter
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
+  };
+
+  // Check if a deadline has passed
+  const isDeadlinePassed = (deadline: string): boolean => {
+    if (!deadline) return false;
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    // Reset time part for accurate date comparison
+    today.setHours(0, 0, 0, 0);
+    return deadlineDate < today;
+  };
+
+  // Format the deadline for display
+  const formatDeadline = (deadline: string): string => {
+    if (!deadline) return "No deadline";
+    return new Date(deadline).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   return (
@@ -136,44 +158,50 @@ export function JobsList({ cycleId }: JobsListProps) {
                 <TableHead>Location</TableHead>
                 <TableHead>Deadline</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Applicants</TableHead>
-                <TableHead>Selected</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {jobs.map((job) => {
-                // Handle both string and object ID formats
-                const jobId = typeof job._id === 'string' ? job._id : job._id.$oid;
-                
+                const jobId =
+                  typeof job._id === "string" ? job._id : job._id.$oid;
+                const deadlinePassed = isDeadlinePassed(job.deadline);
+                const displayStatus = deadlinePassed ? "closed" : job.status;
+
                 return (
-                  <TableRow key={jobId}>
-                    <TableCell className="font-medium">
-                      <Link
-                        href={`/admin/placement_cycles/${cycleId}/jobs/${jobId}`}
-                        className="hover:underline"
-                      >
-                        {job.company}
-                      </Link>
-                    </TableCell>
+                  <TableRow
+                    key={jobId}
+                    onClick={() =>
+                      router.push(
+                        `/admin/placement_cycles/${cycleId}/jobs/${jobId}`
+                      )
+                    }
+                    className="hover:bg-muted cursor-pointer transition-colors"
+                  >
+                    <TableCell className="font-medium">{job.company}</TableCell>
                     <TableCell>{job.role}</TableCell>
                     <TableCell>{job.package}</TableCell>
                     <TableCell>{job.location}</TableCell>
-                    <TableCell>{job.deadline}</TableCell>
+                    <TableCell>
+                      {formatDeadline(job.deadline)}
+                      {deadlinePassed && (
+                        <span className="text-red-500 ml-1"></span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge
-                        variant={
-                          job.status === "open" || job.status === "Open" 
-                            ? "default"
-                            : job.status === "closed" || job.status === "Closed"
-                            ? "secondary"
-                            : "outline"
+                        variant="default"
+                        className={
+                          displayStatus === "open" || displayStatus === "Open"
+                            ? "bg-template"
+                            : displayStatus === "closed" ||
+                              displayStatus === "Closed"
+                            ? "bg-destructive"
+                            : ""
                         }
                       >
-                        {job.status}
+                        {deadlinePassed ? "Closed" : job.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{job.applicants || 0}</TableCell>
-                    <TableCell>{job.selected || 0}</TableCell>
                   </TableRow>
                 );
               })}

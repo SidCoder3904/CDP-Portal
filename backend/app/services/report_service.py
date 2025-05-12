@@ -19,36 +19,36 @@ class ReportService:
             List of report type objects
         """
         return [
-            {
-                "id": "placement_summary",
-                "name": "Placement Summary",
-                "description": "Summary of placements for a specific cycle"
-            },
-            {
-                "id": "student_placement_status",
-                "name": "Student Placement Status",
-                "description": "Detailed status of each student's placement"
-            },
+            # {
+            #     "id": "placement_summary",
+            #     "name": "Placement Summary",
+            #     "description": "Summary of placements for a specific cycle"
+            # },
+            # {
+            #     "id": "student_placement_status",
+            #     "name": "Student Placement Status",
+            #     "description": "Detailed status of each student's placement"
+            # },
             {
                 "id": "company_wise_recruitment",
                 "name": "Company-wise Recruitment",
                 "description": "Breakdown of recruitment by company"
-            },
-            {
-                "id": "branch_wise_statistics",
-                "name": "Branch-wise Statistics",
-                "description": "Placement statistics by branch"
-            },
-            {
-                "id": "ctc_analysis",
-                "name": "CTC Analysis",
-                "description": "Analysis of salary packages offered"
-            },
-            {
-                "id": "job_applicants",
-                "name": "Job Applicants",
-                "description": "List of applicants for a specific job with resume links"
             }
+            # {
+            #     "id": "branch_wise_statistics",
+            #     "name": "Branch-wise Statistics",
+            #     "description": "Placement statistics by branch"
+            # },
+            # {
+            #     "id": "ctc_analysis",
+            #     "name": "CTC Analysis",
+            #     "description": "Analysis of salary packages offered"
+            # },
+            # {
+            #     "id": "job_applicants",
+            #     "name": "Job Applicants",
+            #     "description": "List of applicants for a specific job with resume links"
+            # }
         ]
     
     @staticmethod
