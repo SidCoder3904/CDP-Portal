@@ -163,6 +163,10 @@ class StudentService:
             student_data['created_at'] = datetime.utcnow()
             student_data['updated_at'] = datetime.utcnow()
             
+            # Set branch equal to major if major exists
+            if 'major' in student_data:
+                student_data['branch'] = student_data['major']
+            
             result = mongo.db.student.insert_one(student_data)
             return str(result.inserted_id)
         except Exception as e:
