@@ -152,12 +152,12 @@ export default function StudentsListPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Branches</SelectItem>
-                  <SelectItem value="cs">Computer Science</SelectItem>
-                  <SelectItem value="ee">Electrical Engineering</SelectItem>
-                  <SelectItem value="ce">Civil Engineering</SelectItem>
-                  <SelectItem value="me">Mechanical Engineering</SelectItem>
-                  <SelectItem value="ch">Chemical Engineering</SelectItem>
-                  <SelectItem value="mm">Metallurgical Engineering</SelectItem>
+                  <SelectItem value="CSE">Computer Science</SelectItem>
+                  <SelectItem value="EE">Electrical Engineering</SelectItem>
+                  <SelectItem value="CE">Civil Engineering</SelectItem>
+                  <SelectItem value="ME">Mechanical Engineering</SelectItem>
+                  <SelectItem value="CH">Chemical Engineering</SelectItem>
+                  <SelectItem value="MM">Metallurgical Engineering</SelectItem>
                 </SelectContent>
               </Select>
             </div>

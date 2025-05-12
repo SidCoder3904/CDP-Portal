@@ -710,7 +710,7 @@ export default function BasicDetails() {
                   name: "major",
                   label: "Major",
                   type: "select",
-                  options: ["CSE", "EE", "CE"],
+                  options: ["CSE", "EE", "CE", "ME", "CH", "MM"],
                   placeholder: "Select your major",
                 },
                 {
