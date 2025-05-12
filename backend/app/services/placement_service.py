@@ -179,7 +179,12 @@ class PlacementService:
             'jobDescription': data['jobDescription'],
             'status': 'open',
             'createdAt': datetime.utcnow(),
-            'updatedAt': datetime.utcnow()
+            'updatedAt': datetime.utcnow(),
+            # Add fields for storing file URLs and Cloudinary public IDs
+            'logo': data.get('logo', ''),
+            'jobDescriptionFile': data.get('jobDescriptionFile', ''),
+            'companyImagePublicId': data.get('companyImagePublicId', ''),
+            'jobDescriptionFilePublicId': data.get('jobDescriptionFilePublicId', '')
         }
         result = mongo.db.jobs.insert_one(job)
         return str(result.inserted_id)
@@ -314,3 +319,80 @@ class PlacementService:
         except Exception as e:
             print(f"Error in get_eligible_students: {str(e)}")
             return []
+
+    @staticmethod
+    def update_job(job_id, data):
+        """
+        Update a job.
+        
+        Args:
+            job_id: The ID of the job to update
+            data: Dictionary containing job data to update
+            
+        Returns:
+            True if update successful, False otherwise
+        """
+        try:
+            # Prevent updating certain fields
+            if 'cycleId' in data:
+                del data['cycleId']
+            if 'createdAt' in data:
+                del data['createdAt']
+            
+            # Update object with cleaned data
+            update_data = {}
+            
+            # Basic fields
+            if 'company' in data:
+                update_data['company'] = data['company']
+            if 'role' in data:
+                update_data['role'] = data['role']
+            if 'package' in data:
+                update_data['package'] = data['package']
+            if 'location' in data:
+                update_data['location'] = data['location']
+            if 'deadline' in data:
+                update_data['deadline'] = data['deadline']
+            if 'accommodation' in data:
+                update_data['accommodation'] = data['accommodation']
+            if 'jobDescription' in data:
+                update_data['jobDescription'] = data['jobDescription']
+            if 'status' in data:
+                update_data['status'] = data['status']
+            if 'hiringFlow' in data:
+                update_data['hiringFlow'] = data['hiringFlow']
+            
+            # Eligibility criteria
+            if 'eligibility' in data:
+                update_data['eligibility'] = {
+                    'uniformCgpa': data['eligibility'].get('uniformCgpa', True),
+                    'cgpa': data['eligibility'].get('cgpa'),
+                    'gender': data['eligibility'].get('gender', 'All'),
+                    'branches': data['eligibility'].get('branches', []),
+                }
+                
+                if not data['eligibility'].get('uniformCgpa', True) and 'cgpaCriteria' in data['eligibility']:
+                    update_data['eligibility']['cgpaCriteria'] = data['eligibility']['cgpaCriteria']
+            
+            # File uploads
+            if 'logo' in data:
+                update_data['logo'] = data['logo']
+            if 'companyImagePublicId' in data:
+                update_data['companyImagePublicId'] = data['companyImagePublicId']
+            if 'jobDescriptionFile' in data:
+                update_data['jobDescriptionFile'] = data['jobDescriptionFile']
+            if 'jobDescriptionFilePublicId' in data:
+                update_data['jobDescriptionFilePublicId'] = data['jobDescriptionFilePublicId']
+            
+            # Add timestamp
+            update_data['updatedAt'] = datetime.utcnow()
+            
+            result = mongo.db.jobs.update_one(
+                {'_id': ObjectId(job_id)},
+                {'$set': update_data}
+            )
+            
+            return result.matched_count > 0
+        except Exception as e:
+            print(f"Error updating job: {str(e)}")
+            return False

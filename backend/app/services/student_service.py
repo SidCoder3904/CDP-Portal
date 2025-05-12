@@ -1581,7 +1581,7 @@ class StudentService:
             # Get the placement cycle
             cycle = mongo.db.placement_cycles.find_one({'_id': ObjectId(cycle_id)})
             if not cycle:
-                print("❌ Placement cycle not found")
+                print("[ERROR] Placement cycle not found")
                 return []
                 
             print(f"Found cycle: {cycle}")
@@ -1623,9 +1623,9 @@ class StudentService:
                     
                     if program_type and program_type in cycle.get('eligiblePrograms', []):
                         eligible_students.append(email)
-                        print(f"✅ {email} is eligible")
+                        print(f"[ELIGIBLE] {email} is eligible")
                     else:
-                        print(f"❌ {email} is not eligible")
+                        print(f"[NOT ELIGIBLE] {email} is not eligible")
             
             print(f"\nFound {len(eligible_students)} eligible students")
             print(f"Eligible emails: {eligible_students}")
@@ -1633,5 +1633,5 @@ class StudentService:
             return eligible_students
             
         except Exception as e:
-            print(f"❌ Error getting student emails: {str(e)}")
+            print(f"[ERROR] Error getting student emails: {str(e)}")
             return []
