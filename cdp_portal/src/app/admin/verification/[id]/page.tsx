@@ -306,7 +306,7 @@ export default function StudentVerificationPage() {
           <CardContent>
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="h-32 w-32">
-                <AvatarImage src={student.passport_image} alt={student.name} />
+                <AvatarImage src={student.passportImage} alt={student.name} />
                 <AvatarFallback>
                   {student.name
                     .split(" ")
@@ -324,7 +324,7 @@ export default function StudentVerificationPage() {
               <div className="w-full space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Branch:</span>
-                  <span className="font-medium">{student.branch}</span>
+                  <span className="font-medium">{student.major}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">CGPA:</span>

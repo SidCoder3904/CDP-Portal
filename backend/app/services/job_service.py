@@ -260,55 +260,170 @@ class JobService:
         
         Args:
             job_id: The ID of the job
-            student_id: The ID of the student
+            student_id: The user_id of the student
             data: Optional additional application data
             
         Returns:
             The ID of the newly created application
         """
         try:
+            print(f"\n=== Starting job application process ===")
+            print(f"Job ID: {job_id}")
+            print(f"User ID: {student_id}")
+            
             # Convert string IDs to ObjectId if needed
             if isinstance(job_id, str):
                 job_id = ObjectId(job_id)
+                print(f"Converted job_id to ObjectId: {job_id}")
             if isinstance(student_id, str):
                 student_id = ObjectId(student_id)
+                print(f"Converted student_id to ObjectId: {student_id}")
             
+            # Get student details to check verification status
+            print("\nFetching student details...")
+            student = mongo.db.student.find_one({'user_id': student_id})
+            if not student:
+                print("ERROR: Student not found")
+                raise Exception("Student not found")
+            
+            # Get the student's _id from the student document
+            student_db_id = student.get('_id')
+            if not student_db_id:
+                print("ERROR: Student _id not found in student document")
+                raise Exception("Student _id not found")
+                
+            print(f"Found student: {student.get('name')}")
+            print(f"Student _id from document: {student_db_id}")
+            print(f"Student document: {student}")
+
+            # Check if student is fully verified
+            print("\nChecking verification status...")
+            verification = student.get('verification', {})
+            print(f"Raw verification data: {verification}")
+            
+            # Check basic info fields
+            print("\nChecking basic info fields...")
+            basic_fields = ['name', 'email', 'phone', 'date_of_birth', 'gender', 
+                          'address', 'major', 'student_id', 'enrollment_year', 
+                          'expected_graduation_year', 'passport_image']
+            
+            for field in basic_fields:
+                status = verification.get(field, {}).get('status')
+                print(f"Field: {field}, Status: {status}")
+            
+            basic_fields_verified = all(
+                verification.get(field, {}).get('status') == 'verified'
+                for field in basic_fields
+            )
+            print(f"Basic fields verified: {basic_fields_verified}")
+
+            # Check education items for this specific student
+            print("\nChecking education items...")
+            print(f"Querying education with student _id: {student_db_id}")
+            education_items = list(mongo.db.education.find({'student_id': student_db_id}))
+            print(f"Found {len(education_items)} education items for student")
+            print(f"Education items: {education_items}")
+            for i, edu in enumerate(education_items):
+                print(f"Education {i+1} verified: {edu.get('is_verified', False)}")
+            education_verified = all(
+                edu.get('is_verified', False)
+                for edu in education_items
+            )
+            print(f"All education items verified: {education_verified}")
+
+            # Check experience items for this specific student
+            print("\nChecking experience items...")
+            print(f"Querying experience with student _id: {student_db_id}")
+            experience_items = list(mongo.db.experience.find({'student_id': student_db_id}))
+            print(f"Found {len(experience_items)} experience items for student")
+            print(f"Experience items: {experience_items}")
+            for i, exp in enumerate(experience_items):
+                print(f"Experience {i+1} verified: {exp.get('is_verified', False)}")
+            experience_verified = all(
+                exp.get('is_verified', False)
+                for exp in experience_items
+            )
+            print(f"All experience items verified: {experience_verified}")
+
+            # Check positions items for this specific student
+            print("\nChecking positions items...")
+            print(f"Querying positions with student _id: {student_db_id}")
+            positions_items = list(mongo.db.positions.find({'student_id': student_db_id}))
+            print(f"Found {len(positions_items)} positions items for student")
+            print(f"Positions items: {positions_items}")
+            for i, pos in enumerate(positions_items):
+                print(f"Position {i+1} verified: {pos.get('is_verified', False)}")
+            positions_verified = all(
+                pos.get('is_verified', False)
+                for pos in positions_items
+            )
+            print(f"All positions items verified: {positions_verified}")
+
+            # Check projects items for this specific student
+            print("\nChecking projects items...")
+            print(f"Querying projects with student _id: {student_db_id}")
+            projects_items = list(mongo.db.projects.find({'student_id': student_db_id}))
+            print(f"Found {len(projects_items)} projects items for student")
+            print(f"Projects items: {projects_items}")
+            for i, proj in enumerate(projects_items):
+                print(f"Project {i+1} verified: {proj.get('is_verified', False)}")
+            projects_verified = all(
+                proj.get('is_verified', False)
+                for proj in projects_items
+            )
+            print(f"All projects items verified: {projects_verified}")
+
+            # Final verification check
+            is_fully_verified = (basic_fields_verified and education_verified and 
+                               experience_verified and positions_verified and projects_verified)
+            print(f"\nFinal verification status: {is_fully_verified}")
+
+            # If any verification check fails, raise an exception
+            if not is_fully_verified:
+                print("ERROR: Student profile is not fully verified")
+                raise Exception("Student profile is not fully verified. Please complete verification before applying.")
+
+            print("\nCreating application...")
             # Create base application
             application = {
                 'job_id': job_id,
-                'student_id': student_id,
+                'student_id': student_id,  # Use the original user_id here
                 'status': 'applied',
                 'current_stage': 'Application Submitted',
                 'created_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()
             }
 
-            
             # Add additional data if provided
             if data:
+                print("Adding additional application data...")
                 if 'resumeId' in data:
                     resume_id = data['resumeId']
                     if isinstance(resume_id, str):
                         resume_id = ObjectId(resume_id)
                     application['resume_id'] = resume_id
+                    print(f"Added resume ID: {resume_id}")
                 if 'coverLetter' in data:
                     application['cover_letter'] = data['coverLetter']
+                    print("Added cover letter")
                 if 'answers' in data:
                     application['answers'] = data['answers']
+                    print("Added application answers")
 
             result = mongo.db.applications.insert_one(application)
-            
-            
+            print(f"Application created with ID: {result.inserted_id}")
             
             # Update job applications count
             mongo.db.jobs.update_one(
                 {'_id': job_id},
                 {'$inc': {'applications_count': 1}}
             )
+            print("Updated job applications count")
             
+            print("=== Job application process completed successfully ===\n")
             return str(result.inserted_id)
         except Exception as e:
-            print(f"Error creating application: {str(e)}")
+            print(f"\nERROR in create_application: {str(e)}")
             return None
     
     @staticmethod
