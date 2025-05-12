@@ -95,16 +95,16 @@ class EmailService:
             try:
                 logger.info("Attempting to send email...")
                 mail.send(msg)
-                logger.info(f"✅ Email sent successfully to {len(student_emails)} students")
+                logger.info(f"[SUCCESS] Email sent successfully to {len(student_emails)} students")
                 logger.info(f"Recipients: {', '.join(student_emails)}")
             except smtplib.SMTPAuthenticationError as e:
-                logger.error("❌ SMTP Authentication Error:")
+                logger.error("[ERROR] SMTP Authentication Error:")
                 logger.error("This usually means your Gmail credentials are incorrect.")
                 logger.error("Make sure you're using an App Password, not your regular Gmail password.")
                 logger.error(f"Error details: {str(e)}")
                 raise e
             except smtplib.SMTPException as e:
-                logger.error("❌ SMTP Error:")
+                logger.error("[ERROR] SMTP Error:")
                 logger.error("This could be due to:")
                 logger.error("1. Incorrect SMTP server settings")
                 logger.error("2. Network connectivity issues")
@@ -112,11 +112,11 @@ class EmailService:
                 logger.error(f"Error details: {str(e)}")
                 raise e
             except Exception as e:
-                logger.error("❌ Unexpected error sending email:")
+                logger.error("[ERROR] Unexpected error sending email:")
                 logger.error(f"Error type: {type(e).__name__}")
                 logger.error(f"Error details: {str(e)}")
                 raise e
             
         except Exception as e:
-            logger.error(f"❌ Error in send_notice_notification: {str(e)}")
+            logger.error(f"[ERROR] Error in send_notice_notification: {str(e)}")
             raise e 
