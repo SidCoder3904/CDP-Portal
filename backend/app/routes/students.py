@@ -51,6 +51,7 @@ def create_student():
         "user_id": ObjectId(user_id),
         "name": data.get('name'),
         "email": data.get('email'),
+        "cgpa": data.get('cgpa'),
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
@@ -98,9 +99,9 @@ def bulk_create_students():
             df = pd.read_excel(file)
         
         # Validate required columns
-        required_columns = ['name', 'email']
+        required_columns = ['name', 'email', 'cgpa']
         if not all(col in df.columns for col in required_columns):
-            return jsonify({"message": "File must contain 'name' and 'email' columns"}), 400
+            return jsonify({"message": "File must contain 'name', 'email', and 'cgpa' columns"}), 400
         
         results = {
             "success": [],
@@ -114,6 +115,7 @@ def bulk_create_students():
                 user_data = {
                     "name": row['name'],
                     "email": row['email'],
+                    "cgpa": row['cgpa'],
                     "password": '123456789',
                     "role": 'student'
                 }
@@ -141,6 +143,7 @@ def bulk_create_students():
                     "user_id": ObjectId(user_id),
                     "name": row['name'],
                     "email": row['email'],
+                    "cgpa": row['cgpa'],
                     "created_at": datetime.utcnow(),
                     "updated_at": datetime.utcnow()
                 }

@@ -20,6 +20,7 @@ import { useToast } from "@/components/ui/use-toast";
 export default function StudentManagement() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [cgpa, setCgpa] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const { toast } = useToast();
@@ -35,7 +36,7 @@ export default function StudentManagement() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name, email, cgpa }),
       });
 
       if (!response.ok) {
@@ -52,6 +53,7 @@ export default function StudentManagement() {
       // Reset form
       setName("");
       setEmail("");
+      setCgpa("");
     } catch (error) {
       toast({
         title: "Error",
@@ -166,6 +168,20 @@ export default function StudentManagement() {
                       required
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cgpa">CGPA</Label>
+                    <Input
+                      id="cgpa"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="10"
+                      placeholder="Enter student CGPA"
+                      value={cgpa}
+                      onChange={(e) => setCgpa(e.target.value)}
+                      required
+                    />
+                  </div>
                   <CardDescription>
                     Student will be assigned default password as 123456789
                   </CardDescription>
@@ -188,7 +204,7 @@ export default function StudentManagement() {
                 </CardTitle>
                 <CardDescription>
                   Upload a CSV or Excel file containing student details (File
-                  columns: name, email)
+                  columns: name, email, cgpa)
                 </CardDescription>
               </CardHeader>
               <CardContent>
