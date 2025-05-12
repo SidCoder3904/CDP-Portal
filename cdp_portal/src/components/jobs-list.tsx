@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Filter } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useApi } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 interface JobsListProps {
   cycleId: string;
@@ -47,6 +48,7 @@ export function JobsList({ cycleId }: JobsListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -102,11 +104,11 @@ export function JobsList({ cycleId }: JobsListProps) {
 
   // Format the deadline for display
   const formatDeadline = (deadline: string): string => {
-    if (!deadline) return 'No deadline';
-    return new Date(deadline).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    if (!deadline) return "No deadline";
+    return new Date(deadline).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -160,38 +162,41 @@ export function JobsList({ cycleId }: JobsListProps) {
             </TableHeader>
             <TableBody>
               {jobs.map((job) => {
-                // Handle both string and object ID formats
-                const jobId = typeof job._id === 'string' ? job._id : job._id.$oid;
-                
-                // Determine display status based on deadline
+                const jobId =
+                  typeof job._id === "string" ? job._id : job._id.$oid;
                 const deadlinePassed = isDeadlinePassed(job.deadline);
                 const displayStatus = deadlinePassed ? "closed" : job.status;
-                
+
                 return (
-                  <TableRow key={jobId}>
-                    <TableCell className="font-medium">
-                      <Link
-                        href={`/admin/placement_cycles/${cycleId}/jobs/${jobId}`}
-                        className="hover:underline"
-                      >
-                        {job.company}
-                      </Link>
-                    </TableCell>
+                  <TableRow
+                    key={jobId}
+                    onClick={() =>
+                      router.push(
+                        `/admin/placement_cycles/${cycleId}/jobs/${jobId}`
+                      )
+                    }
+                    className="hover:bg-muted cursor-pointer transition-colors"
+                  >
+                    <TableCell className="font-medium">{job.company}</TableCell>
                     <TableCell>{job.role}</TableCell>
                     <TableCell>{job.package}</TableCell>
                     <TableCell>{job.location}</TableCell>
                     <TableCell>
                       {formatDeadline(job.deadline)}
-                      {deadlinePassed && <span className="text-red-500 ml-1"></span>}
+                      {deadlinePassed && (
+                        <span className="text-red-500 ml-1"></span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={
-                          displayStatus === "open" || displayStatus === "Open" 
-                            ? "default"
-                            : displayStatus === "closed" || displayStatus === "Closed"
-                            ? "secondary"
-                            : "outline"
+                        variant="default"
+                        className={
+                          displayStatus === "open" || displayStatus === "Open"
+                            ? "bg-template"
+                            : displayStatus === "closed" ||
+                              displayStatus === "Closed"
+                            ? "bg-destructive"
+                            : ""
                         }
                       >
                         {deadlinePassed ? "Closed" : job.status}
