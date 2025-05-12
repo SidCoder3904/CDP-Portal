@@ -142,50 +142,9 @@ export default function StudentVerificationPage() {
       console.log(`[Frontend] Making verification API call for field: ${field}, status: ${status}`)
       await adminApi.updateVerificationStatus(studentId, field, status)
       
-      // Update only the specific field that was changed
-      setStudent(prevStudent => {
-        if (!prevStudent) return null
-        
-        // Handle nested fields (education, positions, projects, experience)
-        if (field.includes('.')) {
-          const [section, index] = field.split('.')
-          const newStudent = { ...prevStudent }
-          if (section === 'education') {
-            newStudent.education = [...(prevStudent.education || [])]
-            newStudent.education[parseInt(index)] = {
-              ...newStudent.education[parseInt(index)],
-              is_verified: status === 'verified'
-            }
-          } else if (section === 'positions') {
-            newStudent.positions = [...(prevStudent.positions || [])]
-            newStudent.positions[parseInt(index)] = {
-              ...newStudent.positions[parseInt(index)],
-              is_verified: status === 'verified'
-            }
-          } else if (section === 'projects') {
-            newStudent.projects = [...(prevStudent.projects || [])]
-            newStudent.projects[parseInt(index)] = {
-              ...newStudent.projects[parseInt(index)],
-              is_verified: status === 'verified'
-            }
-          } else if (section === 'experience') {
-            newStudent.experience = [...(prevStudent.experience || [])]
-            newStudent.experience[parseInt(index)] = {
-              ...newStudent.experience[parseInt(index)],
-              is_verified: status === 'verified'
-            }
-          }
-          return newStudent
-        }
-        
-        // Handle simple fields
-        const newStudent = { ...prevStudent }
-        newStudent.verification = {
-          ...prevStudent.verification,
-          [field]: status
-        }
-        return newStudent
-      })
+      // Fetch the latest student data to ensure all fields are up to date
+      const updatedStudent = await adminApi.getStudentById(studentId)
+      setStudent(updatedStudent)
     } catch (err) {
       console.error(`[Frontend] Failed to update ${field} verification status:`, err)
     } finally {
@@ -200,8 +159,19 @@ export default function StudentVerificationPage() {
       setIsUpdating(true)
       
       // Verify all basic info fields
-      const basicFields = Object.keys(student.verification)
-        .filter(key => !['education', 'experience', 'positions', 'projects'].includes(key))
+      const basicFields = [
+        "name",
+        "email",
+        "phone",
+        "date_of_birth",
+        "gender",
+        "address",
+        "major",
+        "student_id",
+        "enrollment_year",
+        "expected_graduation_year",
+        "passport_image"
+      ]
       
       for (const field of basicFields) {
         await adminApi.updateVerificationStatus(studentId, field, "verified")
@@ -336,7 +306,7 @@ export default function StudentVerificationPage() {
           <CardContent>
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="h-32 w-32">
-                <AvatarImage src={student.passportImage} alt={student.name} />
+                <AvatarImage src={student.passport_image} alt={student.name} />
                 <AvatarFallback>
                   {student.name
                     .split(" ")
@@ -348,7 +318,7 @@ export default function StudentVerificationPage() {
 
               <div className="text-center">
                 <h2 className="text-xl font-bold">{student.name}</h2>
-                <p className="text-muted-foreground">{student.studentId}</p>
+                <p className="text-muted-foreground">{student.student_id}</p>
               </div>
 
               <div className="w-full space-y-2">
@@ -424,7 +394,7 @@ export default function StudentVerificationPage() {
                     <VerificationItem
                       label="Date of Birth"
                       value={student.dateOfBirth}
-                      status={student.verification.dateOfBirth}
+                      status={student.verification.dateOfBirth || "pending"}
                       onVerify={() => handleVerification("date_of_birth", "verified")}
                       onReject={() => handleVerification("date_of_birth", "rejected")}
                       isUpdating={isUpdating}
@@ -469,7 +439,7 @@ export default function StudentVerificationPage() {
                     <VerificationItem
                       label="Student ID"
                       value={student.studentId}
-                      status={student.verification.student_id}
+                      status={student.verification.studentId || "pending"}
                       onVerify={() => handleVerification("student_id", "verified")}
                       onReject={() => handleVerification("student_id", "rejected")}
                       isUpdating={isUpdating}
@@ -478,7 +448,7 @@ export default function StudentVerificationPage() {
                     <VerificationItem
                       label="Enrollment Year"
                       value={student.enrollmentYear}
-                      status={student.verification.enrollment_year}
+                      status={student.verification.enrollmentYear || "pending"}
                       onVerify={() => handleVerification("enrollment_year", "verified")}
                       onReject={() => handleVerification("enrollment_year", "rejected")}
                       isUpdating={isUpdating}
@@ -487,20 +457,12 @@ export default function StudentVerificationPage() {
                     <VerificationItem
                       label="Expected Graduation Year"
                       value={student.expectedGraduationYear}
-                      status={student.verification.expected_graduation_year}
+                      status={student.verification.expectedGraduationYear || "pending"}
                       onVerify={() => handleVerification("expected_graduation_year", "verified")}
                       onReject={() => handleVerification("expected_graduation_year", "rejected")}
                       isUpdating={isUpdating}
                     />
 
-                    <VerificationItem
-                      label="Passport Image"
-                      value={student.passportImage ?? ""}
-                      status={student.verification.passport_image}
-                      onVerify={() => handleVerification("passport_image", "verified")}
-                      onReject={() => handleVerification("passport_image", "rejected")}
-                      isUpdating={isUpdating}
-                    />
                   </CardContent>
                 </Card>
               </TabsContent>

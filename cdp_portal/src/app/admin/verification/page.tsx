@@ -203,7 +203,6 @@ export default function StudentsListPage() {
                     <TableHead>Roll Number</TableHead>
                     <TableHead>CGPA</TableHead>
                     <TableHead>Branch</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -215,11 +214,6 @@ export default function StudentsListPage() {
                         <TableCell>{student.studentId}</TableCell>
                         <TableCell>{student.cgpa}</TableCell>
                         <TableCell>{student.major}</TableCell>
-                        <TableCell>
-                          <Badge variant={isStudentFullyVerified(student) ? "default" : "destructive"}>
-                            {isStudentFullyVerified(student) ? "Verified" : "Not Verified"}
-                          </Badge>
-                        </TableCell>
                         <TableCell className="text-right">
                           <Button variant="outline" size="sm" onClick={() => navigateToStudentDetails(student._id)}>
                             View Details
@@ -229,7 +223,7 @@ export default function StudentsListPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={5} className="text-center py-8">
                         No students found matching the filters
                       </TableCell>
                     </TableRow>

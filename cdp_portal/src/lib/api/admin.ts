@@ -15,6 +15,18 @@ export interface StudentVerification {
 }
 
 export interface StudentDetail extends StudentProfile {
+  _id: string
+  name: string
+  email: string
+  phone: string
+  date_of_birth: string
+  gender: string
+  address: string
+  major: string
+  student_id: string
+  enrollment_year: string
+  expected_graduation_year: string
+  passport_image: string
   cgpa: number
   branch: string
   verification: StudentVerification
@@ -201,11 +213,26 @@ export function useAdminApi() {
     return response.json()
   }
 
+  const verifyAllBasicFields = async (studentId: string): Promise<void> => {
+    const response = await fetchWithAuth(`/api/admin/students/${studentId}/verify-all-basic`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to verify all basic fields");
+    }
+  };
+
   return {
     getStudents,
     getStudentById,
     updateVerificationStatus,
     verifyAllFields,
+    verifyAllBasicFields,
   }
 }
 

@@ -96,21 +96,21 @@ export function CommentSection({ placementCycleId }: CommentSectionProps) {
             ) : (
               comments.map((comment) => (
                 <div key={comment._id} className="flex gap-3">
-                  <Avatar>
+                <Avatar>
                     <AvatarFallback>
                       {comment.user_type === 'admin' ? 'A' : 'S'}
                     </AvatarFallback>
-                  </Avatar>
-                  <div className="grid gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{comment.user}</span>
+                </Avatar>
+                <div className="grid gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{comment.user}</span>
                       <span className="text-xs text-muted-foreground">
                         {new Date(comment.created_at).toLocaleString()}
                       </span>
-                    </div>
-                    <p className="text-sm text-gray-600">{comment.content}</p>
                   </div>
+                  <p className="text-sm text-gray-600">{comment.content}</p>
                 </div>
+              </div>
               ))
             )}
           </div>
