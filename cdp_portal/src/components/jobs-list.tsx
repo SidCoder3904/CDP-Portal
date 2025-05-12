@@ -55,18 +55,18 @@ export function JobsList({ cycleId }: JobsListProps) {
         const queryParams = new URLSearchParams();
         if (statusFilter !== "all") queryParams.append("status", statusFilter);
         if (searchTerm.trim()) queryParams.append("company", searchTerm.trim());
-  
+
         // Using fetchWithAuth instead of direct fetch
         // Note: removing /api/ prefix to match backend routes
         const response = await fetchWithAuth(
           `/api/placement-cycles/${cycleId}/jobs?${queryParams.toString()}`
         );
-  
+
         if (!response.ok) {
           const error = await response.json();
           throw new Error(error.message || "Failed to fetch jobs");
         }
-  
+
         const data = await response.json();
         console.log("Fetched jobs:", data);
         setJobs(data);
@@ -76,10 +76,10 @@ export function JobsList({ cycleId }: JobsListProps) {
         setIsLoading(false);
       }
     };
-  
+
     fetchJobs();
   }, [cycleId, searchTerm, statusFilter]);
-  
+
   // Handler for updating the search term
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -142,38 +142,40 @@ export function JobsList({ cycleId }: JobsListProps) {
             </TableHeader>
             <TableBody>
               {jobs.map((job) => {
-                // Handle both string and object ID formats
-                const jobId = typeof job._id === 'string' ? job._id : job._id.$oid;
-                
+                const jobId =
+                  typeof job._id === "string" ? job._id : job._id.$oid;
+
                 return (
-                  <TableRow key={jobId}>
-                    <TableCell className="font-medium">
-                      <Link
-                        href={`/admin/placement_cycles/${cycleId}/jobs/${jobId}`}
-                        className="hover:underline"
-                      >
-                        {job.company}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{job.role}</TableCell>
-                    <TableCell>{job.package}</TableCell>
-                    <TableCell>{job.location}</TableCell>
-                    <TableCell>{job.deadline}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          job.status === "open" || job.status === "Open" 
-                            ? "default"
-                            : job.status === "closed" || job.status === "Closed"
-                            ? "secondary"
-                            : "outline"
-                        }
-                      >
-                        {job.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{job.applicants || 0}</TableCell>
-                    <TableCell>{job.selected || 0}</TableCell>
+                  <TableRow
+                    key={jobId}
+                    className="hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    <Link
+                      href={`/admin/placement_cycles/${cycleId}/jobs/${jobId}`}
+                      className="contents"
+                    >
+                      <TableCell className="font-bold">{job.company}</TableCell>
+                      <TableCell>{job.role}</TableCell>
+                      <TableCell>{job.package}</TableCell>
+                      <TableCell>{job.location}</TableCell>
+                      <TableCell>{job.deadline}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            job.status.toLowerCase() === "open"
+                              ? "default"
+                              : job.status.toLowerCase() === "closed"
+                              ? "secondary"
+                              : "outline"
+                          }
+                          className="bg-template"
+                        >
+                          {job.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{job.applicants || 0}</TableCell>
+                      <TableCell>{job.selected || 0}</TableCell>
+                    </Link>
                   </TableRow>
                 );
               })}

@@ -49,10 +49,10 @@ export default function AdminLayout({
         menuItems={[
           { label: "Notifications", href: "/admin" },
           { label: "Placement Cycles", href: "/admin/placement_cycles" },
+          { label: "Register Student", href: "/admin/students" },
           { label: "Notices", href: "/admin/notice" },
           { label: "Reports", href: "/admin/report" },
           { label: "Verification", href: "/admin/verification" },
-          { label: "Register Student", href: "/admin/students" },
         ]}
       />
       <main className="flex-grow max-w-7xl mx-auto w-full">{children}</main>

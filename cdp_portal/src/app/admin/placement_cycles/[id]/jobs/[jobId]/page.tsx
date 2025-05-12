@@ -11,6 +11,7 @@ import {
   Clock,
   MapPin,
   DollarSign,
+  Loader2,
 } from "lucide-react";
 import { JobApplicants } from "@/components/job-applicants";
 import { JobDetails } from "@/components/job-details";
@@ -31,7 +32,7 @@ export default function JobPage({ params }: JobPageProps) {
   // Instead of destructuring immediately, access properties when needed
   const cycleId = params.id;
   const jobId = params.jobId;
-  
+
   const [job, setJob] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -53,6 +54,17 @@ export default function JobPage({ params }: JobPageProps) {
 
     fetchData();
   }, [jobId]);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Loading job details...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!job) {
     return (
@@ -80,8 +92,12 @@ export default function JobPage({ params }: JobPageProps) {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{job.role}</h1>
-          <p className="text-muted-foreground">{job.company} • {job.location}</p>
+          <h1 className="text-3xl font-bold tracking-tight text-template">
+            {job.role}
+          </h1>
+          <p className="text-muted-foreground">
+            {job.company} • {job.location}
+          </p>
         </div>
       </div>
 
@@ -103,19 +119,21 @@ export default function JobPage({ params }: JobPageProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{job.deadline}</div>
-            <p className="text-xs text-muted-foreground">Application closing date</p>
+            <p className="text-xs text-muted-foreground">
+              Application closing date
+            </p>
           </CardContent>
         </Card>
       </div>
 
       <div className="flex flex-wrap gap-4 mb-6">
-        <Badge className="text-sm py-1">
+        <Badge className="text-sm py-1 bg-template">
           <MapPin className="mr-1 h-4 w-4" />
           {job.location}
         </Badge>
         <Badge
           variant={job.status === "open" ? "default" : "outline"}
-          className="text-sm py-1"
+          className="text-sm py-1 bg-template"
         >
           {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
         </Badge>

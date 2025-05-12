@@ -14,7 +14,7 @@ export default function NewCyclePage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight text-template">
             Create New Cycle
           </h1>
           <p className="text-muted-foreground">

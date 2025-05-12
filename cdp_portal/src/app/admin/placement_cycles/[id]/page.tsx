@@ -60,23 +60,26 @@ function CycleDetail({ id }: { id: string }) {
       try {
         // Use fetchWithAuth instead of direct fetch
         const response = await fetchWithAuth(`/api/placement-cycles/${id}`);
-        
+
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Cycle not found");
           }
           throw new Error(`Failed to fetch cycle: ${response.status}`);
         }
-        
+
         const cycleData: CycleData = await response.json();
-        
+
         // Ensure optional fields have default values if not provided by API
-        cycleData.description = cycleData.description || "No description available";
+        cycleData.description =
+          cycleData.description || "No description available";
         cycleData.eligiblePrograms = cycleData.eligiblePrograms || [];
-        
+
         setCycle(cycleData);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error("An unknown error occurred"));
+        setError(
+          err instanceof Error ? err : new Error("An unknown error occurred")
+        );
       } finally {
         setIsLoading(false);
       }
@@ -108,7 +111,7 @@ function CycleDetail({ id }: { id: string }) {
       </div>
     );
   }
-  
+
   if (!cycle) {
     return (
       <div className="container mx-auto py-6">
@@ -135,15 +138,27 @@ function CycleDetail({ id }: { id: string }) {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{cycle.name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-template">
+            {cycle.name}
+          </h1>
           <p className="text-muted-foreground">{cycle.description}</p>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-4 mb-6">
-        <Badge className="text-sm py-1">
+        <Badge className="text-sm py-1 bg-template">
           <Calendar className="mr-1 h-4 w-4" />
-          {new Date(cycle.startDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})} - {new Date(cycle.endDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}
+          {new Date(cycle.startDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}{" "}
+          -{" "}
+          {new Date(cycle.endDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
         </Badge>
         <Badge
           variant={cycle.status === "Active" ? "default" : "outline"}
@@ -157,7 +172,6 @@ function CycleDetail({ id }: { id: string }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">
@@ -173,12 +187,13 @@ function CycleDetail({ id }: { id: string }) {
                   </Badge>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">No programs specified</p>
+                <p className="text-sm text-muted-foreground">
+                  No programs specified
+                </p>
               )}
             </div>
           </CardContent>
         </Card>
-
       </div>
 
       <CycleStats cycleId={id} />
@@ -218,7 +233,7 @@ function CycleDetail({ id }: { id: string }) {
 export default function CyclePage() {
   const params = useParams();
   const id = params?.id as string;
-  
+
   if (!id) {
     return (
       <div className="container mx-auto py-6">
@@ -235,6 +250,6 @@ export default function CyclePage() {
       </div>
     );
   }
-  
+
   return <CycleDetail id={id} />;
 }
