@@ -295,19 +295,23 @@ export default function BasicDetails() {
     setIsImageCropModalOpen(true);
   };
 
-  const handleCropComplete = async (croppedImageUrl: string) => {
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
     if (!editableData) return;
 
     try {
       setIsUpdating(true);
       setError(null);
-      const response = await fetch(croppedImageUrl);
-      const croppedImageBlob = await response.blob();
+      
+      // No need to fetch the blob URL anymore
+      // const response = await fetch(croppedImageUrl);
+      // const croppedImageBlob = await response.blob();
 
+      // Create the File object directly from the Blob
       const imageFile = new File([croppedImageBlob], "passport-image.jpg", {
         type: "image/jpeg",
       });
 
+      // Call the API function with the File object
       const result = await studentApi.uploadPassportImage(imageFile);
 
       const updatedData = { ...studentData!, passportImage: result.imageUrl };
@@ -315,7 +319,7 @@ export default function BasicDetails() {
       setEditableData(updatedData);
 
       setIsImageCropModalOpen(false);
-      setSelectedImage(null);
+      setSelectedImage(null); // Clear the temporary preview URL
     } catch (error) {
       console.error("Failed to upload image:", error);
       setError("Failed to upload image. Please try again.");
@@ -759,7 +763,10 @@ export default function BasicDetails() {
         {selectedImage && (
           <ImageCropModal
             isOpen={isImageCropModalOpen}
-            onClose={() => setIsImageCropModalOpen(false)}
+            onClose={() => {
+              setIsImageCropModalOpen(false);
+              setSelectedImage(null); // Also clear preview URL on manual close
+            }}
             imageSrc={selectedImage}
             onCropComplete={handleCropComplete}
           />

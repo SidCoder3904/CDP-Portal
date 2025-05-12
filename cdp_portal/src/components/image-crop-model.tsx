@@ -15,7 +15,7 @@ interface ImageCropModalProps {
   isOpen: boolean;
   onClose: () => void;
   imageSrc: string;
-  onCropComplete: (croppedImageUrl: string) => void;
+  onCropComplete: (croppedImageBlob: Blob) => void;
 }
 
 export function ImageCropModal({
@@ -26,84 +26,123 @@ export function ImageCropModal({
 }: ImageCropModalProps) {
   const [crop, setCrop] = useState<Crop>({
     unit: "px",
-    width: 200,
-    height: 200,
-    x: 0,
-    y: 0,
+    width: 150,
+    height: 150,
+    x: 50,
+    y: 50,
   });
   const imageRef = useRef<HTMLImageElement>(null);
 
-  const getCroppedImg = (image: HTMLImageElement, crop: Crop) => {
-    const canvas = document.createElement("canvas");
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-    
-    // Convert percentage values to pixels if needed
-    const cropWidth = crop.unit === "%" ? (crop.width * image.width) / 100 : crop.width;
-    const cropHeight = crop.unit === "%" ? (crop.height * image.height) / 100 : crop.height;
-    const cropX = crop.unit === "%" ? (crop.x * image.width) / 100 : crop.x;
-    const cropY = crop.unit === "%" ? (crop.y * image.height) / 100 : crop.y;
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const { width: displayedWidth, height: displayedHeight } = img;
+    const { naturalWidth, naturalHeight } = img;
 
-    // Set canvas dimensions to match the crop dimensions
-    canvas.width = cropWidth * scaleX;
-    canvas.height = cropHeight * scaleY;
-    const ctx = canvas.getContext("2d");
+    let initialCropPx = Math.min(displayedWidth, displayedHeight) * 0.5;
 
-    if (
-      ctx &&
-      cropWidth &&
-      cropHeight &&
-      cropX !== undefined &&
-      cropY !== undefined
-    ) {
-      ctx.drawImage(
-        image,
-        cropX * scaleX,
-        cropY * scaleY,
-        cropWidth * scaleX,
-        cropHeight * scaleY,
-        0,
-        0,
-        cropWidth * scaleX,
-        cropHeight * scaleY
-      );
+    if (naturalWidth < initialCropPx * (naturalWidth / displayedWidth) || naturalHeight < initialCropPx * (naturalHeight/displayedHeight) ) {
+        initialCropPx = Math.min(naturalWidth * (displayedWidth / naturalWidth) , naturalHeight * (displayedHeight / naturalHeight) );
     }
 
-    return new Promise<string>((resolve) => {
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(URL.createObjectURL(blob));
-        }
-      }, "image/jpeg");
+    setCrop({
+      unit: "px",
+      width: initialCropPx,
+      height: initialCropPx,
+      x: (displayedWidth - initialCropPx) / 2,
+      y: (displayedHeight - initialCropPx) / 2,
     });
   };
 
-  const handleCropComplete = async () => {
-    if (imageRef.current && crop.width && crop.height) {
-      const croppedImageUrl = await getCroppedImg(imageRef.current, crop);
-      onCropComplete(croppedImageUrl);
-      onClose();
+  const handleCropComplete = () => {
+    if (!imageRef.current || !crop.width || !crop.height) {
+      console.error("Image ref or crop dimensions are missing.");
+      return;
     }
+
+    const image = imageRef.current;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      console.error("Failed to get 2D context");
+      return;
+    }
+
+    const { naturalWidth, naturalHeight } = image;
+    const { width: displayedWidth, height: displayedHeight } = image;
+
+    if (displayedWidth === 0 || displayedHeight === 0 || naturalWidth === 0 || naturalHeight === 0) {
+        console.error("Image dimensions are zero. Cannot crop.");
+        return;
+    }
+
+    const scaleX = naturalWidth / displayedWidth;
+    const scaleY = naturalHeight / displayedHeight;
+
+    const sourceX = crop.x * scaleX;
+    const sourceY = crop.y * scaleY;
+    const sourceWidth = crop.width * scaleX;
+    const sourceHeight = crop.height * scaleY;
+
+    canvas.width = sourceWidth;
+    canvas.height = sourceHeight;
+    
+    console.log("Crop (px, relative to displayed):", crop);
+    console.log("Displayed Size (px):", { displayedWidth, displayedHeight });
+    console.log("Natural Size (px):", { naturalWidth, naturalHeight });
+    console.log("Scale Factors:", { scaleX, scaleY });
+    console.log("Source Rect (px, relative to natural):", { sourceX, sourceY, sourceWidth, sourceHeight });
+
+    ctx.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      sourceWidth, 
+      sourceHeight
+    );
+
+    // Clip the canvas to a circle
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.beginPath();
+    ctx.arc(canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) / 2, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over'; // Restore default composite operation
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        console.error("Canvas to Blob failed.");
+        return;
+      }
+      onCropComplete(blob);
+      onClose();
+    }, "image/png", 1);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[650px]">
         <DialogHeader>
           <DialogTitle>Crop Image</DialogTitle>
         </DialogHeader>
         <div className="mt-4">
           <ReactCrop
             crop={crop}
-            onChange={(c) => setCrop(c)}
+            onChange={(pixelCrop, percentCrop) => setCrop(pixelCrop)}
             aspect={1}
-            circularCrop
+            circularCrop={true}
           >
             <img
               ref={imageRef}
               src={imageSrc || "/placeholder.svg"}
               alt="Crop preview"
-              className="max-h-[400px] w-full object-contain"
+              className="max-h-[500px] w-full object-contain"
+              onLoad={onImageLoad}
+              crossOrigin="anonymous"
             />
           </ReactCrop>
         </div>
