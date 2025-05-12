@@ -863,11 +863,6 @@ export default function AdminNotices() {
                 />
                 {isUploading && <div className="animate-spin">⌛</div>}
               </div>
-              {formData.link && (
-                <p className="text-sm text-muted-foreground">
-                  Current file: {formData.link}
-                </p>
-              )}
             </div>
           </div>
           <DialogFooter>
