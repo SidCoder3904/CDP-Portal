@@ -1,14 +1,6 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+// app/admin/page.tsx (or .js)
+import { redirect } from 'next/navigation';
 
 export default function AdminPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.push("/admin/notifications");
-  }, [router]);
-
-  return null;
+  redirect('/admin/notifications');
 }

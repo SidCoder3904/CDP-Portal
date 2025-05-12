@@ -55,18 +55,18 @@ export function JobsList({ cycleId }: JobsListProps) {
         const queryParams = new URLSearchParams();
         if (statusFilter !== "all") queryParams.append("status", statusFilter);
         if (searchTerm.trim()) queryParams.append("company", searchTerm.trim());
-  
+
         // Using fetchWithAuth instead of direct fetch
         // Note: removing /api/ prefix to match backend routes
         const response = await fetchWithAuth(
           `/api/placement-cycles/${cycleId}/jobs?${queryParams.toString()}`
         );
-  
+
         if (!response.ok) {
           const error = await response.json();
           throw new Error(error.message || "Failed to fetch jobs");
         }
-  
+
         const data = await response.json();
         console.log("Fetched jobs:", data);
         setJobs(data);
@@ -76,10 +76,10 @@ export function JobsList({ cycleId }: JobsListProps) {
         setIsLoading(false);
       }
     };
-  
+
     fetchJobs();
   }, [cycleId, searchTerm, statusFilter]);
-  
+
   // Handler for updating the search term
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

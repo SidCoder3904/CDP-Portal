@@ -319,7 +319,7 @@ export default function NoticeList() {
   }
 
   return (
-    <div className="w-full max-w-4xl p-16 space-y-4">
+    <div className="w-full px-32 py-16 space-y-4">
       <h1 className="text-2xl text-template font-bold mb-6 flex items-center gap-2">
         <Calendar className="h-6 w-6" />
         Notices
