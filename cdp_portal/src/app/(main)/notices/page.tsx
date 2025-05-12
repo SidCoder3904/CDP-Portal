@@ -374,39 +374,12 @@ export default function NoticeList() {
               </div>
             </div>
             <div className="flex-1 w-full h-full">
-              {/* First try direct PDF embedding */}
-              <object
-                data={viewingPdf.url}
-                type="application/pdf"
-                className="w-full h-full"
-                onError={(e) => {
-                  console.log('PDF object failed to load, falling back to Google Docs viewer');
-                  // If there's an error loading directly, we'll rely on the iframe below
-                  (e.target as HTMLObjectElement).style.display = 'none';
-                }}
-              >
-                <p className="text-center p-4">
-                  Your browser doesn't support PDF embedding. 
-                  Using Google Docs viewer as fallback...
-                </p>
-              </object>
-              
-              {/* Fallback to Google Docs viewer */}
               <iframe 
                 src={`https://docs.google.com/viewer?url=${encodeURIComponent(viewingPdf.url)}&embedded=true`}
                 className="w-full h-full"
                 frameBorder="0"
                 title={`${viewingPdf.title} (Google Docs Viewer)`}
                 loading="lazy"
-                style={{ display: 'none' }}
-                onLoad={(e) => {
-                  // Only show the iframe if the object failed
-                  const iframe = e.currentTarget;
-                  const obj = iframe.previousElementSibling as HTMLElement;
-                  if (obj && obj.style.display === 'none') {
-                    iframe.style.display = 'block';
-                  }
-                }}
               />
             </div>
           </div>
