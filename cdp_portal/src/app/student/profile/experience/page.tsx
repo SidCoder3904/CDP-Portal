@@ -203,7 +203,10 @@ export default function ExperiencePage() {
               </CardTitle>
               <div className="flex items-center mt-1">
                 {exp.is_verified ? (
-                  <Badge variant="default" className="flex items-center">
+                  <Badge
+                    variant="default"
+                    className="flex items-center bg-template text-white"
+                  >
                     <Check className="mr-1 h-3 w-3" />
                     Verified
                   </Badge>
@@ -300,9 +303,12 @@ export default function ExperiencePage() {
                     company: exp.experience_details.company.current_value,
                     position: exp.experience_details.position.current_value,
                     duration: exp.experience_details.duration.current_value,
-                    description: exp.experience_details.description.current_value,
-                    technologies: exp.experience_details.technologies.current_value,
-                    achievements: exp.experience_details.achievements.current_value,
+                    description:
+                      exp.experience_details.description.current_value,
+                    technologies:
+                      exp.experience_details.technologies.current_value,
+                    achievements:
+                      exp.experience_details.achievements.current_value,
                     skills: exp.experience_details.skills.current_value,
                   }}
                   zodSchema={experienceSchema}

@@ -35,9 +35,10 @@ const JobList: React.FC<JobListProps> = ({
 
   return (
     <div
-      className="w-1/4 bg-white p-4 border-r border-gray-300 overflow-y-auto"
+      className="w-1/5 bg-gray-50 p-4 border-r border-gray-300 overflow-y-auto"
       style={{ maxHeight: "calc(100vh - 2rem)" }}
     >
+      <h2 className="text-2xl text-template font-bold mb-6">Job Listings</h2>
       <div className="mb-4">
         <Select onValueChange={setFilterStatus} defaultValue="all">
           <SelectTrigger className="w-full">
@@ -50,9 +51,7 @@ const JobList: React.FC<JobListProps> = ({
           </SelectContent>
         </Select>
       </div>
-      <h2 className="text-2xl text-template font-semibold mb-4">
-        Job Listings
-      </h2>
+
       <ul className="space-y-2">
         {filteredJobs.map((job) => (
           <li

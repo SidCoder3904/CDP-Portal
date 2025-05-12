@@ -195,7 +195,10 @@ export default function PositionsPage() {
               </CardTitle>
               <div className="flex items-center mt-1">
                 {position.is_verified ? (
-                  <Badge variant="default" className="flex items-center">
+                  <Badge
+                    variant="default"
+                    className="flex items-center bg-template text-white"
+                  >
                     <Check className="mr-1 h-3 w-3" />
                     Verified
                   </Badge>
@@ -279,11 +282,15 @@ export default function PositionsPage() {
                   ]}
                   initialData={{
                     title: position.position_details.title.current_value,
-                    organization: position.position_details.organization.current_value,
+                    organization:
+                      position.position_details.organization.current_value,
                     duration: position.position_details.duration.current_value,
-                    description: position.position_details.description.current_value,
-                    responsibilities: position.position_details.responsibilities.current_value,
-                    achievements: position.position_details.achievements.current_value,
+                    description:
+                      position.position_details.description.current_value,
+                    responsibilities:
+                      position.position_details.responsibilities.current_value,
+                    achievements:
+                      position.position_details.achievements.current_value,
                   }}
                   zodSchema={positionSchema}
                   onSaveValidated={(data) => handleUpdate(position.id, data)}

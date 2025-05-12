@@ -17,9 +17,14 @@ const projectSchema = z.object({
   technologies: z.string().optional(),
   duration: z.string().optional(),
   role: z.string().optional(),
-  teamSize: z.coerce.number().int().min(1, "Team size must be at least 1").optional().or(z.literal('')),
-  githubLink: z.string().url("Invalid URL format").optional().or(z.literal('')),
-  demoLink: z.string().url("Invalid URL format").optional().or(z.literal('')),
+  teamSize: z.coerce
+    .number()
+    .int()
+    .min(1, "Team size must be at least 1")
+    .optional()
+    .or(z.literal("")),
+  githubLink: z.string().url("Invalid URL format").optional().or(z.literal("")),
+  demoLink: z.string().url("Invalid URL format").optional().or(z.literal("")),
 });
 
 type ProjectFormData = z.infer<typeof projectSchema>;
@@ -78,7 +83,7 @@ export default function ProjectsPage() {
             last_verified_value: null,
           },
           teamSize: {
-            current_value: String(newData.teamSize ?? ''),
+            current_value: String(newData.teamSize ?? ""),
             last_verified_value: null,
           },
           githubLink: {
@@ -130,7 +135,7 @@ export default function ProjectsPage() {
             last_verified_value: null,
           },
           teamSize: {
-            current_value: String(newData.teamSize ?? ''),
+            current_value: String(newData.teamSize ?? ""),
             last_verified_value: null,
           },
           githubLink: {
@@ -213,7 +218,10 @@ export default function ProjectsPage() {
               </CardTitle>
               <div className="flex items-center mt-1">
                 {project.is_verified ? (
-                  <Badge variant="default" className="flex items-center">
+                  <Badge
+                    variant="default"
+                    className="flex items-center bg-template text-white"
+                  >
                     <Check className="mr-1 h-3 w-3" />
                     Verified
                   </Badge>
@@ -313,12 +321,15 @@ export default function ProjectsPage() {
                   ]}
                   initialData={{
                     name: project.project_details.name.current_value,
-                    description: project.project_details.description.current_value,
-                    technologies: project.project_details.technologies.current_value,
+                    description:
+                      project.project_details.description.current_value,
+                    technologies:
+                      project.project_details.technologies.current_value,
                     duration: project.project_details.duration.current_value,
                     role: project.project_details.role.current_value,
                     teamSize: project.project_details.teamSize.current_value,
-                    githubLink: project.project_details.githubLink.current_value,
+                    githubLink:
+                      project.project_details.githubLink.current_value,
                     demoLink: project.project_details.demoLink.current_value,
                   }}
                   zodSchema={projectSchema}

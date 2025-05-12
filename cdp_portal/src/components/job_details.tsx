@@ -99,24 +99,17 @@ export default function JobDetails({
               {job.company}
             </p>
             <p className="text-gray-500">
-              {job.location} • {job.jobType || "Placement"}
+              {job.location} • {job.jobType || "Placement"} {"• "}
+              {/* Only show the badge if the job is eligible */}
+              {
+                <Badge variant={"default"} className="text-xs bg-template">
+                  {job.status}
+                </Badge>
+              }
             </p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
-          {/* Only show the badge if the job is eligible */}
-          {job.isEligible && (
-            <Badge
-              variant={
-                job.status === "closed"
-                ? "outline"
-                : "default"
-              }
-              className="text-xs"
-            >
-              {job.status}
-            </Badge>
-          )}
           <Button
             onClick={handleApplyClick}
             disabled={
@@ -252,12 +245,6 @@ export default function JobDetails({
               <div className="grid gap-2 text-sm">
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <span className="text-muted-foreground">
-                    Degrees Eligible:
-                  </span>
-                  <span>{job.eligibility?.programs?.join(", ")}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <span className="text-muted-foreground">
                     Branches Eligible:
                   </span>
                   <span>{job.eligibility?.branches?.join(", ")}</span>
@@ -265,40 +252,50 @@ export default function JobDetails({
                 {job.eligibility?.cgpa && (
                   <div className="grid grid-cols-2 gap-2 mb-2">
                     <span className="text-muted-foreground">CGPA Cutoff:</span>
-                    <span>{job.eligibility.cgpa}</span>
+                    <span>{job.eligibility.cgpa}+</span>
                   </div>
                 )}
-                {job.eligibility?.cgpaCriteria && (
-                  <div className="mt-4">
-                    <h5 className="font-medium mb-2">
-                      Branch-wise CGPA Requirements:
-                    </h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {Object.entries(job.eligibility.cgpaCriteria).map(
-                        ([branch, programs]) => (
-                          <div
-                            key={branch}
-                            className="p-3 bg-gray-50 rounded-md"
-                          >
-                            <p className="font-medium capitalize">{branch}</p>
-                            <ul className="mt-1">
-                              {Object.entries(programs).map(
-                                ([program, cgpa]) => (
-                                  <li key={program} className="text-gray-700">
-                                    <span className="capitalize">
-                                      {program}:
-                                    </span>{" "}
-                                    {cgpa}
-                                  </li>
-                                )
+                {job.eligibility?.cgpaCriteria &&
+                  !job.eligibility?.uniformCgpa && (
+                    <div className="mt-4">
+                      <h5 className="font-semibold text-template">
+                        Branch-wise CGPA Requirements:
+                      </h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {Object.entries(job.eligibility.cgpaCriteria).map(
+                          ([branch, cgpa]) => (
+                            <div
+                              key={branch}
+                              className="p-3 bg-gray-50 rounded-md"
+                            >
+                              <p className="font-medium capitalize">{branch}</p>
+                              {typeof cgpa === "object" ? (
+                                <ul className="mt-1">
+                                  {Object.entries(cgpa).map(
+                                    ([program, value]) => (
+                                      <li
+                                        key={program}
+                                        className="text-gray-700"
+                                      >
+                                        <span className="capitalize">
+                                          {program}:
+                                        </span>{" "}
+                                        {value}
+                                      </li>
+                                    )
+                                  )}
+                                </ul>
+                              ) : (
+                                <p className="text-gray-700 mt-1">
+                                  CGPA: {cgpa}+
+                                </p>
                               )}
-                            </ul>
-                          </div>
-                        )
-                      )}
+                            </div>
+                          )
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           </div>
