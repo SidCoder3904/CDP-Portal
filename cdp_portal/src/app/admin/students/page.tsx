@@ -118,7 +118,7 @@ export default function StudentManagement() {
   };
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="min-h-screen container mx-auto py-10">
       <div className="flex flex-col items-center space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-template">

@@ -312,14 +312,14 @@ export default function NoticeList() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-4xl mx-auto p-4 flex justify-center items-center min-h-[400px]">
+      <div className="min-h-screen w-full max-w-4xl mx-auto p-4 flex justify-center items-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
     );
   }
 
   return (
-    <div className="w-full px-32 py-16 space-y-4">
+    <div className="min-h-screen w-full px-32 py-16 space-y-4">
       <h1 className="text-2xl text-template font-bold mb-6 flex items-center gap-2">
         <Calendar className="h-6 w-6" />
         Notices

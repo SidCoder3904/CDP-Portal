@@ -99,7 +99,7 @@ export default function JobListings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-screen ">
         <Icons.spinner className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-2">Loading jobs...</span>
       </div>
@@ -108,7 +108,7 @@ export default function JobListings() {
 
   return (
     <ProtectedRoute allowedRoles={["student"]}>
-      <div className="flex bg-gray-100">
+      <div className="min-h-screen flex bg-gray-100">
         {/* Job List */}
         <JobList
           jobs={jobs}

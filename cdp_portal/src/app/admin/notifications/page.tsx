@@ -196,8 +196,8 @@ export default function AdminNotificationPage() {
         <div className="space-y-8">
           {/* Placement Cycles Section */}
           <div>
-            <h2 className="text-2xl font-bold text-template mb-4">
-              Placement Cycles
+            <h2 className="text-3xl font-bold text-template mb-4">
+              Notifications
             </h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {cycles.map((cycle) => (

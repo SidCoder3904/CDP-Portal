@@ -9,6 +9,8 @@ import {
   Plus,
   Pencil,
   Trash2,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -643,14 +645,18 @@ export default function AdminNotices() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-6xl mx-auto p-4 flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="min-h-screen bg-white">
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-40">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="w-full py-16 space-y-4">
+    <div className="min-h-screen w-full py-16 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2 text-template">
           <Calendar className="h-6 w-6" />
