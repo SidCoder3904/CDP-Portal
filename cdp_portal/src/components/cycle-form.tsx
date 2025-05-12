@@ -44,8 +44,8 @@ const formSchema = z.object({
   endDate: z.string().min(1, {
     message: "End date is required.",
   }),
-  eligiblePrograms: z.string({
-    required_error: "Please select a program.",
+  eligiblePrograms: z.array(z.string()).min(1, {
+    message: "Select at least one program.",
   }),
   batch: z.string().min(1, {
     message: "Batch is required.",
@@ -65,7 +65,7 @@ export function CycleForm() {
       description: "",
       startDate: "",
       endDate: "",
-      eligiblePrograms: "",
+      eligiblePrograms: [],
       batch: "",
     },
   });
@@ -226,12 +226,12 @@ export function CycleForm() {
             <FormField
               control={form.control}
               name="eligiblePrograms"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <div className="mb-4">
-                    <FormLabel>Eligible Program</FormLabel>
+                    <FormLabel>Eligible Programs</FormLabel>
                     <FormDescription>
-                      Select the program eligible for this cycle
+                      Select the programs eligible for this cycle
                     </FormDescription>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -247,11 +247,20 @@ export function CycleForm() {
                               className="flex flex-row items-start space-x-3 space-y-0"
                             >
                               <FormControl>
-                                <input
-                                  type="radio"
-                                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                                  checked={field.value === program.id}
-                                  onChange={() => field.onChange(program.id)}
+                                <Checkbox
+                                  checked={field.value?.includes(program.id)}
+                                  onCheckedChange={(checked) => {
+                                    return checked
+                                      ? field.onChange([
+                                          ...field.value,
+                                          program.id,
+                                        ])
+                                      : field.onChange(
+                                          field.value?.filter(
+                                            (value) => value !== program.id
+                                          )
+                                        );
+                                  }}
                                 />
                               </FormControl>
                               <FormLabel className="font-normal">
