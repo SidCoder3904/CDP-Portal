@@ -82,11 +82,9 @@ export default function JobListings() {
       setApplications(newApplications);
 
       // Update the jobs array to mark this job as applied
-      setJobs(prevJobs => 
-        prevJobs.map(job => 
-          job._id === jobId 
-            ? { ...job, hasApplied: true } 
-            : job
+      setJobs((prevJobs) =>
+        prevJobs.map((job) =>
+          job._id === jobId ? { ...job, hasApplied: true } : job
         )
       );
 
@@ -110,7 +108,7 @@ export default function JobListings() {
 
   return (
     <ProtectedRoute allowedRoles={["student"]}>
-      <div className="flex h-screen bg-gray-100">
+      <div className="flex bg-gray-100">
         {/* Job List */}
         <JobList
           jobs={jobs}

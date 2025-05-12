@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Download, FileText, Calendar, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,12 +21,15 @@ interface Notice {
 export default function NoticeList() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewingPdf, setViewingPdf] = useState<{url: string, title: string} | null>(null);
+  const [viewingPdf, setViewingPdf] = useState<{
+    url: string;
+    title: string;
+  } | null>(null);
 
   // Parse notices data from different API response formats
   const parseNoticesResponse = (data: any): Notice[] => {
-    if (!data) return []
-    
+    if (!data) return [];
+
     // Handle array format
     if (Array.isArray(data)) {
       return data.map((notice: any, index: number) => ({
@@ -37,10 +40,10 @@ export default function NoticeList() {
         content: notice.content || notice.description || "",
         company: notice.company || "",
         type: notice.type || "",
-        date: notice.date || new Date().toISOString().split('T')[0],
-      }))
+        date: notice.date || new Date().toISOString().split("T")[0],
+      }));
     }
-    
+
     // Handle {notices: [...]} format
     if (data.notices && Array.isArray(data.notices)) {
       return data.notices.map((notice: any, index: number) => ({
@@ -51,179 +54,215 @@ export default function NoticeList() {
         content: notice.content || notice.description || "",
         company: notice.company || "",
         type: notice.type || "",
-        date: notice.date || new Date().toISOString().split('T')[0],
-      }))
+        date: notice.date || new Date().toISOString().split("T")[0],
+      }));
     }
-    
-    return []
-  }
+
+    return [];
+  };
 
   useEffect(() => {
     const fetchNotices = async () => {
       setIsLoading(true);
-      
+
       try {
         // Get the token from localStorage
-        const token = localStorage.getItem('access_token');
-        console.log('Fetching notices for student view...');
-        
+        const token = localStorage.getItem("access_token");
+        console.log("Fetching notices for student view...");
+
         // Debug environment information
-        console.log('Environment variables:');
-        console.log('- NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-        console.log('- Has token:', !!token);
+        console.log("Environment variables:");
+        console.log("- NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
+        console.log("- Has token:", !!token);
         if (token) {
-          console.log('- Token starts with:', token.substring(0, 10) + '...');
+          console.log("- Token starts with:", token.substring(0, 10) + "...");
         }
-        
+
         // Try to fetch from backend
         try {
           // The API endpoint should match the one used in admin page
-          const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+          const backendUrl =
+            process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
           const noticesUrl = `${backendUrl}/notice/notices`;
-          
-          console.log('Attempting to fetch from:', noticesUrl);
-          
+
+          console.log("Attempting to fetch from:", noticesUrl);
+
           // Prepare headers based on token availability
           const headers: HeadersInit = {};
           if (token) {
-            console.log('Using authorization header with token');
-            headers['Authorization'] = `Bearer ${token}`;
+            console.log("Using authorization header with token");
+            headers["Authorization"] = `Bearer ${token}`;
           } else {
-            console.log('No token available, fetching without authorization');
+            console.log("No token available, fetching without authorization");
           }
-          
+
           const response = await fetch(noticesUrl, {
-            method: 'GET',
+            method: "GET",
             headers,
           });
-          
+
           if (!response.ok) {
-            console.log(`Primary endpoint failed with status: ${response.status}`);
+            console.log(
+              `Primary endpoint failed with status: ${response.status}`
+            );
             throw new Error(`Backend returned status ${response.status}`);
           }
-          
+
           const data = await response.json();
-          console.log('Notices loaded from backend:', data?.notices?.length || 0);
+          console.log(
+            "Notices loaded from backend:",
+            data?.notices?.length || 0
+          );
           setNotices(parseNoticesResponse(data));
         } catch (error) {
-          console.error('Error fetching from primary endpoint:', error);
-          
+          console.error("Error fetching from primary endpoint:", error);
+
           // Try an alternative endpoint
           try {
-            console.log('Trying alternative endpoint...');
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            console.log("Trying alternative endpoint...");
+            const backendUrl =
+              process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
             const alternativeUrl = `${backendUrl}/api/notices`;
-            
-            console.log('Attempting to fetch from:', alternativeUrl);
-            
+
+            console.log("Attempting to fetch from:", alternativeUrl);
+
             const altResponse = await fetch(alternativeUrl, {
-              method: 'GET',
-              headers: token ? {
-                'Authorization': `Bearer ${token}`,
-              } : undefined,
+              method: "GET",
+              headers: token
+                ? {
+                    Authorization: `Bearer ${token}`,
+                  }
+                : undefined,
             });
-            
+
             if (!altResponse.ok) {
-              console.log(`Alternative endpoint failed with status: ${altResponse.status}`);
-              throw new Error(`Alternative backend returned status ${altResponse.status}`);
+              console.log(
+                `Alternative endpoint failed with status: ${altResponse.status}`
+              );
+              throw new Error(
+                `Alternative backend returned status ${altResponse.status}`
+              );
             }
-            
+
             const altData = await altResponse.json();
-            console.log('Notices loaded from alternative endpoint:', altData?.notices?.length || 0);
+            console.log(
+              "Notices loaded from alternative endpoint:",
+              altData?.notices?.length || 0
+            );
             setNotices(parseNoticesResponse(altData));
             return;
           } catch (altError) {
-            console.error('Error fetching from alternative endpoint:', altError);
-            
+            console.error(
+              "Error fetching from alternative endpoint:",
+              altError
+            );
+
             // Try one more endpoint pattern
             try {
-              console.log('Trying public endpoint...');
+              console.log("Trying public endpoint...");
               const publicUrl = `${process.env.NEXT_PUBLIC_API_URL}/notice`;
-              
-              console.log('Attempting to fetch from:', publicUrl);
-              
+
+              console.log("Attempting to fetch from:", publicUrl);
+
               const publicResponse = await fetch(publicUrl, {
-                method: 'GET',
+                method: "GET",
               });
-              
+
               if (!publicResponse.ok) {
-                console.log(`Public endpoint failed with status: ${publicResponse.status}`);
-                throw new Error(`Public endpoint returned status ${publicResponse.status}`);
+                console.log(
+                  `Public endpoint failed with status: ${publicResponse.status}`
+                );
+                throw new Error(
+                  `Public endpoint returned status ${publicResponse.status}`
+                );
               }
-              
+
               const publicData = await publicResponse.json();
-              console.log('Notices loaded from public endpoint:', publicData?.length || publicData?.notices?.length || 0);
+              console.log(
+                "Notices loaded from public endpoint:",
+                publicData?.length || publicData?.notices?.length || 0
+              );
               setNotices(parseNoticesResponse(publicData));
               return;
             } catch (publicError) {
-              console.error('Error fetching from public endpoint:', publicError);
-              
+              console.error(
+                "Error fetching from public endpoint:",
+                publicError
+              );
+
               // Try local test endpoint as last resort
               try {
-                console.log('Trying local test endpoint...');
-                const testEndpoint = '/api/notices/test';
-                
-                console.log('Attempting to fetch from:', testEndpoint);
-                
+                console.log("Trying local test endpoint...");
+                const testEndpoint = "/api/notices/test";
+
+                console.log("Attempting to fetch from:", testEndpoint);
+
                 // Test if the endpoint exists
-                const testResponse = await fetch(testEndpoint, { 
-                  method: 'HEAD' 
+                const testResponse = await fetch(testEndpoint, {
+                  method: "HEAD",
                 });
-                
+
                 if (testResponse.ok) {
                   // Endpoint exists, try to fetch data
                   const dataResponse = await fetch(testEndpoint);
                   if (dataResponse.ok) {
                     const testData = await dataResponse.json();
-                    console.log('Notices loaded from test endpoint:', testData?.length || 0);
+                    console.log(
+                      "Notices loaded from test endpoint:",
+                      testData?.length || 0
+                    );
                     setNotices(parseNoticesResponse(testData));
-                    toast.warning('Using test notices - could not connect to backend');
+                    toast.warning(
+                      "Using test notices - could not connect to backend"
+                    );
                     return;
                   }
                 }
-                throw new Error('Test endpoint not available');
+                throw new Error("Test endpoint not available");
               } catch (testError) {
-                console.error('Error using test endpoint:', testError);
+                console.error("Error using test endpoint:", testError);
               }
             }
           }
-          
+
           // If both endpoints fail, use hardcoded test data as fallback
-          console.log('Falling back to test notices');
-          
+          console.log("Falling back to test notices");
+
           // Hardcoded test notices data for fallback
           const testData = [
             {
-              _id: 'fallback-id-1',
-              title: 'Fallback Placement Notice 1',
-              description: 'This is a fallback placement notice',
-              link: 'https://example.com/fallback1.pdf',
-              content: 'Fallback placement notice content',
-              company: 'Fallback Company A',
-              type: 'placement',
-              date: new Date().toISOString().split('T')[0]
+              _id: "fallback-id-1",
+              title: "Fallback Placement Notice 1",
+              description: "This is a fallback placement notice",
+              link: "https://example.com/fallback1.pdf",
+              content: "Fallback placement notice content",
+              company: "Fallback Company A",
+              type: "placement",
+              date: new Date().toISOString().split("T")[0],
             },
             {
-              _id: 'fallback-id-2',
-              title: 'Fallback Internship Notice 2',
-              description: 'This is a fallback internship notice',
-              link: 'https://example.com/fallback2.pdf',
-              content: 'Fallback internship notice content',
-              company: 'Fallback Company B',
-              type: 'internship',
-              date: new Date().toISOString().split('T')[0]
-            }
+              _id: "fallback-id-2",
+              title: "Fallback Internship Notice 2",
+              description: "This is a fallback internship notice",
+              link: "https://example.com/fallback2.pdf",
+              content: "Fallback internship notice content",
+              company: "Fallback Company B",
+              type: "internship",
+              date: new Date().toISOString().split("T")[0],
+            },
           ];
-          
-          console.log('Test notices loaded as fallback:', testData.length);
+
+          console.log("Test notices loaded as fallback:", testData.length);
           setNotices(parseNoticesResponse(testData));
-          
-          toast.warning('Using test notices due to backend error');
+
+          toast.warning("Using test notices due to backend error");
         }
       } catch (error) {
-        console.error('Error fetching notices:', error);
+        console.error("Error fetching notices:", error);
         setNotices([]);
-        toast.error(error instanceof Error ? error.message : 'Failed to load notices');
+        toast.error(
+          error instanceof Error ? error.message : "Failed to load notices"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -236,17 +275,17 @@ export default function NoticeList() {
     if (notice.link) {
       try {
         // Create a link and trigger download
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = notice.link;
-        link.download = `${notice.title || 'notice'}.pdf`;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
+        link.download = `${notice.title || "notice"}.pdf`;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       } catch (error) {
-        console.error('Error downloading PDF:', error);
-        toast.error('Failed to download PDF');
+        console.error("Error downloading PDF:", error);
+        toast.error("Failed to download PDF");
       }
     }
   };
@@ -257,15 +296,15 @@ export default function NoticeList() {
         // Set the viewing state
         setViewingPdf({
           url: notice.link,
-          title: notice.title || 'Notice PDF'
+          title: notice.title || "Notice PDF",
         });
       } catch (error) {
-        console.error('Error preparing PDF for viewing:', error);
-        toast.error('Failed to view PDF');
+        console.error("Error preparing PDF for viewing:", error);
+        toast.error("Failed to view PDF");
       }
     }
   };
-  
+
   // Function to close the PDF viewer
   const closePdfViewer = () => {
     setViewingPdf(null);
@@ -280,8 +319,8 @@ export default function NoticeList() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 space-y-4">
-      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
+    <div className="w-full max-w-4xl p-16 space-y-4">
+      <h1 className="text-2xl text-template font-bold mb-6 flex items-center gap-2">
         <Calendar className="h-6 w-6" />
         Notices
       </h1>
@@ -289,21 +328,28 @@ export default function NoticeList() {
       <div className="grid gap-4">
         {notices.length === 0 && (
           <div className="p-4 text-center">
-            <p className="text-muted-foreground">No notices available at this time.</p>
+            <p className="text-muted-foreground">
+              No notices available at this time.
+            </p>
           </div>
         )}
-        
+
         {notices.map((notice) => (
-          <Card key={notice._id} className="group hover:shadow-md transition-shadow">
+          <Card
+            key={notice._id}
+            className="group hover:shadow-md transition-shadow"
+          >
             <CardContent className="p-4 flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 flex-1">
                 <div className="mt-1">
                   <FileText className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="space-y-1">
-                  <p className="font-medium">{notice.title}</p>
+                  <p className="font-medium text-template">{notice.title}</p>
                   {notice.description && (
-                    <p className="text-sm text-muted-foreground">{notice.description}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {notice.description}
+                    </p>
                   )}
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-xs">
@@ -315,7 +361,8 @@ export default function NoticeList() {
                     </Badge>
                     {notice.type && (
                       <Badge variant="outline" className="text-xs">
-                        {notice.type.charAt(0).toUpperCase() + notice.type.slice(1)}
+                        {notice.type.charAt(0).toUpperCase() +
+                          notice.type.slice(1)}
                       </Badge>
                     )}
                     {notice.company && (
@@ -352,7 +399,7 @@ export default function NoticeList() {
           </Card>
         ))}
       </div>
-      
+
       {/* PDF Viewer Modal */}
       {viewingPdf && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -360,10 +407,10 @@ export default function NoticeList() {
             <div className="p-4 border-b flex justify-between items-center">
               <h3 className="text-lg font-medium">{viewingPdf.title}</h3>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => window.open(viewingPdf.url, '_blank')}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(viewingPdf.url, "_blank")}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download
@@ -380,31 +427,35 @@ export default function NoticeList() {
                 type="application/pdf"
                 className="w-full h-full"
                 onError={(e) => {
-                  console.log('PDF object failed to load, falling back to Google Docs viewer');
+                  console.log(
+                    "PDF object failed to load, falling back to Google Docs viewer"
+                  );
                   // If there's an error loading directly, we'll rely on the iframe below
-                  (e.target as HTMLObjectElement).style.display = 'none';
+                  (e.target as HTMLObjectElement).style.display = "none";
                 }}
               >
                 <p className="text-center p-4">
-                  Your browser doesn't support PDF embedding. 
-                  Using Google Docs viewer as fallback...
+                  Your browser doesn't support PDF embedding. Using Google Docs
+                  viewer as fallback...
                 </p>
               </object>
-              
+
               {/* Fallback to Google Docs viewer */}
-              <iframe 
-                src={`https://docs.google.com/viewer?url=${encodeURIComponent(viewingPdf.url)}&embedded=true`}
+              <iframe
+                src={`https://docs.google.com/viewer?url=${encodeURIComponent(
+                  viewingPdf.url
+                )}&embedded=true`}
                 className="w-full h-full"
                 frameBorder="0"
                 title={`${viewingPdf.title} (Google Docs Viewer)`}
                 loading="lazy"
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 onLoad={(e) => {
                   // Only show the iframe if the object failed
                   const iframe = e.currentTarget;
                   const obj = iframe.previousElementSibling as HTMLElement;
-                  if (obj && obj.style.display === 'none') {
-                    iframe.style.display = 'block';
+                  if (obj && obj.style.display === "none") {
+                    iframe.style.display = "block";
                   }
                 }}
               />
@@ -412,7 +463,7 @@ export default function NoticeList() {
           </div>
         </div>
       )}
-      
+
       <Toaster />
     </div>
   );

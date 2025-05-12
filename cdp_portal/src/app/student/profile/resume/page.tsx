@@ -55,14 +55,16 @@ export default function ResumePage() {
     try {
       const validationResult = resumeSchema.safeParse({ resumeName });
       if (!validationResult.success) {
-        setResumeNameError(validationResult.error.errors[0]?.message || "Invalid name");
+        setResumeNameError(
+          validationResult.error.errors[0]?.message || "Invalid name"
+        );
         return;
       }
       setResumeNameError(null);
 
       setUpdating(true);
       setError(null);
-      
+
       const newResume = await studentApi.uploadResume(resumeName, file);
       setResumes((prev) => [...prev, newResume]);
       setResumeName("");
@@ -93,19 +95,20 @@ export default function ResumePage() {
     try {
       const response = await studentApi.downloadResume(resumeId);
       const { file_url, file_name } = response;
-      
+
       // Create a temporary link element for download
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = file_url;
       link.download = file_name;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to download resume");
-
+      setError(
+        err instanceof Error ? err.message : "Failed to download resume"
+      );
     }
   };
 
@@ -113,9 +116,9 @@ export default function ResumePage() {
     try {
       const response = await studentApi.viewResume(resumeId);
       const { file_url } = response;
-      
+
       // Open the PDF in a new tab for viewing
-      const newWindow = window.open('', '_blank');
+      const newWindow = window.open("", "_blank");
       if (newWindow) {
         newWindow.document.write(`
           <html>
@@ -146,9 +149,9 @@ export default function ResumePage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-1 text-template">
       <h1 className="text-2xl font-bold mb-6">My Resumes</h1>
-      
+
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
@@ -171,7 +174,7 @@ export default function ResumePage() {
           <FileUploader
             onFileUpload={handleFileUpload}
             acceptedFileTypes={{
-              "application/pdf": [".pdf"]
+              "application/pdf": [".pdf"],
             }}
             maxSize={5 * 1024 * 1024}
           />

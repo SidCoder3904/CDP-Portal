@@ -218,7 +218,10 @@ export default function EducationPage() {
               </CardTitle>
               <div className="flex items-center mt-1">
                 {edu.is_verified ? (
-                  <Badge variant="default" className="flex items-center">
+                  <Badge
+                    variant="default"
+                    className="flex items-center bg-template text-white"
+                  >
                     <Check className="mr-1 h-3 w-3" />
                     Verified
                   </Badge>
@@ -320,12 +323,14 @@ export default function EducationPage() {
                   ]}
                   initialData={{
                     degree: edu.education_details.degree.current_value,
-                    institution: edu.education_details.institution.current_value,
+                    institution:
+                      edu.education_details.institution.current_value,
                     year: edu.education_details.year.current_value,
                     gpa: edu.education_details.gpa.current_value,
                     major: edu.education_details.major.current_value,
                     minor: edu.education_details.minor.current_value,
-                    relevantCourses: edu.education_details.relevant_courses.current_value,
+                    relevantCourses:
+                      edu.education_details.relevant_courses.current_value,
                     honors: edu.education_details.honors.current_value,
                   }}
                   zodSchema={educationSchema}

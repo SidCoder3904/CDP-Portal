@@ -12,9 +12,12 @@ export function DetailItem({ label, value, status }: DetailItemProps) {
     <div className="space-y-1">
       <div className="flex justify-between items-center">
         <p className="text-sm font-medium">{label}</p>
-        {status && (
-          status === "verified" ? (
-            <Badge variant="default" className="flex items-center">
+        {status &&
+          (status === "verified" ? (
+            <Badge
+              variant="default"
+              className="flex items-center bg-template text-white"
+            >
               <Check className="mr-1 h-3 w-3" />
               Verified
             </Badge>
@@ -28,8 +31,7 @@ export function DetailItem({ label, value, status }: DetailItemProps) {
               <AlertCircle className="mr-1 h-3 w-3" />
               Pending
             </Badge>
-          )
-        )}
+          ))}
       </div>
       <p className="text-sm text-muted-foreground">{value}</p>
     </div>
