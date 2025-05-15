@@ -98,38 +98,20 @@ export default function Navbar({ menuItems }: NavbarProps) {
           {mounted && isAuthenticated && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  {user?.email?.split("@")[0]}
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2 rounded-full"
+                >
+                  <User className="h-4 w-4 text-template " />
+                  <div className="font-bold text-template">
+                    {user?.email?.split("@")[0]}
+                  </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Link
-                    href={user?.role === "admin" ? "/admin" : "/student"}
-                    className="w-full"
-                  >
-                    Dashboard
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Link
-                    href={
-                      user?.role === "admin"
-                        ? "/admin/profile"
-                        : "/student/profile"
-                    }
-                    className="w-full"
-                  >
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+              <DropdownMenuContent className="rounded-full">
                 <DropdownMenuItem
                   onClick={logout}
-                  className="text-red-600 cursor-pointer"
+                  className="text-red-600 font-bold cursor-pointer rounded-full"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Logout
