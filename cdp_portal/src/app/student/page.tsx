@@ -155,6 +155,34 @@ export default function NotificationPage() {
   }
 
   if (error || !cycle) {
+    // If there's no cycle but also no error, show welcome message
+    return (
+      <div className="min-h-screen bg-white">
+        <main className="container mx-auto px-4 py-8">
+          <div className="flex flex-col items-center justify-center p-8 border rounded-lg bg-white shadow-sm">
+            <h1 className="text-3xl font-bold text-template mb-4">
+              Welcome to CDP Portal
+            </h1>
+            <p className="text-lg text-center text-gray-600 mb-6">
+              You are currently not registered in any placement cycle.
+            </p>
+            <p className="text-md text-center text-gray-500 max-w-md mb-8">
+              Once you are registered in a placement cycle, you will be able to
+              view notifications, job updates, and participate in the placement
+              process here. Kindly fill your profile details in the profile
+              section so that you can be verified by the placement cell and
+              added to placement cycles.
+            </p>
+            <div className="text-sm text-muted-foreground text-center">
+              Please contact your placement coordinator if you believe this is
+              an error.
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+
+    // Show error message for actual errors
     return (
       <div className="min-h-screen bg-white">
         <main className="container mx-auto px-4 py-8">
@@ -162,7 +190,7 @@ export default function NotificationPage() {
             <AlertCircle className="h-10 w-10 text-red-500 mb-4" />
             <h3 className="text-lg font-semibold mb-2">Error Loading Data</h3>
             <p className="text-muted-foreground text-center mb-4">
-              {error || "Cycle not found."}
+              {error || "An unexpected error occurred."}
             </p>
             {error === "Please log in to view notifications" && (
               <button
