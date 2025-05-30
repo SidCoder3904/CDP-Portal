@@ -58,6 +58,12 @@ export default function CareerDevelopmentLanding() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Google Fonts import for 'Pacifico' */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Imperial+Script&display=swap"
+        rel="stylesheet"
+      />
+
       {/* Hero Section */}
       <section className="relative h-[70vh] w-full overflow-hidden">
         <div className="absolute inset-0 z-0">
@@ -71,7 +77,10 @@ export default function CareerDevelopmentLanding() {
         </div>
         <div className="relative z-10 container mx-auto h-full flex flex-col justify-center px-4 md:px-8">
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+            <h1
+              className="text-7xl md:text-8xl lg:text-8xl  text-white mb-6 "
+              style={{ fontFamily: "'Imperial Script'" }}
+            >
               Shaping Future Leaders at IIT Ropar
             </h1>
             <p className="text-xl text-white/90 mb-8 max-w-2xl">
